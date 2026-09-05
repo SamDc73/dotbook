@@ -29,6 +29,8 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Push | `expo-notifications`; exact alarms need a small Kotlin module |
 | Styling | NativeWind 5 (preview) + Tailwind 4, CSS-first |
 | Design tokens | the design system — Material 3 roles + golden-ratio scale |
+| Components | `react-native-reusables` (shadcn for RN, copy-in) |
+| Dynamic colour | Material You via `@pchmn/expo-material3-theme` |
 | Icons | `lucide-react-native` |
 | Voice | `expo-speech-recognition` (on-device, English) |
 
@@ -45,6 +47,15 @@ NativeWind 4 + Tailwind 3.4 is the stable fallback if the preview causes trouble
 it was verified working here before switching to 4 on request.
 
 Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM.
+
+### UI libraries evaluated and rejected — do not re-open without a reason
+
+| Library | Why not |
+|---|---|
+| **HeroUI Native** | No web support — its own docs say so. Would require HeroUI React alongside it: two component libraries kept at parity, for an app whose point is that Android and web behave identically. Revisit only if web parity is ever dropped. |
+| **React Native Paper** | The closest call. Polished MD3 components and the best-documented Material You path. Rejected because it carries its own theme object (duplicating `tokens.css`) and its web output looks like an Android app in a browser — bad for a text-heavy log used on a laptop. |
+| **Tamagui** | Excellent tech, wrong fit for the goal. Another styling DSL, more config, and Material You is entirely manual. More thinking, not less. |
+| **the design system components** | Next.js + real CSS. Cannot run on React Native. Its *tokens* were taken; its components were not. |
 
 ## Commands
 
@@ -124,6 +135,41 @@ inventing a number — that is the whole point of a ratio-based system.
 
 **Re-hue the entire app by editing `tokens.css` alone.** If changing the palette
 requires touching any other file, something has violated this rule.
+
+#### Material You — why the rules above are what make it work
+
+On Android 12+ the palette comes from the user's wallpaper at runtime via
+`@pchmn/expo-material3-theme`. It works here for one reason: our colours are
+already **M3 roles**, and that library generates its palette with Google's
+official `@material/material-color-utilities` — the same role set. The OS output
+maps onto our variable names 1:1 (camelCase → kebab-case).
+
+How it fits together:
+
+- `tokens.css` holds the **static fallback** — used on web, on iOS, and on
+  Android below 12, where no system palette exists
+- At runtime a provider converts the system theme to `vars()` and wraps the app
+  with `VariableContextProvider` (both exported by NativeWind 5), overriding the
+  same variable names
+- `success` / `warning` / `info` stay static — they are the design system additions and M3
+  does not generate them
+
+**Never read a colour into JavaScript.** No `theme.colors.primary`, no passing
+hex values as props, no `StyleSheet.create` with a colour in it. Use the utility
+class and let the variable resolve. A component that reads a colour in JS is
+frozen at the static value and will not follow the wallpaper — and that breakage
+is invisible until someone changes their wallpaper.
+
+#### Components
+
+`react-native-reusables` — shadcn/ui for React Native. Components are **copied
+into the repo**, not imported, so they are ours to edit. Every copied component
+must be converted to token utilities before use; they ship with their own colour
+defaults, and leaving those in place silently breaks both theming and Material You.
+
+⚠️ RNR's support for the NativeWind 5 preview is unverified. If it fights the
+preview, fall back to NativeWind 4 + Tailwind 3.4 (verified working here) rather
+than abandoning the token system.
 
 Tokens are copied from `copied_repos/design-system-tailwind`. Its *components* are
 Next.js + real CSS and cannot run on React Native — reference only, never import.
