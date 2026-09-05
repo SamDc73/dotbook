@@ -1,0 +1,19 @@
+node_modules/
+.expo/
+dist/
+build/
+*.log
+
+# Local data and secrets
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Personal exports — real health data, never commit
+ringconn/*.csv
+
+.DS_Store
