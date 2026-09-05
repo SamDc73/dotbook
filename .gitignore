@@ -17,3 +17,6 @@ build/
 ringconn/*.csv
 
 .DS_Store
+
+# Reference clone, not part of this repo
+copied_repos/uhabits/
