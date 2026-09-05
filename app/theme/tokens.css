@@ -1,0 +1,178 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   THE design tokens. Single source of truth for every colour and dimension.
+
+   Nothing in this app may hardcode a colour, a spacing value, or a font size.
+   If a value is needed, it is added HERE first and used as a utility class.
+   That rule is what makes the whole app feel like one thing.
+
+   Colours: Material 3 role tokens, copied verbatim from the design system
+     (copied_repos/design-system-tailwind). Roles, not raw hues — so `bg-primary`
+     stays correct when the palette changes. To re-hue the app, change the
+     values here and nothing else.
+
+   Sizes: the design system's golden-ratio scale (φ = 1.618), RESOLVED to static values.
+     the design system builds these with nested calc(var(--...)) chains, which React
+     Native cannot evaluate. The numbers below are those chains pre-computed,
+     so phone and web get identical results.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Golden-ratio spacing — p-md, gap-lg, m-xl … ── */
+  --spacing-3xs: 0.146rem;
+  --spacing-2xs: 0.236rem;
+  --spacing-xs: 0.382rem;
+  --spacing-sm: 0.618rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.618rem;
+  --spacing-xl: 2.618rem;
+  --spacing-2xl: 4.236rem;
+  --spacing-3xl: 6.854rem;
+  --spacing-4xl: 11.09rem;
+
+  /* ── Type scale (φ and √φ steps) — text-body, text-title1 … ── */
+  --text-caption: 0.618rem;
+  --text-label: 0.786rem;
+  --text-body: 1rem;
+  --text-callout: 1.128rem;
+  --text-subheading: 1.272rem;
+  --text-heading: 1.618rem;
+  --text-title3: 2.058rem;
+  --text-title2: 2.618rem;
+  --text-title1: 3.33rem;
+  --text-display2: 4.236rem;
+  --text-display1: 6.854rem;
+
+  /* ── Radius ── */
+  --radius-xs: 0.236rem;
+  --radius-sm: 0.382rem;
+  --radius-md: 0.618rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.618rem;
+
+  /* ── Material 3 colour roles (light) ── */
+  --color-primary: #0051e0;
+  --color-on-primary: #faf8ff;
+  --color-primary-container: #dbe1ff;
+  --color-on-primary-container: #00174d;
+  --color-secondary: #40617f;
+  --color-on-secondary: #f7f9ff;
+  --color-secondary-container: #cde5ff;
+  --color-on-secondary-container: #001d32;
+  --color-tertiary: #006878;
+  --color-on-tertiary: #f0fbff;
+  --color-tertiary-container: #a8edff;
+  --color-on-tertiary-container: #001f25;
+  --color-error: #bb0e45;
+  --color-on-error: #fff8f7;
+  --color-error-container: #ffd9dc;
+  --color-on-error-container: #400012;
+  --color-background: #fefbff;
+  --color-on-background: #171b27;
+  --color-surface: #faf8ff;
+  --color-on-surface: #171b27;
+  --color-surface-variant: #c8c6c6;
+  --color-on-surface-variant: #464747;
+  --color-outline: #777777;
+  --color-outline-variant: #c8c6c6;
+  --color-shadow: #000000;
+  --color-scrim: #000000;
+  --color-inverse-surface: #2c303c;
+  --color-inverse-on-surface: #eef0ff;
+  --color-inverse-primary: #b5c4ff;
+  --color-surface-dim: #d7d9ea;
+  --color-surface-bright: #faf8ff;
+  --color-surface-container-lowest: white;
+  --color-surface-container-low: #f2f3ff;
+  --color-surface-container: #ebedfe;
+  --color-surface-container-high: #e5e7f8;
+  --color-surface-container-highest: #dfe2f2;
+  --color-warning: #7d5800;
+  --color-on-warning: #fff8f3;
+  --color-warning-container: #ffdea9;
+  --color-on-warning-container: #271900;
+  --color-success: #006b55;
+  --color-on-success: #e6fff4;
+  --color-success-container: #20ffce;
+  --color-on-success-container: #002118;
+  --color-info: #004ee7;
+  --color-on-info: #faf8ff;
+  --color-info-container: #dce1ff;
+  --color-on-info-container: #001550;
+  --color-primary-fixed: #dbe1ff;
+  --color-primary-fixed-dim: #b5c4ff;
+  --color-on-primary-fixed: #00174d;
+  --color-on-primary-fixed-variant: #003cac;
+  --color-secondary-fixed: #cde5ff;
+  --color-secondary-fixed-dim: #a8caec;
+  --color-on-secondary-fixed: #001d32;
+  --color-on-secondary-fixed-variant: #274a66;
+  --color-tertiary-fixed: #a8edff;
+  --color-tertiary-fixed-dim: #00d9fa;
+  --color-on-tertiary-fixed: #001f25;
+  --color-on-tertiary-fixed-variant: #004e5b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #b5c4ff;
+    --color-on-primary: #00297a;
+    --color-primary-container: #003cac;
+    --color-on-primary-container: #dbe1ff;
+    --color-secondary: #a8caec;
+    --color-on-secondary: #0b334f;
+    --color-secondary-container: #274a66;
+    --color-on-secondary-container: #cde5ff;
+    --color-tertiary: #00d9fa;
+    --color-on-tertiary: #00363f;
+    --color-tertiary-container: #004e5b;
+    --color-on-tertiary-container: #a8edff;
+    --color-error: #ffb2bb;
+    --color-on-error: #670021;
+    --color-error-container: #910032;
+    --color-on-error-container: #ffd9dc;
+    --color-background: #171b27;
+    --color-on-background: #d1d4e4;
+    --color-surface: #222531;
+    --color-on-surface: #c3c6d6;
+    --color-surface-variant: #303030;
+    --color-on-surface-variant: #acabab;
+    --color-outline: #464747;
+    --color-outline-variant: #303030;
+    --color-shadow: #000000;
+    --color-scrim: #000000;
+    --color-inverse-surface: #faf8ff;
+    --color-inverse-on-surface: #171b27;
+    --color-inverse-primary: #b5c4ff;
+    --color-surface-dim: #20232f;
+    --color-surface-bright: #434653;
+    --color-surface-container-lowest: #1b1f2b;
+    --color-surface-container-low: #262a36;
+    --color-surface-container: #2c303c;
+    --color-surface-container-high: #353945;
+    --color-surface-container-highest: #3e424f;
+    --color-warning: #ffba28;
+    --color-on-warning: #422c00;
+    --color-warning-container: #5e4100;
+    --color-on-warning-container: #ffdea9;
+    --color-success: #00e0b4;
+    --color-on-success: #00382b;
+    --color-success-container: #00513f;
+    --color-on-success-container: #20ffce;
+    --color-info: #b6c4ff;
+    --color-on-info: #00277f;
+    --color-info-container: #003ab1;
+    --color-on-info-container: #dce1ff;
+    --color-primary-fixed: #dbe1ff;
+    --color-primary-fixed-dim: #b5c4ff;
+    --color-on-primary-fixed: #00174d;
+    --color-on-primary-fixed-variant: #003cac;
+    --color-secondary-fixed: #cde5ff;
+    --color-secondary-fixed-dim: #a8caec;
+    --color-on-secondary-fixed: #001d32;
+    --color-on-secondary-fixed-variant: #274a66;
+    --color-tertiary-fixed: #a8edff;
+    --color-tertiary-fixed-dim: #00d9fa;
+    --color-on-tertiary-fixed: #001f25;
+    --color-on-tertiary-fixed-variant: #004e5b;
+  }
+}

@@ -28,6 +28,7 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Recurrence | `rrule-es` (**not** `rrule` — unmaintained) |
 | Push | `expo-notifications`; exact alarms need a small Kotlin module |
 | Styling | NativeWind 5 (preview) + Tailwind 4, CSS-first |
+| Design tokens | the design system — Material 3 roles + golden-ratio scale |
 | Icons | `lucide-react-native` |
 | Voice | `expo-speech-recognition` (on-device, English) |
 
@@ -92,6 +93,43 @@ That means: merge/CRDT logic, recurrence expansion, quick-add parsing, template
 expansion, habit rule evaluation. A phone and a server disagreeing about whether a
 habit ticked today is the worst bug class in this app — it is silent and it corrupts
 history.
+
+### Design system — one source, no exceptions
+
+**`app/theme/tokens.css` is the only place a design value may be defined.**
+
+Never write a raw colour, spacing value, font size, or radius anywhere else. Not
+in a component, not in a StyleSheet, not "just this once" for a one-off screen.
+If you need a value that does not exist, add it to `tokens.css` first, then use
+it as a utility class. This single rule is what makes the app feel like one
+thing rather than twelve screens built on twelve afternoons.
+
+```
+❌ <View style={{ padding: 16, backgroundColor: '#635bff' }}>
+❌ <View className="p-[16px] bg-[#635bff]">      // arbitrary values are the same sin
+✅ <View className="p-md bg-primary">
+```
+
+**Colours are Material 3 roles, not hues.** Use `bg-primary`, `text-on-surface`,
+`bg-error-container` — never `bg-blue-500`. Roles carry meaning, so they stay
+correct when the palette changes and they get dark mode for free. Every role has
+a matching `on-` pair; text on `bg-primary` is `text-on-primary`, always.
+
+Semantic roles map to this app's domain: `success` = habit kept / dose taken,
+`error` = habit broken / destructive, `warning` = plan approaching / needs review.
+
+**Sizes come from the golden ratio.** `--spacing-*` and `--text-*` are φ-derived
+(`text-title2` is φ² = 2.618rem). Reach for the next step on the scale rather than
+inventing a number — that is the whole point of a ratio-based system.
+
+**Re-hue the entire app by editing `tokens.css` alone.** If changing the palette
+requires touching any other file, something has violated this rule.
+
+Tokens are copied from `copied_repos/design-system-tailwind`. Its *components* are
+Next.js + real CSS and cannot run on React Native — reference only, never import.
+the design system builds its scale with nested `calc(var(--…))` chains, which React Native
+cannot evaluate; ours are those chains pre-computed to static values so phone and
+web agree exactly.
 
 ### JavaScript / React
 
@@ -164,9 +202,9 @@ history.
 ```
 packages/core/       shared logic — merge, recurrence, parsing, habit rules
 app/                 Expo universal — Android and web from one codebase
+app/theme/tokens.css THE design tokens — colours, spacing, type, radius
 server/              Bun server — relay, ingest, LLM classification
 extension/           Firefox extension (browser time)
 ringconn/            RingConn CSV samples + import mapping
-research/            stack decision record and deep research (reference)
 copied_repos/        reference code, not built or shipped
 ```
