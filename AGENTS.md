@@ -19,23 +19,38 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Layer | Choice |
 |---|---|
 | Language | **Plain JavaScript** — no TypeScript |
-| Android | Expo (React Native), New Architecture |
-| Web | React + Vite |
+| Android + Web | **One** Expo universal codebase (`app/`) — RN on Android, react-native-web on web |
 | Server | Bun |
 | Storage | SQLite everywhere |
 | Sync | vendored `@actual-app/crdt` (Actual Budget pattern) |
 | LLM | TanStack AI on the server → Ollama / any adapter |
 | Parsing | `chrono-node`, `parse-duration`, `uFuzzy` |
 | Recurrence | `rrule-es` (**not** `rrule` — unmaintained) |
-| Push | local exact alarms; UnifiedPush + ntfy for server-initiated |
+| Push | `expo-notifications`; exact alarms need a small Kotlin module |
+| Styling | NativeWind 5 (preview) + Tailwind 4, CSS-first |
+| Icons | `lucide-react-native` |
+| Voice | `expo-speech-recognition` (on-device, English) |
+
+### Two setup traps — do not undo these
+
+1. **NativeWind 5 + Tailwind 4 needs `@tailwindcss/postcss`.** Without
+   `postcss.config.mjs`, `@theme` passes through uncompiled and **no utility
+   classes are generated**. The build still succeeds. Silent failure.
+2. **NativeWind 5 has no `jsx-runtime`.** Do not set
+   `jsxImportSource: 'nativewind'` in `babel.config.js` — that is v4 syntax and
+   the bundle fails to resolve. The `nativewind/babel` preset handles it.
+
+NativeWind 4 + Tailwind 3.4 is the stable fallback if the preview causes trouble;
+it was verified working here before switching to 4 on request.
 
 Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM.
 
 ## Commands
 
-- App (Android): `cd app && bun run start`
-- Web: `cd web && bun run dev`
+- App (Android): `cd app && bun run android`
+- Web: `cd app && bun run web` (same codebase)
 - Server: `cd server && bun run dev`
+- Verify the build pipeline: `cd app && bunx expo export --platform web`
 - Lint: `biome check --write .`
 - Test: `bun test`
 
@@ -148,8 +163,7 @@ history.
 
 ```
 packages/core/       shared logic — merge, recurrence, parsing, habit rules
-app/                 Expo Android app
-web/                 React + Vite web app
+app/                 Expo universal — Android and web from one codebase
 server/              Bun server — relay, ingest, LLM classification
 extension/           Firefox extension (browser time)
 ringconn/            RingConn CSV samples + import mapping

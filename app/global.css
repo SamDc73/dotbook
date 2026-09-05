@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+@import 'nativewind/theme';
+
+/* Colorful by intent, not by accident.
+   Tailwind 4 is CSS-first: every token below is generated into a utility, so
+   --color-primary gives bg-primary / text-primary / border-primary for free.
+   Change the palette here and the whole app follows — nothing hardcodes a colour. */
+@theme {
+  --color-background: rgb(252 252 253);
+  --color-surface: rgb(255 255 255);
+  --color-border: rgb(226 228 235);
+  --color-fg: rgb(24 26 32);
+  --color-muted: rgb(110 116 130);
+
+  --color-primary: rgb(99 91 255); /* indigo — actions, the app's identity */
+  --color-accent: rgb(236 72 153); /* pink   — highlights, active states */
+  --color-success: rgb(22 163 113); /* green  — habit kept, dose taken */
+  --color-warning: rgb(234 160 30); /* amber  — plan approaching, needs review */
+  --color-danger: rgb(233 76 90); /* red    — habit broken, destructive */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: rgb(14 15 19);
+    --color-surface: rgb(23 25 31);
+    --color-border: rgb(42 46 57);
+    --color-fg: rgb(237 239 244);
+    --color-muted: rgb(141 148 165);
+
+    --color-primary: rgb(139 132 255);
+    --color-accent: rgb(244 114 182);
+    --color-success: rgb(45 196 141);
+    --color-warning: rgb(245 183 66);
+    --color-danger: rgb(248 113 126);
+  }
+}

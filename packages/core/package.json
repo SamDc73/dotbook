@@ -1,0 +1,22 @@
+{
+  "name": "@dotbook/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./parse": "./src/parse/index.js",
+    "./templates": "./src/templates/index.js",
+    "./recurrence": "./src/recurrence/index.js",
+    "./habits": "./src/habits/index.js",
+    "./sync": "./src/sync/index.js"
+  },
+  "dependencies": {
+    "chrono-node": "^2.10.1",
+    "parse-duration": "^2.1.8",
+    "@leeoniya/ufuzzy": "^1.0.19",
+    "rrule-es": "^1.0.0",
+    "uuidv7": "^1.2.1"
+  }
+}

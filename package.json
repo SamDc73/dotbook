@@ -1,0 +1,13 @@
+{
+  "name": "dotbook",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "app", "server"],
+  "scripts": {
+    "lint": "biome check --write .",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.0"
+  }
+}
