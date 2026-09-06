@@ -1,15 +1,15 @@
 {
-  "name": "@dotbook/server",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "bun --watch src/index.js",
-    "start": "bun src/index.js"
-  },
-  "dependencies": {
-    "@dotbook/core": "workspace:*",
-    "@tanstack/ai": "^0.53.0",
-    "hono": "^4.13.7"
-  }
+	"name": "@dotbook/server",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --watch src/index.js",
+		"start": "bun src/index.js"
+	},
+	"dependencies": {
+		"@dotbook/core": "workspace:*",
+		"@tanstack/ai": "^0.53.0",
+		"hono": "^4.13.7"
+	}
 }

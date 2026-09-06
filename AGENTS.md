@@ -33,6 +33,7 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Dynamic colour | Material You via `@pchmn/expo-material3-theme` |
 | Icons | `lucide-react-native` |
 | Voice | `expo-speech-recognition` (on-device, English) |
+| Composer | `@expensify/react-native-live-markdown` (custom worklet parser) |
 
 ### Two setup traps — do not undo these
 
@@ -64,6 +65,7 @@ Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM
 - Server: `cd server && bun run dev`
 - Verify the build pipeline: `cd app && bunx expo export --platform web`
 - Lint: `biome check --write .`
+- Import-graph lint (cycles/duplicates — the only rules Biome lacks): `bun run lint:imports`
 - Test: `bun test`
 
 ## Critical Rules - DO NOT VIOLATE
@@ -224,6 +226,40 @@ with nested `calc(var(--…))` chains, which React Native cannot evaluate — ou
 are those chains pre-computed to static values so phone and web agree exactly.
 Its *components* are Next.js + real CSS and cannot run on React Native:
 reference only, never import.
+
+### The composer, and what it is not
+
+`@expensify/react-native-live-markdown` is a `TextInput` that accepts a custom
+**worklet** parser (it runs on the UI thread as you type). It ships a real web
+build, so one composer serves Android and web.
+
+**Plain text in, rich components out.** The composer holds text and nothing else
+— no document model, no embedded widgets, no rich-text state. Committed lines are
+rendered as ordinary React components, and *that* is where chips live: version
+stamps, habit glyphs, live timer countdowns. This split is deliberate. It is why
+`entries.text` can stay the raw string the user typed, and why a bad parse is
+always recoverable.
+
+Do not replace this with a rich-text editor. TipTap-in-a-WebView (`tentap`),
+Lexical and Portable Text were all considered: the WebView is wrong for a
+text-heavy log, and the other two have no React Native renderer, so each would
+fork the input across platforms — the one thing this codebase exists to avoid.
+
+`/` opens the command menu **only at column 0**; anywhere else it is a plain
+character, so `50g brocli sprouts` and `and/or` type normally. The menu is our
+own code filtered with `uFuzzy`, not a library.
+
+### Timers are rows
+
+A running timer is an `entries` row with `kind: timer`, `ts_start` and `ts_end` —
+never runtime state, never a background task holding a number. Remaining time is
+always `ts_end - now`, recomputed from the log. That is what makes a timer survive
+an app kill, a reboot, and a sync from another device, and it is why no timer
+library is needed.
+
+Suggested durations come from the plan first (the next `plan` line's boundary),
+then from a frequency-and-recency query over past timer rows. Plain SQL, no ML.
+A suggestion is always visible before it commits — never applied silently.
 
 ### JavaScript / React
 
