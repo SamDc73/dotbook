@@ -26,7 +26,8 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | LLM | TanStack AI on the server → Ollama / any adapter |
 | Parsing | `chrono-node`, `parse-duration`, `uFuzzy` |
 | Recurrence | `rrule-es` (**not** `rrule` — unmaintained) |
-| Push | `expo-notifications`; exact alarms need a small Kotlin module |
+| Push (Android) | `expo-notifications`; exact alarms need a small Kotlin module |
+| Push (web) | Web Notifications when open; ntfy Web Push when closed |
 | Styling | NativeWind 5 (preview) + Tailwind 4, CSS-first |
 | Design tokens | **Cyanotype & Verdigris** — M3 roles + golden-ratio scale |
 | Components | `react-native-reusables` (shadcn for RN, copy-in) |
@@ -248,6 +249,12 @@ fork the input across platforms — the one thing this codebase exists to avoid.
 `/` opens the command menu **only at column 0**; anywhere else it is a plain
 character, so `50g brocli sprouts` and `and/or` type normally. The menu is our
 own code filtered with `uFuzzy`, not a library.
+
+**The composer styles text; it does not host views.** `live-markdown`'s parser
+returns `{type, start, length}` with `type` from a closed 16-value enum. There is
+no custom type and no way to put a View inside a `TextInput`. Anything that needs
+to be drawn rather than styled — a timer's progress, a sparkline — is a layer
+behind the row or part of the rendered (committed) line, never inside the input.
 
 ### Timers are rows
 
