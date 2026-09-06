@@ -1,0 +1,538 @@
+<title>Cyanotype &amp; Verdigris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --primary:#006cb4; --primary-lo:#448bcb;
+  --kept:#004746; --broken:#f2a9a6; --broken-ink:#e1595b;
+  --pending:#dd9314; --pending-deep:#a76c00; --passive:#726d9e;
+  --ground:#f8fafd; --surface:#ffffff; --line:#dadfe3; --muted:#69737d; --ink:#192028;
+  --on-accent:#ffffff;
+  --kept-wash:rgba(0,71,70,.08); --broken-wash:rgba(242,169,166,.24);
+  --pend-wash:rgba(221,147,20,.12); --pass-wash:rgba(114,109,158,.10);
+  --shadow:0 1px 2px rgba(25,32,40,.05), 0 10px 30px -18px rgba(0,108,180,.28);
+  --glow:rgba(0,108,180,.10);
+  /* 24-hour drift — pinned lightness, chroma 0.002–0.038, never a hue you'd name */
+  --h00:#677283; --h01:#677284; --h02:#677284; --h03:#677285; --h04:#677285; --h05:#677286;
+  --h06:#757071; --h07:#826d5b; --h08:#7e6e5f; --h09:#7a6f64; --h10:#787068; --h11:#75716c;
+  --h12:#737170; --h13:#707273; --h14:#6e7276; --h15:#6c7279; --h16:#757073; --h17:#7d6d6d;
+  --h18:#846a67; --h19:#836b68; --h20:#826b6a; --h21:#756f77; --h22:#667383; --h23:#667383;
+
+  --f-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --f-body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --t-cap:.786rem; --t-body:1rem; --t-call:1.128rem; --t-sub:1.272rem;
+  --t-head:1.618rem; --t-title:2.618rem;
+  --sp-xs:.382rem; --sp-sm:.618rem; --sp-md:1rem; --sp-lg:1.618rem;
+  --sp-xl:2.618rem; --sp-2xl:4.236rem;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --primary:#6ab1f3; --primary-lo:#4585bf;
+    --kept:#7be6e2; --broken:#8f2f33; --broken-ink:#d24c50;
+    --pending:#fab558; --pending-deep:#fab558; --passive:#a29fcc;
+    --ground:#0b1015; --surface:#141a21; --line:#2a3138; --muted:#8f9aa4; --ink:#ebeff2;
+    --on-accent:#08131c;
+    --kept-wash:rgba(123,230,226,.10); --broken-wash:rgba(143,47,51,.28);
+    --pend-wash:rgba(250,181,88,.10); --pass-wash:rgba(162,159,204,.10);
+    --shadow:0 1px 0 rgba(235,239,242,.03), 0 16px 40px -26px rgba(0,0,0,.85);
+    --glow:rgba(106,177,243,.13);
+    --h00:#8d99ab; --h01:#8d99ac; --h02:#8d99ac; --h03:#8d99ad; --h04:#8d99ad; --h05:#8d99ae;
+    --h06:#9c9798; --h07:#aa9480; --h08:#a69585; --h09:#a2968a; --h10:#9f978e; --h11:#9c9792;
+    --h12:#999896; --h13:#97989a; --h14:#95999d; --h15:#9299a0; --h16:#9c969a; --h17:#a49493;
+    --h18:#ac918d; --h19:#ab918f; --h20:#aa9191; --h21:#9c969e; --h22:#8c9aab; --h23:#8d99ab;
+  }
+}
+:root[data-theme="dark"]{
+  --primary:#6ab1f3; --primary-lo:#4585bf;
+  --kept:#7be6e2; --broken:#8f2f33; --broken-ink:#d24c50;
+  --pending:#fab558; --pending-deep:#fab558; --passive:#a29fcc;
+  --ground:#0b1015; --surface:#141a21; --line:#2a3138; --muted:#8f9aa4; --ink:#ebeff2;
+  --on-accent:#08131c;
+  --kept-wash:rgba(123,230,226,.10); --broken-wash:rgba(143,47,51,.28);
+  --pend-wash:rgba(250,181,88,.10); --pass-wash:rgba(162,159,204,.10);
+  --shadow:0 1px 0 rgba(235,239,242,.03), 0 16px 40px -26px rgba(0,0,0,.85);
+  --glow:rgba(106,177,243,.13);
+  --h00:#8d99ab; --h01:#8d99ac; --h02:#8d99ac; --h03:#8d99ad; --h04:#8d99ad; --h05:#8d99ae;
+  --h06:#9c9798; --h07:#aa9480; --h08:#a69585; --h09:#a2968a; --h10:#9f978e; --h11:#9c9792;
+  --h12:#999896; --h13:#97989a; --h14:#95999d; --h15:#9299a0; --h16:#9c969a; --h17:#a49493;
+  --h18:#ac918d; --h19:#ab918f; --h20:#aa9191; --h21:#9c969e; --h22:#8c9aab; --h23:#8d99ab;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--f-body); font-size:var(--t-body); line-height:1.55;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:66rem; margin:0 auto; padding:var(--sp-xl) var(--sp-lg) var(--sp-2xl)}
+.cvd-defs{position:absolute; width:0; height:0; overflow:hidden}
+
+/* header */
+.head{display:flex; flex-wrap:wrap; gap:var(--sp-lg); align-items:flex-end;
+  justify-content:space-between; padding-bottom:var(--sp-lg);
+  border-bottom:1px solid var(--line); margin-bottom:var(--sp-xl)}
+h1{font-family:var(--f-display); font-weight:600; font-size:var(--t-title);
+  line-height:1.05; margin:0 0 var(--sp-sm); letter-spacing:-.02em; text-wrap:balance}
+h1 .a{color:var(--primary)} h1 .b{color:var(--kept)}
+.lede{margin:0; color:var(--muted); max-width:36rem; font-size:var(--t-call)}
+.controls{display:flex; flex-direction:column; gap:var(--sp-sm); min-width:16rem}
+.ctl{display:flex; flex-direction:column; gap:var(--sp-xs)}
+.ctl>span{font-family:var(--f-mono); font-size:.66rem; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muted)}
+.seg{display:flex; border:1px solid var(--line); border-radius:.4rem; overflow:hidden; background:var(--surface)}
+.seg button{flex:1; appearance:none; border:0; background:transparent; cursor:pointer;
+  font-family:var(--f-body); font-size:var(--t-cap); color:var(--muted);
+  padding:.4rem .3rem; transition:background .15s, color .15s}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--primary); color:var(--on-accent); font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--primary); outline-offset:-2px}
+
+section{margin-bottom:var(--sp-2xl)}
+h2{font-family:var(--f-display); font-weight:500; font-size:var(--t-head);
+  margin:0 0 var(--sp-xs); letter-spacing:-.01em}
+.note{margin:0 0 var(--sp-lg); color:var(--muted); max-width:46rem; font-size:var(--t-cap)}
+.eyebrow{font-family:var(--f-mono); font-size:.66rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 var(--sp-xs)}
+
+/* specimens */
+.spec{display:flex; flex-direction:column; gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:.7rem; overflow:hidden}
+.row{display:grid; grid-template-columns:8rem 1fr auto; gap:var(--sp-md);
+  align-items:center; background:var(--surface); padding:var(--sp-sm) var(--sp-md)}
+.chip{height:3.1rem; border-radius:.4rem; display:flex; align-items:flex-end; padding:var(--sp-xs) var(--sp-sm)}
+.chip b{font-family:var(--f-mono); font-size:.66rem; font-weight:500; opacity:.92}
+.rname{font-weight:600; font-size:var(--t-call); margin:0}
+.rrole{margin:0; color:var(--muted); font-size:var(--t-cap)}
+.rdata{font-family:var(--f-mono); font-size:.69rem; color:var(--muted);
+  text-align:right; line-height:1.7; font-variant-numeric:tabular-nums; white-space:nowrap}
+.rdata b{color:var(--ink); font-weight:500}
+.aa{color:var(--kept); font-weight:500}
+.ui{color:var(--pending-deep); font-weight:500}
+.fillonly{color:var(--muted); font-weight:500}
+
+.neutrals{display:grid; grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr)); gap:var(--sp-sm)}
+.n{border:1px solid var(--line); border-radius:.5rem; overflow:hidden; background:var(--surface)}
+.n .sw{height:2.6rem}
+.n .lb{padding:var(--sp-xs) var(--sp-sm); font-family:var(--f-mono); font-size:.64rem;
+  color:var(--muted); display:flex; justify-content:space-between; gap:.4rem}
+.n .lb b{color:var(--ink); font-weight:500}
+
+/* log */
+.ctx{display:grid; grid-template-columns:1fr; gap:var(--sp-md)}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:.7rem;
+  padding:var(--sp-md); box-shadow:var(--shadow)}
+.panel>h3{margin:0 0 var(--sp-md); font-size:var(--t-cap); font-family:var(--f-mono);
+  font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.log{position:relative; display:flex; flex-direction:column; gap:.1rem; margin:0; padding:0 0 0 var(--sp-md); list-style:none}
+/* the day's arc, drawn once down the gutter */
+.log::before{content:""; position:absolute; left:0; top:.3rem; bottom:.3rem; width:2px; border-radius:2px;
+  background:linear-gradient(to bottom, var(--h07), var(--h08), var(--h09), var(--h10))}
+.log li{display:grid; grid-template-columns:5.6rem 1fr; gap:var(--sp-sm); align-items:baseline;
+  padding:.3rem 0; border-bottom:1px dashed var(--line)}
+.log li:last-child{border-bottom:0}
+.tm{font-family:var(--f-mono); font-size:.75rem; color:var(--t,var(--muted));
+  font-variant-numeric:tabular-nums; font-weight:500; white-space:nowrap}
+.tx{font-size:.93rem}
+.tx em{font-style:normal; color:var(--muted)}
+.log li.passive .tx{color:var(--passive)}
+.log li.passive .tm{color:var(--passive); opacity:.75}
+.dia{display:inline-block; width:.72rem; color:var(--passive)}
+
+/* clickable version token — Low Lamplight's treatment, made interactive */
+.tokwrap{display:inline}
+.tok{appearance:none; border:0; background:none; padding:0; font:inherit; cursor:pointer;
+  color:var(--primary); border-bottom:1px solid color-mix(in srgb,var(--primary) 42%,transparent);
+  transition:color .15s, border-color .15s}
+.ver{display:inline-flex; align-items:center; gap:.22rem; margin-left:.3rem;
+  font-family:var(--f-mono); font-size:.68rem; font-weight:500; color:var(--primary);
+  border:1px solid color-mix(in srgb,var(--primary) 40%,transparent);
+  background:color-mix(in srgb,var(--primary) 8%,transparent);
+  border-radius:.25rem; padding:.02rem .3rem .02rem .34rem; white-space:nowrap;
+  transition:background .15s, border-color .15s}
+.ver::after{content:"▸"; font-size:.62em; transition:transform .18s; display:inline-block}
+.tokwrap.open .ver::after{transform:rotate(90deg)}
+.tok:hover, .tok:focus-visible{color:var(--ink)}
+.tok:hover .ver, .tok:focus-visible .ver{background:color-mix(in srgb,var(--primary) 18%,transparent);
+  border-color:var(--primary)}
+.tok:focus-visible{outline:2px solid var(--primary); outline-offset:3px; border-radius:.2rem}
+.stackout{margin:.3rem 0 .1rem; padding:var(--sp-sm) var(--sp-md); border-left:2px solid var(--primary);
+  background:color-mix(in srgb,var(--primary) 6%,transparent); border-radius:0 .3rem .3rem 0;
+  font-family:var(--f-mono); font-size:.72rem; color:var(--muted); line-height:1.9}
+.stackout b{color:var(--ink); font-weight:500}
+.stackout .eff{color:var(--primary)}
+
+/* habits — Low Lamplight's row, with room to breathe */
+.habits{display:flex; flex-direction:column; border:1px solid var(--line);
+  border-radius:.7rem; background:var(--surface); box-shadow:var(--shadow); overflow:hidden}
+.hab{display:grid; grid-template-columns:1.35rem minmax(9rem,1fr) minmax(0,1.3fr) auto;
+  gap:var(--sp-md); align-items:center; padding:var(--sp-sm) var(--sp-md);
+  border-top:1px solid var(--line)}
+.hab:first-child{border-top:0}
+.hab-name{font-size:.93rem}
+.hab-why{font-family:var(--f-mono); font-size:.72rem; color:var(--muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.hab-state{font-family:var(--f-mono); font-size:.64rem; letter-spacing:.13em;
+  text-transform:uppercase; padding:.12rem .5rem; border-radius:.25rem;
+  border:1px solid var(--line); white-space:nowrap}
+.hab.kept{background:var(--kept-wash)}
+.hab.broken{background:var(--broken-wash)}
+.hab.pending{background:var(--pend-wash)}
+.hab.kept .hab-state{color:var(--kept); border-color:color-mix(in srgb,var(--kept) 42%,transparent)}
+.hab.broken .hab-state{color:var(--broken-ink); border-color:color-mix(in srgb,var(--broken-ink) 45%,transparent)}
+.hab.pending .hab-state{color:var(--pending-deep); border-color:color-mix(in srgb,var(--pending) 45%,transparent)}
+.hab.kept .hab-name{color:var(--ink)}
+.hab.broken .hab-name{color:var(--muted)}
+.glyph{width:1.05rem; height:1.05rem; flex:none; display:block}
+.g-kept{color:var(--kept)} .g-broken{color:var(--broken-ink)}
+.g-pending{color:var(--pending-deep)} .g-passive{color:var(--passive)}
+
+/* hour ramp strip */
+.ramp{display:flex; border:1px solid var(--line); border-radius:.5rem; overflow:hidden}
+.ramp div{flex:1; height:3.2rem; display:flex; align-items:flex-end; justify-content:center;
+  padding-bottom:.25rem; font-family:var(--f-mono); font-size:.56rem; color:var(--ground)}
+.ramp-x{display:flex; justify-content:space-between; font-family:var(--f-mono);
+  font-size:.64rem; color:var(--muted); margin-top:var(--sp-xs)}
+
+/* bench + table */
+.bench{display:grid; grid-template-columns:1fr; gap:var(--sp-md)}
+@media(min-width:46rem){ .bench{grid-template-columns:1fr 1fr} .ctx{grid-template-columns:1.4fr 1fr} }
+.pair{display:flex; gap:var(--sp-sm)}
+.pair>div{flex:1; border-radius:.4rem; padding:var(--sp-sm) var(--sp-md); display:flex;
+  align-items:center; gap:var(--sp-sm); border:1px solid var(--line);
+  font-family:var(--f-mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase}
+.tbl{width:100%; border-collapse:collapse; font-family:var(--f-mono); font-size:.72rem;
+  font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:right; padding:.42rem .5rem; border-bottom:1px solid var(--line); white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:400}
+.tbl td{color:var(--muted)} .tbl .hold{color:var(--kept)} .tbl .fail{color:var(--broken-ink)}
+.tbl tr.grp td{color:var(--ink); padding-top:var(--sp-sm); font-family:var(--f-body); font-size:.78rem}
+.scroll{overflow-x:auto}
+.scroll>.tbl{min-width:34rem}
+
+.why{display:grid; grid-template-columns:1fr; gap:var(--sp-md) var(--sp-lg)}
+@media(min-width:46rem){ .why{grid-template-columns:1fr 1fr} }
+.card{border-left:2px solid var(--primary); padding-left:var(--sp-md)}
+.card:nth-child(2){border-color:var(--kept)}
+.card:nth-child(3){border-color:var(--pending)}
+.card:nth-child(4){border-color:var(--passive)}
+.card h3{margin:0 0 var(--sp-xs); font-size:var(--t-body); font-weight:600}
+.card p{margin:0; color:var(--muted); font-size:.87rem}
+code{font-family:var(--f-mono); font-size:.8em; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:.25rem; padding:.05rem .28rem}
+footer{border-top:1px solid var(--line); padding-top:var(--sp-md); color:var(--muted); font-size:var(--t-cap)}
+.vis-wrap{transition:filter .2s}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+<svg class="cvd-defs" aria-hidden="true" focusable="false"><defs>
+  <filter id="sim-deuteranopia" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.292751 0.707252 0.000001 0 0  0.292750 0.707249 0 0 0  -0.022336 0.022337 1 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="sim-protanopia" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.112382 0.887612 -0.000001 0 0  0.112383 0.887618 0 0 0  0.004006 -0.004006 1 0 0  0 0 0 1 0"/>
+  </filter>
+  <filter id="sim-tritanopia" color-interpolation-filters="linearRGB">
+    <feColorMatrix type="matrix" values="0.493258 0.506749 0.000001 0 0  0.493256 0.506738 -0.000001 0 0  -3.010865 3.010905 1.000004 0 0  0 0 0 1 0"/>
+  </filter>
+  <symbol id="gk" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.1" fill="currentColor"/></symbol>
+  <symbol id="gb" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="4.1" y1="11.9" x2="11.9" y2="4.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="gp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="1.5 2.7" stroke-linecap="round"/></symbol>
+  <symbol id="gs" viewBox="0 0 16 16"><path d="M8 2.4 13.6 8 8 13.6 2.4 8Z" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+
+<header class="head">
+  <div>
+    <h1><span class="a">Cyanotype</span> &amp; <span class="b">Verdigris</span></h1>
+    <p class="lede">Blue leads. Teal and madder carry the verdict — separated by
+      <em>lightness</em>, not hue, which is the only thing colour-blind vision reliably keeps.
+      And the timestamps drift with the hour, so a day has a temperature.</p>
+  </div>
+  <div class="controls">
+    <div class="ctl">
+      <span>Theme</span>
+      <div class="seg" id="theme" role="group" aria-label="Theme">
+        <button type="button" data-t="system" aria-pressed="true">System</button>
+        <button type="button" data-t="light" aria-pressed="false">Light</button>
+        <button type="button" data-t="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span>Colour vision</span>
+      <div class="seg" id="vision" role="group" aria-label="Colour vision simulation">
+        <button type="button" data-v="none" aria-pressed="true">Typical</button>
+        <button type="button" data-v="deuteranopia" aria-pressed="false">Deuter.</button>
+        <button type="button" data-v="protanopia" aria-pressed="false">Protan.</button>
+        <button type="button" data-v="tritanopia" aria-pressed="false">Tritan.</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="vis-wrap" id="visWrap">
+
+<section>
+  <p class="eyebrow">The five that carry meaning</p>
+  <h2>Cyanotype leads; the rest answer to it</h2>
+  <p class="note">Every colour sits at a fixed OKLCH lightness and was gamut-fitted into sRGB by
+    bisection on chroma. Contrast is measured against the page ground. Where a colour cannot
+    carry text, it says so instead of pretending.</p>
+  <div class="spec">
+    <div class="row">
+      <div class="chip" style="background:var(--primary)"><b style="color:var(--on-accent)">#006cb4</b></div>
+      <div><p class="rname">Cyanotype</p><p class="rrole">Identity · actions · links · version chips</p></div>
+      <div class="rdata"><b>oklch(0.52 0.140 248)</b><br>5.28:1 <span class="aa">AA text</span></div>
+    </div>
+    <div class="row">
+      <div class="chip" style="background:var(--kept)"><b style="color:#fff">#004746</b></div>
+      <div><p class="rname">Verdigris</p><p class="rrole">Habit kept · dose taken · streak alive</p></div>
+      <div class="rdata"><b>oklch(0.36 0.100 192)</b><br>10.1:1 <span class="aa">AA text</span></div>
+    </div>
+    <div class="row">
+      <div class="chip" style="background:var(--broken)"><b style="color:#4a1418">#f2a9a6</b></div>
+      <div><p class="rname">Madder</p><p class="rrole">Habit broken — the wash behind the row</p></div>
+      <div class="rdata"><b>oklch(0.80 0.090 22)</b><br>1.86:1 <span class="fillonly">fill only</span></div>
+    </div>
+    <div class="row">
+      <div class="chip" style="background:var(--broken-ink)"><b style="color:#fff">#e1595b</b></div>
+      <div><p class="rname">Madder Ink</p><p class="rrole">The struck glyph — labels use ink</p></div>
+      <div class="rdata"><b>oklch(0.64 0.170 22)</b><br>3.52:1 <span class="ui">UI / glyph</span></div>
+    </div>
+    <div class="row">
+      <div class="chip" style="background:var(--pending)"><b style="color:#3a2400">#dd9314</b></div>
+      <div><p class="rname">Saffron</p><p class="rrole">Plan approaching · pending · due now</p></div>
+      <div class="rdata"><b>oklch(0.72 0.150 72)</b><br>2.43:1 <span class="fillonly">fill only</span></div>
+    </div>
+    <div class="row">
+      <div class="chip" style="background:var(--passive)"><b style="color:#fff">#726d9e</b></div>
+      <div><p class="rname">Iris</p><p class="rrole">Passive data — ring, screen time, anything untyped</p></div>
+      <div class="rdata"><b>oklch(0.56 0.075 288)</b><br>4.57:1 <span class="aa">AA text</span></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:var(--sp-md)">Iris keeps a place, demoted from identity to
+    machine-voice and dropped to chroma 0.075 — passive data should be present, never assertive.
+    Saffron is the one colour that can never be type: sRGB holds no amber at that lightness with
+    enough contrast, so it fills and outlines only, with Saffron Deep <code>#a76c00</code> for words.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Neutrals</p>
+  <h2>Tinted toward Cyanotype</h2>
+  <p class="note">Not grey. Every neutral carries a trace of the identity hue (248°) at chroma
+    0.004–0.020 — unnameable on its own, but it stops the greys reading as stock.</p>
+  <div class="neutrals">
+    <div class="n"><div class="sw" style="background:var(--ground)"></div><div class="lb"><b>ground</b><span>0.985</span></div></div>
+    <div class="n"><div class="sw" style="background:var(--surface)"></div><div class="lb"><b>surface</b><span>1.000</span></div></div>
+    <div class="n"><div class="sw" style="background:var(--line)"></div><div class="lb"><b>line</b><span>0.900</span></div></div>
+    <div class="n"><div class="sw" style="background:var(--muted)"></div><div class="lb"><b>muted</b><span>0.550</span></div></div>
+    <div class="n"><div class="sw" style="background:var(--ink)"></div><div class="lb"><b>ink</b><span>0.240</span></div></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">The drift</p>
+  <h2>A day has a temperature</h2>
+  <p class="note">Timestamps take their tint from the hour they name — warm at dawn and dusk,
+    colourless at noon, cool after midnight. Hues come off the Planckian locus for the warm half
+    and the CIE daylight locus for the cool half; they cross at near-zero chroma around 6500 K,
+    so midday is genuinely neutral. Interpolation runs in OKLab a/b rather than hue angle, so
+    mid-morning passes through true grey instead of detouring through green.</p>
+  <div class="ramp" aria-hidden="true">
+    <div style="background:var(--h00)">00</div><div style="background:var(--h03)">03</div>
+    <div style="background:var(--h06)">06</div><div style="background:var(--h07)">07</div>
+    <div style="background:var(--h09)">09</div><div style="background:var(--h12)">12</div>
+    <div style="background:var(--h15)">15</div><div style="background:var(--h17)">17</div>
+    <div style="background:var(--h18)">18</div><div style="background:var(--h20)">20</div>
+    <div style="background:var(--h22)">22</div><div style="background:var(--h23)">23</div>
+  </div>
+  <div class="ramp-x"><span>midnight, cool</span><span>dawn, warm</span><span>noon, neutral</span><span>dusk, warm</span><span>back to cool</span></div>
+  <p class="note" style="margin-top:var(--sp-md)">The whole ramp lives at chroma <b>0.002–0.038</b>
+    while every colour that means something lives at <b>0.075–0.185</b>. That gap is what keeps this
+    a thermometer instead of a rainbow — no hour can be mistaken for a habit state. And lightness is
+    pinned at every hour, so the drift costs nothing: the floor across all 24 is
+    <b>4.62:1</b> light, <b>6.52:1</b> dark.</p>
+</section>
+
+<section>
+  <p class="eyebrow">In context · a real day, typed as it was typed</p>
+  <h2>The log is the product</h2>
+  <p class="note">Only three things earn ink: the hour, a resolved template, and data you didn't
+    type. Try the version chip — it opens.</p>
+  <div class="ctx">
+    <div class="panel">
+      <h3>Fri 5 Sep</h3>
+      <ul class="log">
+        <li style="--t:var(--h07)"><span class="tm">7:36</span><span class="tx">woke up</span></li>
+        <li style="--t:var(--h08)"><span class="tm">8:27</span><span class="tx">breakfast ready <em>(did some clearning the kitched durign)</em> — 3 eggs, some green onions, 50g brocli sprouts, 100g blueberries</span></li>
+        <li style="--t:var(--h08)"><span class="tm">8:30→10:00</span><span class="tx">mostly daydreaming and watched some tv, ate few bites</span></li>
+        <li style="--t:var(--h09)"><span class="tm">9:15</span><span class="tx"><span class="tokwrap" id="tw">took <button type="button" class="tok" id="tokBtn" aria-expanded="false" aria-controls="stackout">nootstack<span class="ver">v1.3</span></button></span>
+          <div class="stackout" id="stackout" hidden>
+            <span class="eff">effective 22 Feb 2026 →</span><br>
+            <b>caffeine</b> 100mg · <b>l-theanine</b> 200mg · <b>creatine</b> 5g<br>
+            <span style="opacity:.8">v1.2 ran 3 Jan – 21 Feb · caffeine was 200mg</span>
+          </div></span></li>
+        <li style="--t:var(--h09)"><span class="tm">9:30</span><span class="tx">called my grandma <em>(didn't pick up)</em></span></li>
+        <li style="--t:var(--h10)"><span class="tm">10:00</span><span class="tx">tried to call my mum <em>(I do feel like talking)</em></span></li>
+        <li class="passive"><span class="tm">—</span><span class="tx"><span class="dia">◇</span>ring · slept 6h 52m, woke 7:36, resting hr 54</span></li>
+        <li class="passive"><span class="tm">—</span><span class="tx"><span class="dia">◇</span>firefox 2h 14m · android apps 41m</span></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Proposed from those lines</h3>
+      <div class="habits">
+        <div class="hab kept"><svg class="glyph g-kept"><use href="#gk"></use></svg>
+          <span class="hab-name">Up before 8:00</span><span class="hab-why">7:36 woke up</span>
+          <span class="hab-state">Kept</span></div>
+        <div class="hab kept"><svg class="glyph g-kept"><use href="#gk"></use></svg>
+          <span class="hab-name">Reach out to family</span><span class="hab-why">9:30 called my grandma</span>
+          <span class="hab-state">Kept</span></div>
+        <div class="hab broken"><svg class="glyph g-broken"><use href="#gb"></use></svg>
+          <span class="hab-name">No TV before noon</span><span class="hab-why">8:30→10:00 watched some tv</span>
+          <span class="hab-state">Broken</span></div>
+        <div class="hab pending"><svg class="glyph g-pending"><use href="#gp"></use></svg>
+          <span class="hab-name">Second dose, 14:00</span><span class="hab-why">nootstack v1.3 — not logged yet</span>
+          <span class="hab-state">Not yet</span></div>
+        <div class="hab pending"><svg class="glyph g-pending"><use href="#gp"></use></svg>
+          <span class="hab-name">Screen under 3h</span><span class="hab-why">2h 55m used · 5m left</span>
+          <span class="hab-state">Not yet</span></div>
+      </div>
+      <p class="note" style="margin:var(--sp-md) 0 0">Each row shows the line that produced it, so a
+        wrong call from the model is visible and correctable. Broken recedes rather than alarms —
+        a private log has no standing to shout at the person keeping it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">The decision the rest follows from</p>
+  <h2>Kept and broken differ mostly in brightness</h2>
+  <p class="note">The first draft put teal at L 0.54 and madder at L 0.56 — near-identical lightness, separated
+    by hue alone. Measured on the pair the glyphs actually render, it kept just <b>14%</b> of its
+    separation under protanopia: <em>worse than plain green/red</em>. Dichromacy compresses hue and
+    leaves luminance almost untouched, so a hue-only pair has nothing left to show. Opening a
+    lightness gap of <b>ΔL 0.28</b> — the same two hues — is what fixed it.</p>
+  <div class="bench">
+    <div class="panel">
+      <p class="eyebrow">Now · ΔL 0.28</p>
+      <div class="pair">
+        <div style="background:var(--kept-wash); color:var(--kept)"><svg class="glyph g-kept"><use href="#gk"></use></svg>Kept</div>
+        <div style="background:var(--broken-wash); color:var(--broken-ink)"><svg class="glyph g-broken"><use href="#gb"></use></svg>Broken</div>
+      </div>
+      <p class="note" style="margin:var(--sp-sm) 0 0"><code>#004746</code> · <code>#e1595b</code> — the two glyph colours themselves,
+        10.1:1 and 3.52:1 against the ground.</p>
+    </div>
+    <div class="panel">
+      <p class="eyebrow">Naive baseline · hue only</p>
+      <div class="pair">
+        <div style="background:rgba(34,163,91,.14); color:#1a7d47"><span class="glyph" style="background:#22a35b; border-radius:50%"></span>Kept</div>
+        <div style="background:rgba(211,59,59,.14); color:#c0322f"><span class="glyph" style="background:#d33b3b; border-radius:50%"></span>Broken</div>
+      </div>
+      <p class="note" style="margin:var(--sp-sm) 0 0"><code>#22a35b</code> · <code>#d33b3b</code> —
+        switch the control above to Deuter. and watch both circles become the same olive.</p>
+    </div>
+  </div>
+  <div class="scroll" style="margin-top:var(--sp-lg)">
+    <table class="tbl">
+      <thead><tr><th>Vision</th><th>ΔE OKLab</th><th>Separation kept</th><th>Vision</th><th>ΔE OKLab</th><th>Separation kept</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="3">Cyanotype &amp; Verdigris — light</td><td colspan="3">Cyanotype &amp; Verdigris — dark</td></tr>
+        <tr><td>Normal</td><td>0.364</td><td>—</td><td>Normal</td><td>0.373</td><td>—</td></tr>
+        <tr><td>Deuteranopia</td><td>0.306</td><td class="hold">84%</td><td>Deuteranopia</td><td>0.276</td><td>74%</td></tr>
+        <tr><td>Protanopia</td><td class="fail">0.173</td><td class="fail">48%</td><td>Protanopia</td><td>0.392</td><td class="hold">105%</td></tr>
+        <tr><td>Tritanopia</td><td>0.462</td><td class="hold">127%</td><td>Tritanopia</td><td>0.276</td><td>74%</td></tr>
+        <tr class="grp"><td colspan="6">The first draft, and the naive baseline</td></tr>
+        <tr><td>Draft · deuteranopia</td><td class="fail">0.178</td><td class="fail">62%</td><td>Green/red · deuteranopia</td><td class="fail">0.055</td><td class="fail">18%</td></tr>
+        <tr><td>Draft · protanopia</td><td class="fail">0.041</td><td class="fail">14%</td><td>Green/red · protanopia</td><td>0.205</td><td>66%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note" style="margin-top:var(--sp-md)">Protanopia in the light theme, at 48%, is the weakest cell and is stated
+    rather than buried — protanopes see red as much darker than it is, which pulls a pale madder
+    back down toward the teal it is meant to separate from. It is also why the glyphs are not decoration: kept is a <em>filled</em> ring,
+    broken is a ring <em>struck through</em>, pending is a <em>dashed</em> ring, passive is a diamond.
+    Those four silhouettes are distinguishable with the colour channel removed entirely, and the word
+    is printed beside every one of them anyway.</p>
+</section>
+
+</div>
+
+<section>
+  <p class="eyebrow">How this was arrived at</p>
+  <h2>Four decisions</h2>
+  <div class="why">
+    <div class="card">
+      <h3>Blue leads, violet serves</h3>
+      <p>Cyanotype takes the identity at hue 248 and the neutrals follow it, so the whole interface
+        reads at one temperature. Iris stays in the palette but drops to chroma 0.075 as the
+        machine voice — ring data, screen time, anything that arrived without being typed.</p>
+    </div>
+    <div class="card">
+      <h3>Lightness carries the verdict</h3>
+      <p>Roughly one man in twelve has a red–green deficiency, and the most-read signal in this app
+        is a binary habit state. Hue cannot be trusted with it. Teal and madder stay, but 0.31 of
+        lightness now sits between them — which is what survives when hue does not.</p>
+    </div>
+    <div class="card">
+      <h3>Two registers, split by chroma</h3>
+      <p>Time lives at chroma 0.002–0.038, meaning lives at 0.075–0.185. The gap is wide enough that
+        an hour can never be misread as a state. It lets the interface breathe with the day without
+        the day ever competing with the data.</p>
+    </div>
+    <div class="card">
+      <h3>Failure recedes</h3>
+      <p>A broken habit gets a pale wash and a struck ring, not a red alarm. This is a private log
+        kept by one person about their own life; the brightest thing on any screen should be
+        something they actually did.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Colours computed in OKLCH with Ottosson's matrices and gamut-fitted into sRGB by bisection on
+  chroma, so no coordinate here sits outside sRGB. Contrast is WCAG 2.1 relative luminance against
+  each theme's own ground. Simulations use the Viénot, Brettel &amp; Mollon (1999) LMS matrices in
+  linear RGB — the same matrices drive the live filters above and the table numbers, so the swatches
+  you toggle and the figures agree. Tritanopia is the least reliable of the three: Viénot's
+  single-plane construction is an approximation there, and the condition affects on the order of
+  1 in 10,000 people rather than 1 in 12.
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  function wire(id, fn){
+    var box=document.getElementById(id);
+    box.addEventListener('click', function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      Array.prototype.forEach.call(box.querySelectorAll('button'), function(x){
+        x.setAttribute('aria-pressed', String(x===b)); });
+      fn(b);
+    });
+  }
+  wire('theme', function(b){
+    var t=b.dataset.t;
+    if(t==='system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',t);
+  });
+  var wrap=document.getElementById('visWrap');
+  wire('vision', function(b){
+    var v=b.dataset.v;
+    wrap.style.filter=(v==='none')?'':'url(#sim-'+v+')';
+  });
+
+  var btn=document.getElementById('tokBtn'),
+      out=document.getElementById('stackout'),
+      tw=document.getElementById('tw');
+  btn.addEventListener('click', function(){
+    var open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded', String(!open));
+    out.hidden=open;
+    tw.classList.toggle('open', !open);
+  });
+})();
+</script>

@@ -28,7 +28,7 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Recurrence | `rrule-es` (**not** `rrule` — unmaintained) |
 | Push | `expo-notifications`; exact alarms need a small Kotlin module |
 | Styling | NativeWind 5 (preview) + Tailwind 4, CSS-first |
-| Design tokens | the design system — Material 3 roles + golden-ratio scale |
+| Design tokens | **Cyanotype & Verdigris** — M3 roles + golden-ratio scale |
 | Components | `react-native-reusables` (shadcn for RN, copy-in) |
 | Dynamic colour | Material You via `@pchmn/expo-material3-theme` |
 | Icons | `lucide-react-native` |
@@ -121,6 +121,53 @@ thing rather than twelve screens built on twelve afternoons.
 ✅ <View className="p-md bg-primary">
 ```
 
+#### The palette: Cyanotype & Verdigris
+
+Settled. Four alternative proposals (Low Lamplight, Kelvin Drift, Materia Medica,
+Iron Gall Ledger) were built and dropped — do not revive them.
+
+| Role | Light | Dark | Carries |
+|---|---|---|---|
+| `primary` | `#006cb4` | `#78beff` | identity, actions, links, version chips |
+| `success` | `#004746` | `#7be6e2` | habit kept, dose taken |
+| `error` | `#e1595b` | `#d24c50` | habit broken, destructive |
+| `warning` | `#905c00` | `#f2a635` | plan approaching, pending |
+| `tertiary` | `#676292` | `#b4b0e5` | passive data — ring, screen time, anything untyped |
+
+Neutrals are tinted toward hue 248 at chroma 0.006–0.016 — never pure grey.
+`docs/palette.html` is the living reference: specimens, contrast, and a live
+colour-vision simulator. Open it before changing any colour.
+
+**`success` and `error` are separated by lightness, not hue — do not "fix" this.**
+ΔL 0.28 in light, 0.26 in dark. It looks like an odd pairing (deep teal against a
+light red) and it is deliberate: roughly one man in twelve has a red–green
+deficiency, and dichromacy compresses hue while leaving luminance almost
+untouched. An earlier draft used the same two hues at nearly equal lightness and
+retained just **14%** of its separation under protanopia — worse than plain
+green/red. Pulling them apart in lightness took deuteranopia to 84%.
+
+Light-theme protanopia is still the weak cell at 48%, which is exactly why:
+
+**Habit state is encoded by shape first, colour second.** Kept is a *filled*
+ring, broken is a ring *struck through*, pending is a *dashed* ring, passive is a
+*diamond*. Those four silhouettes are distinguishable with colour removed
+entirely, and the word is printed beside each anyway. Never ship a state that
+only colour distinguishes.
+
+#### The hour drift
+
+`--hour-00` … `--hour-23` tint a timestamp by the hour it names — warm at dawn
+and dusk, colourless at noon, cool after midnight, off the Planckian and CIE
+daylight loci.
+
+The whole ramp lives at chroma **0.002–0.038** while every colour that *means*
+something lives at **0.075–0.185**. Keep that gap. It is the only thing stopping
+an hour being misread as a habit state, and it is why the drift reads as
+atmosphere rather than decoration. Lightness is pinned across all 24 steps, so
+the drift costs no contrast: the floor is 4.62:1 light, 6.52:1 dark.
+
+Use it for timestamps and the log gutter. Nothing else.
+
 **Colours are Material 3 roles, not hues.** Use `bg-primary`, `text-on-surface`,
 `bg-error-container` — never `bg-blue-500`. Roles carry meaning, so they stay
 correct when the palette changes and they get dark mode for free. Every role has
@@ -171,11 +218,12 @@ defaults, and leaving those in place silently breaks both theming and Material Y
 preview, fall back to NativeWind 4 + Tailwind 3.4 (verified working here) rather
 than abandoning the token system.
 
-Tokens are copied from `copied_repos/design-system-tailwind`. Its *components* are
-Next.js + real CSS and cannot run on React Native — reference only, never import.
-the design system builds its scale with nested `calc(var(--…))` chains, which React Native
-cannot evaluate; ours are those chains pre-computed to static values so phone and
-web agree exactly.
+The golden-ratio spacing and type scale come from the design system
+(`copied_repos/design-system-tailwind`); its colours do not. the design system builds its scale
+with nested `calc(var(--…))` chains, which React Native cannot evaluate — ours
+are those chains pre-computed to static values so phone and web agree exactly.
+Its *components* are Next.js + real CSS and cannot run on React Native:
+reference only, never import.
 
 ### JavaScript / React
 
@@ -249,6 +297,7 @@ web agree exactly.
 packages/core/       shared logic — merge, recurrence, parsing, habit rules
 app/                 Expo universal — Android and web from one codebase
 app/theme/tokens.css THE design tokens — colours, spacing, type, radius
+docs/palette.html    palette reference — specimens, contrast, CVD simulator
 server/              Bun server — relay, ingest, LLM classification
 extension/           Firefox extension (browser time)
 ringconn/            RingConn CSV samples + import mapping
