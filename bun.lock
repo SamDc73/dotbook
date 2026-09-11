@@ -15,6 +15,9 @@
       "version": "1.0.0",
       "dependencies": {
         "@expensify/react-native-live-markdown": "^0.1.339",
+        "@expo-google-fonts/fraunces": "^0.4.1",
+        "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
+        "@expo-google-fonts/instrument-sans": "^0.4.2",
         "@justdice/react-native-usage-stats": "0.1.11",
         "@dotbook/core": "workspace:*",
         "@pchmn/expo-material3-theme": "^1.4.0",
@@ -28,6 +31,7 @@
         "expo-dev-client": "~57.0.18",
         "expo-device": "~57.0.1",
         "expo-document-picker": "~57.0.1",
+        "expo-font": "~57.0.3",
         "expo-linear-gradient": "~57.0.1",
         "expo-linking": "~57.0.9",
         "expo-notifications": "~57.0.17",
@@ -284,6 +288,12 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
     "@expensify/react-native-live-markdown": ["@expensify/react-native-live-markdown@0.1.339", "", { "peerDependencies": { "expensify-common": ">=2.0.201", "react": "*", "react-native": "*", "react-native-worklets": ">=0.7.0" } }, "sha512-ijeLa87cFI/odfJ78GeL6mmJJK9mdpDw9G81kEl6dU5mHwcoPq7rAeSqYLW7hrqaSoCT5pR/UNU6S+9sKKa8Qg=="],
+
+    "@expo-google-fonts/fraunces": ["@expo-google-fonts/fraunces@0.4.1", "", {}, "sha512-gYc9P92ObyWvz1rWPOeWSvVKyBFIuA8hgOdhvo4DSiPBaWLbFA6v8uLIEIBwW+0oWTlXbBzjeBReHQI2H7UNjQ=="],
+
+    "@expo-google-fonts/ibm-plex-mono": ["@expo-google-fonts/ibm-plex-mono@0.4.1", "", {}, "sha512-/yYz1mPZq8Nd4tSiH0SBDPEdJUqiOGBwVgSrQvLuw7SPh6C7ezBzmi6eFyHY4QaQwjHDmOLSBKsxzq8ZDFXVAg=="],
+
+    "@expo-google-fonts/instrument-sans": ["@expo-google-fonts/instrument-sans@0.4.2", "", {}, "sha512-YR0jemCJ/eUlknOfxxxiLnJWpFDaT0KgLiB1q333jIDPlRAERfuMpOislkWA1A7HGX85N9LCsjWLlB3QOZo1wg=="],
 
     "@expo-google-fonts/material-symbols": ["@expo-google-fonts/material-symbols@0.4.45", "", {}, "sha512-D5gd/uFa7KfMJX9S11hvej4GpQnBl27oKiUgyIq3cLTPtyDOWBwRgmeePIdV6+PGcedlDkaCND2BnRgAkxzNaA=="],
 
