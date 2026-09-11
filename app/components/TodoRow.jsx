@@ -1,17 +1,20 @@
 import { useSQLiteContext } from "expo-sqlite"
-import { Square, SquareCheck, SquareDashed, Trash } from "lucide-react-native"
+import { Play, Square, SquareCheck, SquareDashed, Trash } from "lucide-react-native"
 import { useCallback, useState } from "react"
 import { Pressable, Text, View } from "react-native"
-import { linkedEntries } from "../db/todos"
+import { linkedEntries, proposedLinks } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
+import { TodoProposals } from "./TodoProposals"
 import { Icon } from "./ui/Icon"
 
 // One todo. Shape carries the state — filled box done, dashed box trashed — so
 // it survives with colour removed. A chip only appears when it has something to
-// say: late, scheduled, or time spent. Unscheduled todos show nothing.
-export function TodoRow({ todo, today, onClose, onEdit, editor = null }) {
+// say: late, scheduled, time spent, being worked on, or lines that look like it.
+// Unscheduled todos show nothing.
+export function TodoRow({ todo, today, active = false, onClose, onEdit, onActivate, editor = null }) {
 	const db = useSQLiteContext()
 	const [showLines, setShowLines] = useState(false)
+	const [showProposals, setShowProposals] = useState(false)
 	const open = todo.status === "open"
 
 	const query = useCallback(
@@ -19,6 +22,11 @@ export function TodoRow({ todo, today, onClose, onEdit, editor = null }) {
 		[db, todo.id, showLines]
 	)
 	const lines = useLiveQuery(db, query)
+
+	// Kept live so the count drops as proposals are answered. Not on every render:
+	// it re-runs only when the database changes or the todo's text does.
+	const proposalQuery = useCallback(() => (open ? proposedLinks(db, todo) : Promise.resolve([])), [db, todo, open])
+	const proposals = useLiveQuery(db, proposalQuery)
 
 	function done() {
 		onClose(todo, "done")
@@ -31,6 +39,12 @@ export function TodoRow({ todo, today, onClose, onEdit, editor = null }) {
 	}
 	function toggleLines() {
 		setShowLines(!showLines)
+	}
+	function toggleProposals() {
+		setShowProposals(!showProposals)
+	}
+	function activate() {
+		onActivate(todo)
 	}
 
 	return (
@@ -63,15 +77,31 @@ export function TodoRow({ todo, today, onClose, onEdit, editor = null }) {
 									<Chip className="bg-surface-container-high text-on-surface-variant">{spentLabel(todo.spent_ms)}</Chip>
 								</Pressable>
 							)}
+							{active ? <Chip className="bg-primary-container text-on-primary-container">working on it</Chip> : null}
+							{proposals.length > 0 && (
+								<Pressable onPress={toggleProposals}>
+									<Chip className="bg-tertiary-container text-on-tertiary-container">{proposals.length} proposed</Chip>
+								</Pressable>
+							)}
 						</View>
 					) : null}
 				</Pressable>
+				{open ? (
+					<Pressable
+						onPress={activate}
+						className="pt-3xs"
+						accessibilityLabel={active ? "Stop working on it" : "Work on it"}
+					>
+						<Icon as={Play} className={active ? "text-primary" : "text-on-surface-variant"} />
+					</Pressable>
+				) : null}
 				{open ? (
 					<Pressable onPress={trash} className="pt-3xs" accessibilityLabel="Trash">
 						<Icon as={Trash} className="text-on-surface-variant" />
 					</Pressable>
 				) : null}
 			</View>
+			{showProposals && proposals.length > 0 ? <TodoProposals todo={todo} proposals={proposals} /> : null}
 			{showLines
 				? lines.map((line) => (
 						<Text key={line.id} className="px-xl py-2xs text-label text-on-surface-variant">

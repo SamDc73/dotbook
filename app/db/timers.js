@@ -7,6 +7,7 @@ import {
 import Storage from "expo-sqlite/kv-store"
 import { Platform } from "react-native"
 import { uuidv7 } from "uuidv7"
+import { linkTimerToActiveTodo } from "./todos"
 
 // A timer is a row, not runtime state (AGENTS.md → "Timers are rows"): `kind: timer`
 // with ts_start and ts_end. Remaining time is always ts_end − now, so it survives
@@ -25,6 +26,8 @@ export async function startTimer(db, { minutes, text }) {
 	const { next } = await db.sql`SELECT coalesce(max(seq), 0) + 1 AS next FROM entries WHERE day = ${day}`.first()
 	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, created_at)
 		VALUES (${id}, ${day}, ${next}, ${now}, ${tsEnd}, ${text}, 'timer', ${now})`
+	// Working on a todo? Its time is this timer's. See todos.js.
+	await linkTimerToActiveTodo(db, id, now)
 	await notifyAtEnd(id, tsEnd, minutes)
 	return id
 }

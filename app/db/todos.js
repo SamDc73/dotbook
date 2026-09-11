@@ -1,3 +1,5 @@
+import { fuzzyFind, localDay, parseLineTime } from "@dotbook/core/parse"
+import Storage from "expo-sqlite/kv-store"
 import { uuidv7 } from "uuidv7"
 import { addEntry } from "./entries"
 
@@ -8,7 +10,7 @@ import { addEntry } from "./entries"
 // Every open todo, with what the screen shows beside it:
 //   days_late      whole days past `due_on`, null for the queue and for the future
 //   planned_*      the linked `plan` line's day and window — only when one exists
-//   spent_ms       time attributed through `timer` / `matched` links
+//   spent_ms       time attributed through confirmed `timer` / `matched` links
 export function openTodos(db, today) {
 	return db.sql`SELECT t.*,
 			CASE WHEN t.due_on < ${today}
@@ -17,7 +19,7 @@ export function openTodos(db, today) {
 			p.day AS planned_day, p.ts_start AS planned_start, p.ts_end AS planned_end,
 			(SELECT coalesce(sum(e.ts_end - e.ts_start), 0)
 				FROM todo_links l JOIN entries e ON e.id = l.entry_id
-				WHERE l.todo_id = t.id AND l.origin IN ('timer', 'matched')
+				WHERE l.todo_id = t.id AND l.origin IN ('timer', 'matched') AND l.confirmed_at IS NOT NULL
 					AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL AND e.deleted_at IS NULL) AS spent_ms
 		FROM todos t
 		LEFT JOIN todo_links pl ON pl.todo_id = t.id AND pl.origin = 'planned'
@@ -50,6 +52,7 @@ export function setDueOn(db, id, dueOn) {
 export async function closeTodo(db, todo, status, today) {
 	const now = Date.now()
 	await db.sql`UPDATE todos SET status = ${status}, closed_at = ${now} WHERE id = ${todo.id}`
+	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
 	const id = await addLine(db, today, `${clock(now)} ${status}: ${todo.text}`)
 	await db.sql`UPDATE entries SET source = 'todo' WHERE id = ${id}`
 }
@@ -68,8 +71,59 @@ export async function scheduleTodo(db, todo, { day, text }) {
 // The lines that time spent is summed over, oldest first.
 export function linkedEntries(db, todoId) {
 	return db.sql`SELECT e.*, l.origin FROM todo_links l JOIN entries e ON e.id = l.entry_id
-		WHERE l.todo_id = ${todoId} AND l.origin IN ('timer', 'matched') AND e.deleted_at IS NULL
+		WHERE l.todo_id = ${todoId} AND l.origin IN ('timer', 'matched') AND l.confirmed_at IS NOT NULL
+			AND e.deleted_at IS NULL
 		ORDER BY e.ts_start`
+}
+
+// ------------------------------------------------------------ time attaches itself
+
+// The todo being worked on right now — a person's choice, kept in kv-store so a
+// `/timer` started from the log knows where its time belongs. Null when none.
+const ACTIVE_TODO_KEY = "active-todo"
+
+export function activeTodoId() {
+	return Storage.getItemAsync(ACTIVE_TODO_KEY)
+}
+
+export function setActiveTodo(id) {
+	if (id === null) return Storage.removeItemAsync(ACTIVE_TODO_KEY)
+	return Storage.setItemAsync(ACTIVE_TODO_KEY, id)
+}
+
+// Called by `startTimer` with the new timer row: one tap, no thought. The link
+// is confirmed at once because starting a timer while working on a todo is the
+// person saying so. Nothing happens when no todo is active or it was closed.
+export async function linkTimerToActiveTodo(db, entryId, now) {
+	const todoId = await activeTodoId()
+	if (todoId === null) return
+	const open = await db.sql`SELECT 1 FROM todos WHERE id = ${todoId} AND status = 'open' AND deleted_at IS NULL`.first()
+	if (!open) return
+	await db.sql`INSERT OR IGNORE INTO todo_links (todo_id, entry_id, origin, confirmed_at)
+		VALUES (${todoId}, ${entryId}, 'timer', ${now})`
+}
+
+// Log ranges since the todo was written whose text fuzzy-matches it, best match
+// first. Proposed only — nothing here writes. A line already linked to this todo
+// (confirmed or refused) is never proposed again.
+export async function proposedLinks(db, todo) {
+	const since = localDay(todo.created_at)
+	const candidates = await db.sql`SELECT e.* FROM entries e
+		WHERE e.kind = 'log' AND e.deleted_at IS NULL AND e.day >= ${since}
+			AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL
+			AND e.id NOT IN (SELECT entry_id FROM todo_links WHERE todo_id = ${todo.id})
+		ORDER BY e.ts_start DESC LIMIT 200`
+	const bodies = candidates.map((entry) => parseLineTime(entry.text, entry.day).body)
+	return fuzzyFind(todo.text, bodies).ranked.map((index) => candidates[index])
+}
+
+// Answering a proposal. `confirmed` = yes: the line's time counts from now on.
+// No: the link is kept with `confirmed_at` null, so it is a remembered "not
+// this" and the same line is never proposed again — the promotion prompt's rule.
+export function answerProposal(db, todoId, entryId, confirmed) {
+	const confirmedAt = confirmed ? Date.now() : null
+	return db.sql`INSERT OR IGNORE INTO todo_links (todo_id, entry_id, origin, confirmed_at)
+		VALUES (${todoId}, ${entryId}, 'matched', ${confirmedAt})`
 }
 
 // `addEntry` does not return the id it generated, and entries.js is not this

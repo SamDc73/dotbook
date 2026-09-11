@@ -1,13 +1,13 @@
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
 import { ChevronLeft } from "lucide-react-native"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, SectionList, Text, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { TodoEditor } from "../components/TodoEditor"
 import { TodoRow } from "../components/TodoRow"
 import { Icon } from "../components/ui/Icon"
-import { addTodo, closedTodos, closeTodo, openTodos } from "../db/todos"
+import { activeTodoId, addTodo, closedTodos, closeTodo, openTodos, setActiveTodo } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
 
@@ -23,6 +23,11 @@ export default function Todos() {
 	const [showClosed, setShowClosed] = useState(false)
 	const [text, setText] = useState("")
 	const [due, setDue] = useState("queue") // queue | today | tomorrow
+	const [activeId, setActiveId] = useState(null) // the todo a `/timer` attaches to
+
+	useEffect(() => {
+		activeTodoId().then(setActiveId)
+	}, [])
 
 	const openQuery = useCallback(() => openTodos(db, day), [db, day])
 	const open = useLiveQuery(db, openQuery)
@@ -51,6 +56,13 @@ export default function Todos() {
 	}
 	function close(todo, status) {
 		closeTodo(db, todo, status, day)
+		if (todo.id === activeId) setActiveId(null)
+	}
+	// One todo is worked on at a time; tapping the active one clears it.
+	function activate(todo) {
+		const next = todo.id === activeId ? null : todo.id
+		setActiveTodo(next)
+		setActiveId(next)
 	}
 
 	function add() {
@@ -62,7 +74,17 @@ export default function Todos() {
 
 	function renderItem({ item }) {
 		const editor = item.id === editingId ? <TodoEditor todo={item} today={day} onDone={stopEditing} /> : null
-		return <TodoRow todo={item} today={day} onClose={close} onEdit={startEditing} editor={editor} />
+		return (
+			<TodoRow
+				todo={item}
+				today={day}
+				active={item.id === activeId}
+				onClose={close}
+				onEdit={startEditing}
+				onActivate={activate}
+				editor={editor}
+			/>
+		)
 	}
 	function renderSectionHeader({ section }) {
 		return <Text className="px-md pt-sm pb-2xs text-caption text-on-surface-variant">{section.title}</Text>
