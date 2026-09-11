@@ -11,13 +11,16 @@
 		"./recurrence": "./src/recurrence/index.js",
 		"./habits": "./src/habits/index.js",
 		"./sync": "./src/sync/index.js",
-		"./db": "./src/db/index.js"
+		"./db": "./src/db/index.js",
+		"./import": "./src/import/index.js"
 	},
 	"dependencies": {
+		"@actual-app/crdt": "3.1.2",
 		"@date-fns/tz": "^1.5.0",
 		"@leeoniya/ufuzzy": "^1.0.19",
 		"chrono-node": "^2.10.1",
 		"ical.js": "2.2.1",
+		"papaparse": "5.7.0",
 		"parse-duration": "^2.1.8",
 		"rrule-es": "^1.0.0",
 		"uuidv7": "^1.2.1"

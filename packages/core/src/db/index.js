@@ -110,6 +110,62 @@ export const MIGRATIONS = [
 			)`,
 		],
 	},
+	{
+		// Phase 7 — sync. See V0.1 → feature 9.
+		version: 4,
+		statements: [
+			// One row per column write, ever. The tables above are a materialisation
+			// of the newest message per (dataset, row, column); this is the source of
+			// truth, and it merges by set union so conflicts cannot exist. `timestamp`
+			// is a 46-character hybrid-logical-clock string, so sorting by it is
+			// sorting by causality. `value` is JSON text so null, numbers and strings
+			// round-trip unchanged.
+			`CREATE TABLE messages_crdt (
+				timestamp TEXT PRIMARY KEY,
+				dataset   TEXT NOT NULL,
+				row       TEXT NOT NULL,
+				column    TEXT NOT NULL,
+				value     TEXT NOT NULL
+			)`,
+			"CREATE INDEX messages_crdt_by_field ON messages_crdt (dataset, row, column, timestamp)",
+			// This device's clock and merkle trie — exactly one row, ever — and
+			// `since`: the newest own message the server is known to have.
+			`CREATE TABLE messages_clock (
+				id    INTEGER PRIMARY KEY CHECK (id = 1),
+				clock TEXT NOT NULL,
+				since TEXT NOT NULL DEFAULT ''
+			)`,
+		],
+	},
+	{
+		// Phase 5e — todos. See V0.1 → feature 17.
+		version: 5,
+		statements: [
+			// due_on: null is the queue. Written once by a person and never by a job —
+			// carry-over is a view, so the lateness chip is always counted from the
+			// original date. status: open | done | trashed (trashed is a state, not a delete).
+			`CREATE TABLE todos (
+				id         TEXT PRIMARY KEY,
+				text       TEXT    NOT NULL,
+				due_on     TEXT,
+				status     TEXT    NOT NULL DEFAULT 'open',
+				closed_at  INTEGER,
+				created_at INTEGER NOT NULL,
+				deleted_at INTEGER
+			)`,
+			"CREATE INDEX todos_by_status ON todos (status, due_on)",
+			// One relation, three reasons: timer | matched point at past lines and are
+			// what time spent sums over; planned points at the plan line whose window
+			// the todo shows — read live, never copied onto the todo.
+			`CREATE TABLE todo_links (
+				todo_id      TEXT NOT NULL REFERENCES todos (id),
+				entry_id     TEXT NOT NULL REFERENCES entries (id),
+				origin       TEXT NOT NULL,
+				confirmed_at INTEGER,
+				PRIMARY KEY (todo_id, entry_id)
+			)`,
+		],
+	},
 ]
 
 /** Migrations newer than the database's current `user_version`, oldest first. */

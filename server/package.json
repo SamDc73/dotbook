@@ -8,6 +8,7 @@
 		"start": "bun src/index.js"
 	},
 	"dependencies": {
+		"@actual-app/crdt": "3.1.2",
 		"@dotbook/core": "workspace:*",
 		"@tanstack/ai": "^0.53.0",
 		"hono": "^4.13.7"
