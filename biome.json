@@ -18,9 +18,9 @@
 			"react": "all"
 		},
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"a11y": {
-				"recommended": true
+				"preset": "recommended"
 			},
 			"suspicious": {
 				"noArrayIndexKey": "error",
