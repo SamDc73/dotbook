@@ -29,6 +29,7 @@
 		"nativewind": "5.0.0-preview.4",
 		"react": "19.2.3",
 		"react-dom": "19.2.3",
+		"react-error-boundary": "^6.1.5",
 		"react-native": "0.86.3",
 		"react-native-css": "^3.0.1",
 		"react-native-gifted-charts": "^1.4.78",
@@ -42,11 +43,12 @@
 		"uuidv7": "^1.2.1"
 	},
 	"scripts": {
-		"start": "expo start",
-		"android": "expo run:android",
-		"ios": "expo run:ios",
-		"web": "expo start --web",
-		"e2e": "bun e2e/routes.mjs && ENGINE=firefox bun e2e/today.mjs && ENGINE=chromium bun e2e/today.mjs"
+		"start": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo start",
+		"android": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo run:android",
+		"ios": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo run:ios",
+		"web": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo start --web",
+		"e2e": "bun e2e/routes.mjs && ENGINE=firefox bun e2e/today.mjs && ENGINE=chromium bun e2e/today.mjs && ENGINE=firefox bun e2e/tabs.mjs && ENGINE=chromium bun e2e/tabs.mjs",
+		"export:web": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo export --platform web"
 	},
 	"private": true,
 	"devDependencies": {

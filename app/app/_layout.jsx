@@ -3,7 +3,10 @@ import * as Device from "expo-device"
 import { Stack } from "expo-router"
 import { addDatabaseChangeListener, SQLiteProvider, useSQLiteContext } from "expo-sqlite"
 import { Suspense, useEffect } from "react"
+import { ErrorBoundary } from "react-error-boundary"
 import { ActivityIndicator, AppState, Platform } from "react-native"
+import { DatabaseError } from "../db/DatabaseError"
+import { DatabaseGate } from "../db/DatabaseGate"
 import { migrate } from "../db/migrate"
 import * as Notifications from "../notifications/native"
 import { reconcile } from "../notifications/reminders"
@@ -25,24 +28,31 @@ const queryClient = new QueryClient({
 const LOADING = <ActivityIndicator className="flex-1 bg-background text-primary" />
 
 export default function RootLayout() {
+	// Opening the database can fail (on web: another tab holds it, see
+	// DatabaseGate.web.jsx). The boundary shows the message and a retry, which
+	// remounts the provider and opens again.
 	return (
-		<Suspense fallback={LOADING}>
-			<SQLiteProvider
-				databaseName="dotbook.db"
-				options={{ enableChangeListener: true }}
-				onInit={migrate}
-				useSuspense
-			>
-				<QueryClientProvider client={queryClient}>
-					<LiveQueries />
-					<Reminders />
-					<Sync />
-					<MaterialYou>
-						<Stack screenOptions={{ headerShown: false }} />
-					</MaterialYou>
-				</QueryClientProvider>
-			</SQLiteProvider>
-		</Suspense>
+		<ErrorBoundary FallbackComponent={DatabaseError}>
+			<DatabaseGate>
+				<Suspense fallback={LOADING}>
+					<SQLiteProvider
+						databaseName="dotbook.db"
+						options={{ enableChangeListener: true }}
+						onInit={migrate}
+						useSuspense
+					>
+						<QueryClientProvider client={queryClient}>
+							<LiveQueries />
+							<Reminders />
+							<Sync />
+							<MaterialYou>
+								<Stack screenOptions={{ headerShown: false }} />
+							</MaterialYou>
+						</QueryClientProvider>
+					</SQLiteProvider>
+				</Suspense>
+			</DatabaseGate>
+		</ErrorBoundary>
 	)
 }
 

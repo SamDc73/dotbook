@@ -7,7 +7,7 @@
 # ---- build: install the workspace and export the web app -------------------
 FROM oven/bun:1 AS build
 WORKDIR /src
-ENV CI=1
+ENV CI=1 EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1
 
 # Manifests first so `bun install` is cached until a dependency changes.
 COPY package.json bun.lock ./

@@ -64,6 +64,18 @@ nothing about the web at runtime; the browser check does.
    adapter is async for this reason — keep it that way.
 6. **live-markdown's web input ignores `className`.** It is styled through the
    token hook on web only (`Composer.jsx`); do not try to fix it with classes.
+7. **One database connection per origin on web.** OPFS's access-handle pool
+   refuses a second opener with `NoModificationAllowedError` — a second tab
+   would be blank forever. `app/db/DatabaseGate.web.jsx` takes a Web Lock
+   before opening and the next tab waits, then takes over when the first closes.
+   Keep the gate outside the `SQLiteProvider`.
+
+### No telemetry
+
+Nothing in this repo may phone home. Every `expo` invocation runs with
+`EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1` (the scripts in `app/package.json` and the
+Dockerfile set them — use those scripts, not bare `expo`). Bun, Biome, Metro,
+Playwright, web-ext, Caddy and ntfy send nothing. Do not add a tool that does.
 
 NativeWind 4 + Tailwind 3.4 is the stable fallback if the preview causes trouble;
 it was verified working here before switching to 4 on request.

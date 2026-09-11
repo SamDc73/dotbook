@@ -5,7 +5,7 @@
       "name": "dotbook",
       "devDependencies": {
         "@biomejs/biome": "^2.5.13",
-        "eslint": "^9.39.1",
+        "eslint": "^9.39.5",
         "eslint-plugin-import": "^2.32.0",
         "playwright": "1.63.0",
       },
@@ -40,6 +40,7 @@
         "nativewind": "5.0.0-preview.4",
         "react": "19.2.3",
         "react-dom": "19.2.3",
+        "react-error-boundary": "^6.1.5",
         "react-native": "0.86.3",
         "react-native-css": "^3.0.1",
         "react-native-gifted-charts": "^1.4.78",
@@ -1385,6 +1386,8 @@
     "react-devtools-core": ["react-devtools-core@6.1.5", "", { "dependencies": { "shell-quote": "^1.6.1", "ws": "^7" } }, "sha512-ePrwPfxAnB+7hgnEr8vpKxL9cmnp7F322t8oqcPshbIQQhDKgFDW4tjhF2wjVbdXF9O/nyuy3sQWd9JGpiLPvA=="],
 
     "react-dom": ["react-dom@19.2.3", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.3" } }, "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="],
+
+    "react-error-boundary": ["react-error-boundary@6.1.5", "", { "peerDependencies": { "@types/react": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-l2nk+KhgM6e79tAiHEs3tXTdiTW4ARniKYMQN+cLY5vQFpDOkxuXKIC4uIwYuIKoMpFQ6jEbQz9wBArUmq7GWA=="],
 
     "react-fast-compare": ["react-fast-compare@3.2.2", "", {}, "sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ=="],
 

@@ -37,6 +37,10 @@ cp server/.env.example server/.env   # set DOTBOOK_TOKEN
 cd server && bun run dev
 ```
 
+Web smoke tests in real browsers (Firefox + Chromium): `cd app && bun run e2e` while `bun run web` is up.
+
+Every script disables Expo's CLI telemetry (`EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1`); nothing here phones home.
+
 Self-hosting (Caddy + ntfy + the API, one SQLite volume): `docs/self-host.md`.
 
 ## Where things are decided
