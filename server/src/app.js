@@ -1,4 +1,5 @@
-// The HTTP surface. Built by a factory so tests can hand it an in-memory database.
+// The HTTP surface. Built by a factory so tests can hand it an in-memory
+// database and a fake classifier.
 
 import { Timestamp } from "@actual-app/crdt"
 import { applyMessages, relay } from "@dotbook/core/sync"
@@ -6,11 +7,15 @@ import { Hono } from "hono"
 import { bearerAuth } from "hono/bearer-auth"
 import { cors } from "hono/cors"
 import { validator } from "hono/validator"
+import { classifyDay, classifyStatus, clearRuns, runPending } from "./ai/classify.js"
+import { addBrowserTime } from "./ingest/browserTime.js"
+import { validateBrowserTime, validateClassify, validateSyncBody } from "./validate.js"
 
 /**
- * @param {{ db: import("@dotbook/core/sync").SyncDb, token: string, corsOrigins: string[] }} options
+ * @param {{ db: import("@dotbook/core/sync").SyncDb, token: string, corsOrigins: string[],
+ *           groupId: string, classifier?: import("./ai/adapter.js").Classifier | null }} options
  */
-export function createApp({ db, token, corsOrigins }) {
+export function createApp({ db, token, corsOrigins, groupId, classifier = null }) {
 	const app = new Hono()
 
 	// Registered before the auth middleware on purpose: a container health
@@ -21,6 +26,11 @@ export function createApp({ db, token, corsOrigins }) {
 
 	app.post("/api/v1/sync", validator("json", validateSyncBody), (c) => {
 		const body = c.req.valid("json")
+		// One person per server in V0.1. Serving several would need one replica
+		// and one clock per group; this check is the seam, and all there is.
+		if (body.groupId !== groupId) {
+			return c.json({ error: "unknown group" }, 403)
+		}
 		const response = relay(db, body)
 		// Keep the server's replica current for the classifier. A device whose
 		// clock is more than the CRDT's drift limit ahead of ours is refused
@@ -36,33 +46,33 @@ export function createApp({ db, token, corsOrigins }) {
 		return c.json(response)
 	})
 
+	app.post("/api/v1/browser-time", validator("json", validateBrowserTime), (c) => {
+		const accepted = addBrowserTime(db, groupId, c.req.valid("json"))
+		return c.json({ accepted })
+	})
+
+	app.post("/api/v1/classify", validator("json", validateClassify), async (c) => {
+		if (!classifier) {
+			return c.json({ error: "no AI provider configured" }, 503)
+		}
+		const { day, all } = c.req.valid("json")
+		if (day) {
+			return c.json({ day, ticks: await classifyDay(db, day, groupId, classifier) })
+		}
+		if (all) {
+			clearRuns(db, classifier)
+		}
+		// Deferred: answer with the queue length now and classify in the background.
+		runPending(db, groupId, classifier)
+		return c.json(classifyStatus(db, classifier))
+	})
+
+	app.get("/api/v1/classify/status", (c) => {
+		if (!classifier) {
+			return c.json({ error: "no AI provider configured" }, 503)
+		}
+		return c.json(classifyStatus(db, classifier))
+	})
+
 	return app
-}
-
-// The one place request bodies are trusted: everything after this assumes the shape.
-function validateSyncBody(value, c) {
-	const { groupId, clientId, merkle, messages } = value ?? {}
-	const shapeOk =
-		typeof groupId === "string" &&
-		groupId !== "" &&
-		/^[0-9a-f]{16}$/.test(clientId ?? "") &&
-		typeof merkle === "object" &&
-		merkle !== null &&
-		Array.isArray(messages) &&
-		messages.every(isMessage)
-	if (!shapeOk) {
-		return c.json({ error: "expected { groupId, clientId, merkle, messages[] }" }, 400)
-	}
-	return { groupId, clientId, merkle, messages }
-}
-
-function isMessage(message) {
-	return (
-		typeof message?.dataset === "string" &&
-		typeof message.row === "string" &&
-		typeof message.column === "string" &&
-		"value" in message &&
-		typeof message.timestamp === "string" &&
-		Timestamp.parse(message.timestamp) !== null
-	)
 }

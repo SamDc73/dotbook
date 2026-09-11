@@ -12,6 +12,18 @@ export const CONFIG = {
 		.split(",")
 		.map((origin) => origin.trim())
 		.filter(Boolean),
+	// One person, one group. Every device sends this groupId; any other is refused.
+	groupId: env.GROUP_ID ?? "default",
+	// The model that classifies habits. Unset AI_PROVIDER = classification off.
+	// Swapping Ollama for Anthropic is these variables and nothing in code.
+	ai: {
+		provider: env.AI_PROVIDER ?? null,
+		model: env.AI_MODEL ?? null,
+		ollamaUrl: env.OLLAMA_URL ?? "http://localhost:11434",
+		anthropicApiKey: env.ANTHROPIC_API_KEY ?? null,
+		openaiApiKey: env.OPENAI_API_KEY ?? null,
+	},
+	classifyEveryMin: Number(env.CLASSIFY_EVERY_MIN ?? 10),
 }
 
 if (!CONFIG.token) {

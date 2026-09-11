@@ -1,12 +1,13 @@
-// Schema for the server's one database: the relay tables plus a replica of the
-// client schema. The replica is what the LLM classifier (phase 9) reads; it is
-// filled by applying the same messages the relay stores.
+// Schema for the server's one database: the relay tables, the server's own
+// bookkeeping, and a replica of the client schema. The replica is what the
+// classifier reads; it is filled by applying the same messages the relay stores.
 
 import { pendingMigrations } from "@dotbook/core/db"
 import { ensureRelayTables } from "@dotbook/core/sync"
 
 export function migrate(db) {
 	ensureRelayTables(db)
+	ensureServerTables(db)
 	migrateReplica(db)
 }
 
@@ -21,4 +22,17 @@ export function migrateReplica(db) {
 			db.run(`PRAGMA user_version = ${migration.version}`)
 		})
 	}
+}
+
+// Which days the classifier has finished, with which model and prompt version.
+// Server-only, never synced — a phone has no use for it — so it lives beside
+// the relay tables rather than in the client migrations. Deleting rows re-runs.
+function ensureServerTables(db) {
+	db.run(`CREATE TABLE IF NOT EXISTS classification_runs (
+		id             TEXT PRIMARY KEY,
+		day            TEXT    NOT NULL,
+		model          TEXT    NOT NULL,
+		prompt_version TEXT    NOT NULL,
+		created_at     INTEGER NOT NULL
+	)`)
 }

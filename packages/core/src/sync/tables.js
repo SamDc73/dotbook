@@ -36,6 +36,19 @@ export const SYNCED = {
 		keys: ["recurrence_id", "occurrence_ts"],
 		columns: ["entry_id"],
 	},
+	// Written by the server (browser time) and, later, the phone (app time).
+	time_rollups: {
+		keys: ["day", "source", "device", "key"],
+		columns: ["seconds"],
+	},
+	habits: {
+		keys: ["id"],
+		columns: ["name", "kind", "created_at", "deleted_at"],
+	},
+	habit_ticks: {
+		keys: ["id"],
+		columns: ["habit_id", "day", "value", "by", "model", "prompt_version", "reasoning", "created_at", "deleted_at"],
+	},
 }
 
 // A message's `row` is the primary key as text. Composite keys are joined with
