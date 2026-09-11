@@ -1,3 +1,4 @@
+import { parseLineTime } from "@dotbook/core/parse"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
@@ -13,6 +14,7 @@ import { materializeDay } from "../db/recurrences"
 import { abandonTimer, startTimer, stopTimer } from "../db/timers"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
+import { clock } from "../lib/format"
 import { saveVoiceNote } from "../voice/notes"
 
 const ORDER_KEY = "entry-order" // "typing" | "chronological"
@@ -58,7 +60,7 @@ export default function Today() {
 			return
 		}
 		if (text === "") return
-		const id = await addEntry(db, { day, text, source: voice ? "voice" : "manual" })
+		const id = await addEntry(db, { day, text: stampedNow(text, day), source: voice ? "voice" : "manual" })
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 	}
 
@@ -114,4 +116,15 @@ export default function Today() {
 
 function keyOf(entry) {
 	return entry.id
+}
+
+// A line typed today without a time is stamped with the current one — the time
+// is the bullet, so every line gets one. It is written into the text itself,
+// exactly as if it had been typed, so the row stays a plain line. Lines for
+// other days and `/` commands are left as they are: "now" means nothing there.
+function stampedNow(text, day) {
+	if (text.startsWith("/") || day !== today()) return text
+	const now = Date.now()
+	if (parseLineTime(text, day, now).timeText !== "") return text
+	return `${clock(now)} ${text}`
 }
