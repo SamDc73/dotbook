@@ -159,7 +159,7 @@ only colour distinguishes.
 
 #### The hour drift
 
-`--hour-00` … `--hour-23` tint a timestamp by the hour it names — warm at dawn
+`--color-hour-00` … `--color-hour-23` tint a timestamp by the hour it names — warm at dawn
 and dusk, colourless at noon, cool after midnight, off the Planckian and CIE
 daylight loci.
 

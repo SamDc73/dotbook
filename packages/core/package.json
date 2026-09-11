@@ -10,7 +10,8 @@
 		"./templates": "./src/templates/index.js",
 		"./recurrence": "./src/recurrence/index.js",
 		"./habits": "./src/habits/index.js",
-		"./sync": "./src/sync/index.js"
+		"./sync": "./src/sync/index.js",
+		"./db": "./src/db/index.js"
 	},
 	"dependencies": {
 		"chrono-node": "^2.10.1",
@@ -18,5 +19,8 @@
 		"@leeoniya/ufuzzy": "^1.0.19",
 		"rrule-es": "^1.0.0",
 		"uuidv7": "^1.2.1"
+	},
+	"scripts": {
+		"test": "bun test"
 	}
 }
