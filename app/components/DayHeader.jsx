@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { ChevronLeft, ChevronRight, Clock, Layers, List } from "lucide-react-native"
+import { ChevronLeft, ChevronRight, Clock, Layers, List, ListChecks } from "lucide-react-native"
 import { styled } from "nativewind"
 import { Pressable, Text, View } from "react-native"
 import { dayLabel } from "../lib/day"
@@ -11,6 +11,7 @@ const NextIcon = styled(ChevronRight, ICON)
 const ChronologicalIcon = styled(Clock, ICON)
 const TypingIcon = styled(List, ICON)
 const TemplatesIcon = styled(Layers, ICON)
+const TodosIcon = styled(ListChecks, ICON)
 
 export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	const OrderIcon = order === "chronological" ? ChronologicalIcon : TypingIcon
@@ -24,6 +25,9 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	}
 	function openTemplates() {
 		router.push("/templates")
+	}
+	function openTodos() {
+		router.push("/todos")
 	}
 
 	return (
@@ -56,6 +60,9 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 				accessibilityLabel="Templates"
 			>
 				<TemplatesIcon className="text-on-surface-variant" />
+			</Pressable>
+			<Pressable onPress={openTodos} className="p-xs rounded-md active:bg-surface-container" accessibilityLabel="Todos">
+				<TodosIcon className="text-on-surface-variant" />
 			</Pressable>
 		</View>
 	)
