@@ -17,7 +17,7 @@
 				"monochromeImage": "./assets/android-icon-monochrome.png"
 			},
 			"package": "dev.dotbook.app",
-			"permissions": ["android.permission.USE_EXACT_ALARM"]
+			"permissions": ["android.permission.USE_EXACT_ALARM", "android.permission.PACKAGE_USAGE_STATS"]
 		},
 		"web": {
 			"bundler": "metro",
