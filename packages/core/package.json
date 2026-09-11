@@ -14,9 +14,11 @@
 		"./db": "./src/db/index.js"
 	},
 	"dependencies": {
-		"chrono-node": "^2.10.1",
-		"parse-duration": "^2.1.8",
+		"@date-fns/tz": "^1.5.0",
 		"@leeoniya/ufuzzy": "^1.0.19",
+		"chrono-node": "^2.10.1",
+		"ical.js": "2.2.1",
+		"parse-duration": "^2.1.8",
 		"rrule-es": "^1.0.0",
 		"uuidv7": "^1.2.1"
 	},

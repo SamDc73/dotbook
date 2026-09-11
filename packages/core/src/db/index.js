@@ -80,6 +80,36 @@ export const MIGRATIONS = [
 			"CREATE INDEX template_prompts_by_template ON template_prompts (template_id)",
 		],
 	},
+	{
+		// Phase 6 — recurring events. See V0.1 → feature 5.
+		version: 3,
+		statements: [
+			// rrule: RFC 5545 RRULE text with no DTSTART inside — the start (and the
+			// time of day) is `dtstart`, read in `tzid`. duration_min NULL = point event.
+			`CREATE TABLE recurrences (
+				id           TEXT PRIMARY KEY,
+				text         TEXT    NOT NULL,
+				rrule        TEXT    NOT NULL,
+				dtstart      INTEGER NOT NULL,
+				tzid         TEXT    NOT NULL,
+				duration_min INTEGER,
+				kind         TEXT    NOT NULL DEFAULT 'plan',
+				source       TEXT    NOT NULL DEFAULT 'manual',
+				created_at   INTEGER NOT NULL,
+				deleted_at   INTEGER
+			)`,
+			// One row per occurrence that has been materialised into an entry. This is
+			// what makes materialisation idempotent and per-occurrence edits safe: once
+			// an occurrence has its entry it is never generated again, so editing or
+			// soft-deleting that entry changes only that day and the series is untouched.
+			`CREATE TABLE recurrence_instances (
+				recurrence_id TEXT    NOT NULL REFERENCES recurrences (id),
+				occurrence_ts INTEGER NOT NULL,
+				entry_id      TEXT    NOT NULL REFERENCES entries (id),
+				PRIMARY KEY (recurrence_id, occurrence_ts)
+			)`,
+		],
+	},
 ]
 
 /** Migrations newer than the database's current `user_version`, oldest first. */
