@@ -74,6 +74,10 @@
 	--spacing-icon: 1.15rem;
 	--text-tab: 0.64rem;
 
+	/* The habits grid, as uHabits draws it: square day cells, names in a fixed column */
+	--spacing-cell: 2.6rem;
+	--spacing-habitname: 9rem;
+
 	/* Reading width on wide screens — the log never runs the full width of a monitor. */
 	--container-page: 66rem;
 	/* Past this width the rail replaces the bottom bar and gutters widen — the template's 46rem. */

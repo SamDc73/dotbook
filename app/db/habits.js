@@ -53,7 +53,21 @@ export async function untick(db, habitId, day) {
 	}
 }
 
-// Live ticks in a day range, oldest first — what the per-day strip is built from.
+// A tap on a day cell, the way uHabits' checkmark works for a yes/no habit
+// (Entry.nextToggleValue with question marks on): unknown → yes → no → unknown.
+// A proposal (the classifier's tick) is accepted as it stands on the first tap
+// — yes stays yes — and the cycle continues from there. `current` is the
+// effective tick for that habit and day, or null. Older manual ticks for the
+// day are retired first, so one row per decision stays live.
+export async function cycleTick(db, habitId, day, current) {
+	await untick(db, habitId, day)
+	if (current?.by === "llm") return tick(db, habitId, day, current.value)
+	if (!current) return tick(db, habitId, day, "kept")
+	if (current.value === "kept") return tick(db, habitId, day, "broken")
+	return null
+}
+
+// Live ticks in a day range, oldest first — what the grid is built from.
 export function grid(db, fromDay, toDay) {
 	return db.sql`SELECT habit_id, day, value, by, created_at FROM habit_ticks
 		WHERE day BETWEEN ${fromDay} AND ${toDay} AND deleted_at IS NULL

@@ -1,82 +1,65 @@
 import { effectiveTick } from "@dotbook/core/habits"
 import { useSQLiteContext } from "expo-sqlite"
-import { useCallback, useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform, View } from "react-native"
+import { useCallback, useMemo, useState } from "react"
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { DateHeadline } from "../../components/DateHeadline"
-import { HabitRow } from "../../components/HabitRow"
+import { DayHeader, HabitCells } from "../../components/HabitGrid"
+import { ScreenHeader } from "../../components/ScreenHeader"
 import { Badge } from "../../components/ui/Badge"
 import { Input } from "../../components/ui/Input"
-import { addHabit, grid, habits, removeHabit, tick, ticksOn, untick } from "../../db/habits"
+import { Text } from "../../components/ui/Text"
+import { addHabit, cycleTick, grid, habits, removeHabit } from "../../db/habits"
 import { useLiveQuery } from "../../db/use-live-query"
 import { shiftDay, today } from "../../lib/day"
-import { useDayNav } from "../../lib/use-day-nav"
+import { weekday } from "../../lib/format"
 
-const STRIP_DAYS = 14
+// Four weeks of cells; older days scroll in from the right.
+const DAYS = 28
 
-// Tapping the glyph walks the person's tick through these; `null` means untick.
-const NEXT = { pending: "kept", kept: "broken", broken: null }
-
-// One day of habits, in the template's bordered list. The state shown is
-// `effectiveTick`: a person's tick wins over the classifier's while it exists.
-// Proposals are reviewable here and nowhere else — no badge, no count.
+// Habits as uHabits lays them out: names in a fixed column, a square cell per
+// day to their right, newest day first, the whole day panel scrolling sideways
+// under one header. The state shown is `effectiveTick`: a person's tick wins
+// over the classifier's while it exists. Nothing counts proposals, nothing nags.
 export default function Habits() {
 	const db = useSQLiteContext()
 	const insets = useSafeAreaInsets()
-	const [day, setDay] = useState(today)
 	const [name, setName] = useState("")
 	const [kind, setKind] = useState("do")
+	const [why, setWhy] = useState(null) // a proposal's reasoning, shown on long-press
 
-	const stripStart = shiftDay(day, 1 - STRIP_DAYS)
+	const day = today()
+	const days = useMemo(() => columns(day), [day])
 	const list = useLiveQuery(["habits"], () => habits(db))
-	const ticks = useLiveQuery(["habit-ticks", day], () => ticksOn(db, day))
-	const history = useLiveQuery(["habit-grid", stripStart, day], () => grid(db, stripStart, day))
+	const history = useLiveQuery(["habit-grid", days.at(-1).day, day], () => grid(db, days.at(-1).day, day))
 
-	// Indexed once per render instead of filtering every row for every habit and day.
-	const ticksByHabit = groupBy(ticks, (row) => row.habit_id)
-	const historyByHabitDay = groupBy(history, (row) => `${row.habit_id}|${row.day}`)
-	const days = Array.from({ length: STRIP_DAYS }, (_, i) => shiftDay(stripStart, i))
+	// One index for the whole grid, rebuilt only when the ticks change: each
+	// habit's cells are a stable array, so a memoised row skips its render.
+	const cellsByHabit = useMemo(() => {
+		const byKey = groupBy(history, (row) => `${row.habit_id}|${row.day}`)
+		const byHabit = new Map()
+		for (const habit of list) {
+			byHabit.set(
+				habit.id,
+				days.map((column) => ({ ...column, tick: effectiveTick(byKey.get(`${habit.id}|${column.day}`) ?? NONE) }))
+			)
+		}
+		return byHabit
+	}, [history, list, days])
 
-	// Same gestures as Today: swipe, arrow keys, hover chevrons, tap the date.
-	const shift = useCallback((delta) => setDay((current) => shiftDay(current, delta)), [])
-	const pan = useDayNav(shift)
+	const tap = useCallback((habit, cell) => cycleTick(db, habit.id, cell.day, cell.tick), [db])
+	const hold = useCallback((habit, cell) => setWhy({ habit, cell }), [])
+	const remove = useCallback((habit) => removeHabit(db, habit.id), [db])
+
 	function toggleKind() {
 		setKind((current) => (current === "do" ? "avoid" : "do"))
 	}
-
-	// Stable handlers for the memoised rows; `day` is the only state they need.
-	const cycle = useCallback(
-		(habit, current) => {
-			const next = NEXT[current?.value ?? "pending"]
-			if (next === null) untick(db, habit.id, day)
-			else tick(db, habit.id, day, next)
-		},
-		[db, day]
-	)
-	const accept = useCallback((habit, proposal) => tick(db, habit.id, day, proposal.value), [db, day])
-	const remove = useCallback((habit) => removeHabit(db, habit.id), [db])
-
 	function add() {
 		if (name.trim() === "") return
 		addHabit(db, { name, kind })
 		setName("")
 	}
-
-	function renderHabit({ item }) {
-		const strip = days.map((d) => ({
-			day: d,
-			value: effectiveTick(historyByHabitDay.get(`${item.id}|${d}`) ?? NONE)?.value,
-		}))
-		return (
-			<HabitRow
-				habit={item}
-				tick={effectiveTick(ticksByHabit.get(item.id) ?? NONE)}
-				strip={strip}
-				onCycle={cycle}
-				onAccept={accept}
-				onRemove={remove}
-			/>
-		)
+	function dismissWhy() {
+		setWhy(null)
 	}
 
 	return (
@@ -85,19 +68,32 @@ export default function Habits() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<DateHeadline day={day} section="Habits" onShift={shift} onPick={setDay} />
-			<View
-				className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel"
-				{...pan.panHandlers}
-			>
-				<FlatList
-					data={list}
-					keyExtractor={keyOf}
-					renderItem={renderHabit}
-					ItemSeparatorComponent={Hairline}
-					keyboardShouldPersistTaps="handled"
-				/>
-			</View>
+			<ScreenHeader title="Habits" lede="tap a day to cycle it: yes, no, unknown" />
+			<ScrollView className="flex-1" contentContainerClassName="p-md" keyboardShouldPersistTaps="handled">
+				<View className="flex-row overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
+					<View className="w-habitname border-r border-outline-variant">
+						<View className="h-cell" />
+						{list.map((habit) => (
+							<NameCell key={habit.id} habit={habit} onRemove={remove} />
+						))}
+					</View>
+					<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+						<View>
+							<DayHeader days={days} today={day} />
+							{list.map((habit) => (
+								<HabitCells
+									key={habit.id}
+									habit={habit}
+									cells={cellsByHabit.get(habit.id) ?? NONE}
+									onTap={tap}
+									onHold={hold}
+								/>
+							))}
+						</View>
+					</ScrollView>
+				</View>
+				{why ? <Reasoning why={why} onDismiss={dismissWhy} /> : null}
+			</ScrollView>
 			<View className="flex-row items-center gap-xs border-t border-outline-variant bg-surface px-md py-sm">
 				<Input
 					className="flex-1"
@@ -107,7 +103,7 @@ export default function Habits() {
 					submitBehavior="submit"
 					placeholder="no porn"
 				/>
-				<Badge variant="primary" caps onPress={toggleKind}>
+				<Badge variant="primary" caps onPress={toggleKind} accessibilityLabel={`kind: ${kind}`}>
 					{kind}
 				</Badge>
 			</View>
@@ -115,14 +111,45 @@ export default function Habits() {
 	)
 }
 
-const NONE = []
-
-function keyOf(habit) {
-	return habit.id
+// The name and its kind, in the fixed column; long-press removes (soft).
+function NameCell({ habit, onRemove }) {
+	function remove() {
+		onRemove(habit)
+	}
+	return (
+		<Pressable onLongPress={remove} className="h-cell justify-center px-sm active:bg-surface-container">
+			<Text variant="line" numberOfLines={1}>
+				{habit.name}
+			</Text>
+			<Text variant="data">{habit.kind}</Text>
+		</Pressable>
+	)
 }
 
-function Hairline() {
-	return <View className="border-t border-outline-variant" />
+// Why the classifier proposed what it did, for the cell that was held.
+function Reasoning({ why, onDismiss }) {
+	const { habit, cell } = why
+	return (
+		<Pressable
+			onPress={onDismiss}
+			className="mt-md gap-3xs rounded-panel border border-tertiary-line bg-tertiary-wash px-md py-sm"
+		>
+			<Text variant="eyebrow">
+				{habit.name} · {cell.weekday} {cell.number} · proposed
+			</Text>
+			<Text variant="data">{cell.tick?.reasoning ?? "no reasoning recorded"}</Text>
+		</Pressable>
+	)
+}
+
+const NONE = []
+
+/** Today and the 27 days before it, newest first, with the header's two lines ready. */
+function columns(day) {
+	return Array.from({ length: DAYS }, (_, i) => {
+		const d = shiftDay(day, -i)
+		return { day: d, weekday: weekday(d), number: d.slice(8) }
+	})
 }
 
 /** rows → Map<key, rows[]>, one pass. */
