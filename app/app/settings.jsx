@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react-native"
 import { Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { ScreenTimeSection } from "../components/ScreenTimeSection"
+import { ServerSettings } from "../components/ServerSettings"
 import { Icon } from "../components/ui/Icon"
 import { Text } from "../components/ui/Text"
 
@@ -24,6 +25,7 @@ export default function Settings() {
 				<Text variant="heading">Settings</Text>
 			</View>
 			<ScrollView>
+				<ServerSettings />
 				<ScreenTimeSection />
 			</ScrollView>
 		</View>

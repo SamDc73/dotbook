@@ -1,3 +1,4 @@
+import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
 import { Stack } from "expo-router"
 import { SQLiteProvider, useSQLiteContext } from "expo-sqlite"
@@ -8,6 +9,7 @@ import { reconcile } from "../notifications/reminders"
 import { answerResponse } from "../notifications/respond"
 import { setupNotifications } from "../notifications/setup"
 import { registerResponseTask } from "../notifications/task"
+import { useCollectScreenTime } from "../screenTime/collect"
 import { useSync } from "../sync/use-sync"
 import { MaterialYou } from "../theme/MaterialYou"
 import "../global.css"
@@ -37,6 +39,8 @@ export default function RootLayout() {
 // claims each tap once, so overlap is harmless.
 function Reminders() {
 	const db = useSQLiteContext()
+	// Android screen time, collected on every foreground once usage access is granted.
+	useCollectScreenTime(db, Device.deviceName ?? "android")
 
 	useEffect(() => {
 		const foreground = AppState.addEventListener("change", (state) => {
