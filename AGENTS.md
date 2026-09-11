@@ -61,13 +61,17 @@ Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM
 
 ## Commands
 
-- App (Android): `cd app && bun run android`
+- App (Android): `cd app && bun run android` (`expo run:android` — a dev client; needs Java + Android SDK)
 - Web: `cd app && bun run web` (same codebase)
 - Server: `cd server && bun run dev`
-- Verify the build pipeline: `cd app && bunx expo export --platform web`
-- Lint: `biome check --write .`
+- Verify the build pipeline: `cd app && bunx expo export --platform web` and `--platform android`;
+  `bunx expo prebuild --platform android --no-install` proves every native module and permission resolves
+  (then delete `app/android/` — it is generated, and gitignored)
+- Lint: `bun run lint` (Biome, `--write`)
 - Import-graph lint (cycles/duplicates — the only rules Biome lacks): `bun run lint:imports`
-- Test: `bun test`
+- Test: `cd packages/core && bun test` and `cd server && bun test` (the app has no test runner;
+  its pure sync round is tested against the in-process server)
+- Extension: `bunx web-ext lint --source-dir extension`
 
 ## Critical Rules - DO NOT VIOLATE
 
@@ -210,6 +214,12 @@ class and let the variable resolve. A component that reads a colour in JS is
 frozen at the static value and will not follow the wallpaper — and that breakage
 is invisible until someone changes their wallpaper.
 
+The one sanctioned exception is `app/lib/use-token-colour.js`, for a library that
+demands a JS value (live-markdown's `markdownStyle`): it reads the *live* variable,
+so it still follows Material You. Use it nowhere else. The other allowed non-token
+style is a computed layout value — a progress fill's `width`, a bar's `height` —
+always with a comment saying so.
+
 #### Components
 
 `react-native-reusables` — shadcn/ui for React Native. Components are **copied
@@ -309,6 +319,15 @@ A suggestion is always visible before it commits — never applied silently.
 - Wrap `synchronize()` in a retry-once block
 - Delta sync only, compressed
 - Every row carries `source` (which device/connector produced it) — provenance is a feature, not debug info
+- **Every write to a synced table goes through `insertRow` / `updateRow` in `app/db/sync.js`** (the server's
+  equivalent is `publish` / `publishUpdate`). A row is messages first and a table row second; a direct
+  `INSERT`/`UPDATE` on a table listed in `packages/core/src/sync/tables.js` is a row no other device will
+  ever see. Derived caches (`entry_items`) and device-local tables (`voice_notes`) keep direct SQL
+- Soft delete only, because a hard delete has no message. A table without `deleted_at` cannot be
+  deleted from on one device and stay consistent on another — add the column first
+- Column names in SQL come from `SYNCED`, never from the wire
+- **Migrations are additive and numbered** in `packages/core/src/db/index.js`; a shipped migration is never edited.
+  The server creates its own relay/bookkeeping tables with `CREATE TABLE IF NOT EXISTS`, outside that list
 
 ### AI & LLMs
 
@@ -337,12 +356,22 @@ A suggestion is always visible before it commits — never applied silently.
 ## Repo Layout
 
 ```
-packages/core/       shared logic — merge, recurrence, parsing, habit rules
+packages/core/       shared logic — db schema + migrations, parse, templates,
+                     recurrence, sync (CRDT), habits, analysis, import (RingConn)
 app/                 Expo universal — Android and web from one codebase
+app/app/             the routes: index (Today), focus, templates, todos, habits,
+                     recurring, trends, settings
+app/db/              one module per table family; sync.js holds insertRow/updateRow
+app/notifications/   reminders: setup, reconcile, responses, headless task, web path
+app/sync/            the sync client and its triggers
+app/screenTime/      Android UsageStats collection
+app/voice/           speech recognition
 app/theme/tokens.css THE design tokens — colours, spacing, type, radius
-docs/palette.html    palette reference — specimens, contrast, CVD simulator
+app/components/ui/   Text, Button, Icon (from react-native-reusables), cn()
+docs/                palette.html, self-host.md
 server/              Bun server — relay, ingest, LLM classification
 extension/           Firefox extension (browser time)
-ringconn/            RingConn CSV samples + import mapping
+ringconn/            RingConn CSV samples (gitignored) + import mapping
+Dockerfile, docker-compose.yml, Caddyfile — self-hosting
 copied_repos/        reference code, not built or shipped
 ```
