@@ -24,19 +24,19 @@ export function createApp({ db, token, corsOrigins, groupId, classifier = null }
 
 	app.use("/api/v1/*", cors({ origin: corsOrigins }), bearerAuth({ token }))
 
-	app.post("/api/v1/sync", validator("json", validateSyncBody), (c) => {
+	app.post("/api/v1/sync", validator("json", validateSyncBody), async (c) => {
 		const body = c.req.valid("json")
 		// One person per server in V0.1. Serving several would need one replica
 		// and one clock per group; this check is the seam, and all there is.
 		if (body.groupId !== groupId) {
 			return c.json({ error: "unknown group" }, 403)
 		}
-		const response = relay(db, body)
+		const response = await relay(db, body)
 		// Keep the server's replica current for the classifier. A device whose
 		// clock is more than the CRDT's drift limit ahead of ours is refused
 		// rather than let its timestamps poison every other device's clock.
 		try {
-			applyMessages(db, body.messages)
+			await applyMessages(db, body.messages)
 		} catch (error) {
 			if (error instanceof Timestamp.ClockDriftError) {
 				return c.json({ error: "device clock is too far ahead of the server" }, 409)
@@ -46,8 +46,8 @@ export function createApp({ db, token, corsOrigins, groupId, classifier = null }
 		return c.json(response)
 	})
 
-	app.post("/api/v1/browser-time", validator("json", validateBrowserTime), (c) => {
-		const accepted = addBrowserTime(db, groupId, c.req.valid("json"))
+	app.post("/api/v1/browser-time", validator("json", validateBrowserTime), async (c) => {
+		const accepted = await addBrowserTime(db, groupId, c.req.valid("json"))
 		return c.json({ accepted })
 	})
 
@@ -60,18 +60,18 @@ export function createApp({ db, token, corsOrigins, groupId, classifier = null }
 			return c.json({ day, ticks: await classifyDay(db, day, groupId, classifier) })
 		}
 		if (all) {
-			clearRuns(db, classifier)
+			await clearRuns(db, classifier)
 		}
 		// Deferred: answer with the queue length now and classify in the background.
 		runPending(db, groupId, classifier)
-		return c.json(classifyStatus(db, classifier))
+		return c.json(await classifyStatus(db, classifier))
 	})
 
-	app.get("/api/v1/classify/status", (c) => {
+	app.get("/api/v1/classify/status", async (c) => {
 		if (!classifier) {
 			return c.json({ error: "no AI provider configured" }, 503)
 		}
-		return c.json(classifyStatus(db, classifier))
+		return c.json(await classifyStatus(db, classifier))
 	})
 
 	return app

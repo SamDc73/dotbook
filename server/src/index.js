@@ -9,7 +9,7 @@ import { openDatabase } from "./db/adapter.js"
 import { migrate } from "./db/index.js"
 
 const db = openDatabase(CONFIG.dbPath)
-migrate(db)
+await migrate(db)
 
 const classifier = classifierFor(CONFIG.ai)
 const app = createApp({

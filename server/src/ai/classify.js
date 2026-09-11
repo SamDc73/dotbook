@@ -21,10 +21,12 @@ const VERDICTS = new Set(["kept", "broken", "unknown"])
  * @param {import("./adapter.js").Classifier} classifier
  */
 export async function classifyDay(db, day, groupId, classifier) {
-	const habits = activeHabits(db)
-	const lines = db
-		.all("SELECT text FROM entries WHERE day = ? AND kind = 'log' AND deleted_at IS NULL ORDER BY seq", [day])
-		.map((row) => row.text)
+	const habits = await activeHabits(db)
+	const rows = await db.all(
+		"SELECT text FROM entries WHERE day = ? AND kind = 'log' AND deleted_at IS NULL ORDER BY seq",
+		[day]
+	)
+	const lines = rows.map((row) => row.text)
 	if (habits.length === 0 || lines.length === 0) {
 		return 0
 	}
@@ -40,14 +42,14 @@ export async function classifyDay(db, day, groupId, classifier) {
 	// A run replaces the previous run's proposals wholesale: a habit the model
 	// now calls "unknown" loses its old tick rather than keeping a stale one.
 	for (const habit of habits) {
-		retireProposals(db, groupId, habit.id, day)
+		await retireProposals(db, groupId, habit.id, day)
 	}
 	let published = 0
 	for (const { habit, verdict, reasoning } of verdicts) {
 		if (verdict === "unknown") {
 			continue
 		}
-		publish(db, groupId, "habit_ticks", [
+		await publish(db, groupId, "habit_ticks", [
 			{
 				id: uuidv7(),
 				habit_id: habit.id,
@@ -63,7 +65,7 @@ export async function classifyDay(db, day, groupId, classifier) {
 		])
 		published++
 	}
-	db.run("INSERT INTO classification_runs (id, day, model, prompt_version, created_at) VALUES (?, ?, ?, ?, ?)", [
+	await db.run("INSERT INTO classification_runs (id, day, model, prompt_version, created_at) VALUES (?, ?, ?, ?, ?)", [
 		uuidv7(),
 		day,
 		classifier.model,
@@ -78,19 +80,18 @@ export async function classifyDay(db, day, groupId, classifier) {
  * Only finished days (before today): today's log is still being written, and
  * a day classified half-way would never be looked at again.
  */
-export function pendingDays(db, classifier, now = Date.now()) {
-	if (activeHabits(db).length === 0) {
+export async function pendingDays(db, classifier, now = Date.now()) {
+	if ((await activeHabits(db)).length === 0) {
 		return []
 	}
-	return db
-		.all(
-			`SELECT DISTINCT day FROM entries
-			WHERE kind = 'log' AND deleted_at IS NULL AND day < ?
-			AND day NOT IN (SELECT day FROM classification_runs WHERE model = ? AND prompt_version = ?)
-			ORDER BY day DESC`,
-			[localDay(now), classifier.model, PROMPT_VERSION]
-		)
-		.map((row) => row.day)
+	const rows = await db.all(
+		`SELECT DISTINCT day FROM entries
+		WHERE kind = 'log' AND deleted_at IS NULL AND day < ?
+		AND day NOT IN (SELECT day FROM classification_runs WHERE model = ? AND prompt_version = ?)
+		ORDER BY day DESC`,
+		[localDay(now), classifier.model, PROMPT_VERSION]
+	)
+	return rows.map((row) => row.day)
 }
 
 let running = false
@@ -103,7 +104,7 @@ export async function runPending(db, groupId, classifier) {
 	running = true
 	let done = 0
 	try {
-		for (const day of pendingDays(db, classifier)) {
+		for (const day of await pendingDays(db, classifier)) {
 			try {
 				await classifyDay(db, day, groupId, classifier)
 				done++
@@ -119,27 +120,30 @@ export async function runPending(db, groupId, classifier) {
 }
 
 /** Forget every run for the current model + prompt version, so history re-runs. */
-export function clearRuns(db, classifier) {
-	db.run("DELETE FROM classification_runs WHERE model = ? AND prompt_version = ?", [classifier.model, PROMPT_VERSION])
+export async function clearRuns(db, classifier) {
+	await db.run("DELETE FROM classification_runs WHERE model = ? AND prompt_version = ?", [
+		classifier.model,
+		PROMPT_VERSION,
+	])
 }
 
-export function classifyStatus(db, classifier) {
-	const last = db.get("SELECT max(created_at) AS at FROM classification_runs")
-	return { pending: pendingDays(db, classifier).length, lastRun: last?.at ?? null }
+export async function classifyStatus(db, classifier) {
+	const last = await db.get("SELECT max(created_at) AS at FROM classification_runs")
+	return { pending: (await pendingDays(db, classifier)).length, lastRun: last?.at ?? null }
 }
 
-function activeHabits(db) {
+async function activeHabits(db) {
 	return db.all("SELECT id, name, kind FROM habits WHERE deleted_at IS NULL ORDER BY name")
 }
 
 /** Soft-delete the model's earlier ticks for this habit and day. Manual ticks are never touched. */
-function retireProposals(db, groupId, habitId, day) {
-	const rows = db.all(
+async function retireProposals(db, groupId, habitId, day) {
+	const rows = await db.all(
 		"SELECT id FROM habit_ticks WHERE habit_id = ? AND day = ? AND by = 'llm' AND deleted_at IS NULL",
 		[habitId, day]
 	)
 	for (const { id } of rows) {
-		publishUpdate(db, groupId, "habit_ticks", { id }, { deleted_at: Date.now() })
+		await publishUpdate(db, groupId, "habit_ticks", { id }, { deleted_at: Date.now() })
 	}
 }
 

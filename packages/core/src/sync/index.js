@@ -7,13 +7,17 @@
 // per-field last-write-wins by hybrid logical clock.
 //
 // Every platform hands these functions the same four-method adapter — the one
-// abstraction in this package, because expo-sqlite and bun:sqlite differ:
+// abstraction in this package, because expo-sqlite and bun:sqlite differ. The
+// methods MAY return promises: expo-sqlite's async API is the only one that
+// works on the web without SharedArrayBuffer, so every function here awaits
+// the adapter and returns a promise itself. A synchronous adapter (bun:sqlite)
+// works unchanged — awaiting a plain value is a no-op.
 //
 // @typedef {object} SyncDb
-// @property {(sql: string, params?: unknown[]) => { changes: number }} run
-// @property {(sql: string, params?: unknown[]) => object[]} all
-// @property {(sql: string, params?: unknown[]) => object | null} get
-// @property {<T>(fn: () => T) => T} transaction  runs `fn` atomically and returns its result
+// @property {(sql: string, params?: unknown[]) => { changes: number } | Promise<{ changes: number }>} run
+// @property {(sql: string, params?: unknown[]) => object[] | Promise<object[]>} all
+// @property {(sql: string, params?: unknown[]) => object | null | Promise<object | null>} get
+// @property {<T>(fn: () => Promise<T>) => Promise<T>} transaction  runs async `fn` atomically and returns its result
 
 export { applyMessages, rebuildFromMessages } from "./apply.js"
 export { messagesForInsert, messagesForUpdate } from "./messages.js"

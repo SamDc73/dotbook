@@ -1,14 +1,15 @@
 import { applyMessages, messagesForInsert, messagesForUpdate } from "@dotbook/core/sync"
 
-// The app's side of @dotbook/core/sync: expo-sqlite's synchronous API behind the
+// The app's side of @dotbook/core/sync: expo-sqlite's async API behind the
 // four-method adapter core expects, and the two helpers every write to a synced
 // table goes through. A write becomes messages first and a table row second, so
 // local and foreign writes travel one path and the tables are always a
 // materialisation of `messages_crdt` (AGENTS.md → Sync).
 //
-// On web the synchronous API blocks on SharedArrayBuffer, which browsers allow
-// only under the COOP/COEP headers metro.config.js (dev) and the Caddyfile
-// (self-host) send.
+// Async on purpose: expo-sqlite's synchronous API needs SharedArrayBuffer on
+// the web, which exists only on a cross-origin-isolated page — and Expo's dev
+// server does not isolate the HTML document, nor does every static host. The
+// async API works everywhere, so core awaits the adapter instead.
 
 const ADAPTERS = new WeakMap()
 
@@ -28,14 +29,14 @@ export function adapterFor(db) {
 
 function adapt(db) {
 	return {
-		run: (sql, params = []) => db.runSync(sql, params),
-		all: (sql, params = []) => db.getAllSync(sql, params),
-		get: (sql, params = []) => db.getFirstSync(sql, params),
-		// withTransactionSync returns nothing, so the result is carried out by hand.
-		transaction: (fn) => {
+		run: (sql, params = []) => db.runAsync(sql, params),
+		all: (sql, params = []) => db.getAllAsync(sql, params),
+		get: (sql, params = []) => db.getFirstAsync(sql, params),
+		// withTransactionAsync resolves to nothing, so the result is carried out by hand.
+		transaction: async (fn) => {
 			let result
-			db.withTransactionSync(() => {
-				result = fn()
+			await db.withTransactionAsync(async () => {
+				result = await fn()
 			})
 			return result
 		},
@@ -48,7 +49,7 @@ function adapt(db) {
  */
 export async function insertRow(db, dataset, row) {
 	const adapter = adapterFor(db)
-	applyMessages(adapter, messagesForInsert(adapter, dataset, row))
+	await applyMessages(adapter, await messagesForInsert(adapter, dataset, row))
 }
 
 /**
@@ -57,5 +58,5 @@ export async function insertRow(db, dataset, row) {
  */
 export async function updateRow(db, dataset, key, changes) {
 	const adapter = adapterFor(db)
-	applyMessages(adapter, messagesForUpdate(adapter, dataset, key, changes))
+	await applyMessages(adapter, await messagesForUpdate(adapter, dataset, key, changes))
 }

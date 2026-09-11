@@ -43,9 +43,9 @@ export function messagesForUpdate(db, dataset, key, changes) {
 }
 
 /** Give each field a fresh, monotonic timestamp from this device's clock. */
-function stamp(db, fields) {
-	clockFor(db)
+async function stamp(db, fields) {
+	await clockFor(db)
 	const messages = fields.map((field) => ({ ...field, timestamp: Timestamp.send().toString() }))
-	saveClock(db)
+	await saveClock(db)
 	return messages
 }

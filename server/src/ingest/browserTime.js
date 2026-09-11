@@ -14,21 +14,19 @@ import { publish, publishUpdate } from "../sync/publish.js"
  * @param {import("@dotbook/core/sync").SyncDb} db
  * @param {string} groupId
  * @param {{ source: string, device: string, rollups: { day: string, site: string, seconds: number }[] }} batch
- * @returns {number} rollups taken in
+ * @returns {Promise<number>} rollups taken in
  */
-export function addBrowserTime(db, groupId, { source, device, rollups }) {
+export async function addBrowserTime(db, groupId, { source, device, rollups }) {
 	for (const { day, site, seconds } of rollups) {
 		const key = { day, source, device, key: site }
-		const row = db.get("SELECT seconds FROM time_rollups WHERE day = ? AND source = ? AND device = ? AND key = ?", [
-			day,
-			source,
-			device,
-			site,
-		])
+		const row = await db.get(
+			"SELECT seconds FROM time_rollups WHERE day = ? AND source = ? AND device = ? AND key = ?",
+			[day, source, device, site]
+		)
 		if (row) {
-			publishUpdate(db, groupId, "time_rollups", key, { seconds: row.seconds + seconds })
+			await publishUpdate(db, groupId, "time_rollups", key, { seconds: row.seconds + seconds })
 		} else {
-			publish(db, groupId, "time_rollups", [{ ...key, seconds }])
+			await publish(db, groupId, "time_rollups", [{ ...key, seconds }])
 		}
 	}
 	return rollups.length

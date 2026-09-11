@@ -19,12 +19,12 @@ const MAX_ROUNDS = 10
  * @param {import("./index.js").SyncDb} db
  * @param {string} groupId  the user — one group per person, every device shares it
  */
-export function buildSyncRequest(db, groupId) {
-	const clock = clockFor(db)
+export async function buildSyncRequest(db, groupId) {
+	const clock = await clockFor(db)
 	const clientId = clock.timestamp.node()
-	const { since } = db.get("SELECT since FROM messages_clock WHERE id = 1")
+	const { since } = await db.get("SELECT since FROM messages_clock WHERE id = 1")
 	// Only messages this device stamped: anything else came from the server.
-	const rows = db.all(
+	const rows = await db.all(
 		"SELECT timestamp, dataset, row, column, value FROM messages_crdt WHERE timestamp > ? AND timestamp LIKE ? ORDER BY timestamp",
 		[since, `%-${clientId}`]
 	)
@@ -33,14 +33,14 @@ export function buildSyncRequest(db, groupId) {
 }
 
 /**
- * Take in the server's answer. Returns true when both sides hold the same set.
+ * Take in the server's answer. Resolves true when both sides hold the same set.
  * @param {import("./index.js").SyncDb} db
- * @param {ReturnType<typeof buildSyncRequest>} request  what was sent
+ * @param {Awaited<ReturnType<typeof buildSyncRequest>>} request  what was sent
  * @param {{ messages: object[], merkle: object }} response
  */
-export function receiveSyncResponse(db, request, response) {
-	applyMessages(db, response.messages)
-	const clock = clockFor(db)
+export async function receiveSyncResponse(db, request, response) {
+	await applyMessages(db, response.messages)
+	const clock = await clockFor(db)
 	const divergedAt = merkle.diff(clock.merkle, response.merkle)
 
 	let since = request.messages.at(-1)?.timestamp
@@ -48,7 +48,7 @@ export function receiveSyncResponse(db, request, response) {
 		since = new Timestamp(divergedAt, 0, "0").toString()
 	}
 	if (since !== undefined) {
-		db.run("UPDATE messages_clock SET since = ? WHERE id = 1", [since])
+		await db.run("UPDATE messages_clock SET since = ? WHERE id = 1", [since])
 	}
 	return divergedAt === null
 }
@@ -60,9 +60,9 @@ export function receiveSyncResponse(db, request, response) {
  */
 export async function sync(db, groupId, post) {
 	for (let round = 1; round <= MAX_ROUNDS; round++) {
-		const request = buildSyncRequest(db, groupId)
+		const request = await buildSyncRequest(db, groupId)
 		const response = await post(request)
-		if (receiveSyncResponse(db, request, response)) {
+		if (await receiveSyncResponse(db, request, response)) {
 			return round
 		}
 	}

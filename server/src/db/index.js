@@ -5,21 +5,21 @@
 import { pendingMigrations } from "@dotbook/core/db"
 import { ensureRelayTables } from "@dotbook/core/sync"
 
-export function migrate(db) {
-	ensureRelayTables(db)
-	ensureServerTables(db)
-	migrateReplica(db)
+export async function migrate(db) {
+	await ensureRelayTables(db)
+	await ensureServerTables(db)
+	await migrateReplica(db)
 }
 
 /** The client migrations, gated by `user_version` exactly as on a device. */
-export function migrateReplica(db) {
-	const { user_version: version } = db.get("PRAGMA user_version")
+export async function migrateReplica(db) {
+	const { user_version: version } = await db.get("PRAGMA user_version")
 	for (const migration of pendingMigrations(version)) {
-		db.transaction(() => {
+		await db.transaction(async () => {
 			for (const statement of migration.statements) {
-				db.run(statement)
+				await db.run(statement)
 			}
-			db.run(`PRAGMA user_version = ${migration.version}`)
+			await db.run(`PRAGMA user_version = ${migration.version}`)
 		})
 	}
 }
@@ -27,8 +27,8 @@ export function migrateReplica(db) {
 // Which days the classifier has finished, with which model and prompt version.
 // Server-only, never synced — a phone has no use for it — so it lives beside
 // the relay tables rather than in the client migrations. Deleting rows re-runs.
-function ensureServerTables(db) {
-	db.run(`CREATE TABLE IF NOT EXISTS classification_runs (
+async function ensureServerTables(db) {
+	await db.run(`CREATE TABLE IF NOT EXISTS classification_runs (
 		id             TEXT PRIMARY KEY,
 		day            TEXT    NOT NULL,
 		model          TEXT    NOT NULL,

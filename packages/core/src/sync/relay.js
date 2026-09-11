@@ -6,14 +6,14 @@
 import { merkle, Timestamp } from "@actual-app/crdt"
 
 /** Create the relay tables if missing. Fixed forever, hence no version gate. */
-export function ensureRelayTables(db) {
-	db.run(`CREATE TABLE IF NOT EXISTS messages_binary (
+export async function ensureRelayTables(db) {
+	await db.run(`CREATE TABLE IF NOT EXISTS messages_binary (
 		group_id  TEXT NOT NULL,
 		timestamp TEXT NOT NULL,
 		content   TEXT NOT NULL,
 		PRIMARY KEY (group_id, timestamp)
 	)`)
-	db.run(`CREATE TABLE IF NOT EXISTS messages_merkles (
+	await db.run(`CREATE TABLE IF NOT EXISTS messages_merkles (
 		group_id TEXT PRIMARY KEY,
 		merkle   TEXT NOT NULL
 	)`)
@@ -24,15 +24,15 @@ export function ensureRelayTables(db) {
  *
  * @param {import("./index.js").SyncDb} db
  * @param {{ groupId: string, clientId: string, merkle: object, messages: object[] }} request
- * @returns {{ messages: object[], merkle: object }}
+ * @returns {Promise<{ messages: object[], merkle: object }>}
  *   the messages the client lacks (none when the tries already agree) and the
  *   group's trie after storing what the client sent
  */
 export function relay(db, { groupId, clientId, merkle: clientMerkle, messages }) {
-	return db.transaction(() => {
-		let trie = loadTrie(db, groupId)
+	return db.transaction(async () => {
+		let trie = await loadTrie(db, groupId)
 		for (const message of messages) {
-			const { changes } = db.run(
+			const { changes } = await db.run(
 				"INSERT OR IGNORE INTO messages_binary (group_id, timestamp, content) VALUES (?, ?, ?)",
 				[groupId, message.timestamp, JSON.stringify(message)]
 			)
@@ -43,7 +43,7 @@ export function relay(db, { groupId, clientId, merkle: clientMerkle, messages })
 		// Pruned like Actual does: only the newest branches are kept, and the
 		// hashes stay exact, so old history costs nothing to store or send.
 		trie = merkle.prune(trie)
-		db.run(
+		await db.run(
 			"INSERT INTO messages_merkles (group_id, merkle) VALUES (?, ?) ON CONFLICT (group_id) DO UPDATE SET merkle = excluded.merkle",
 			[groupId, JSON.stringify(trie)]
 		)
@@ -55,7 +55,7 @@ export function relay(db, { groupId, clientId, merkle: clientMerkle, messages })
 		// Everything from the minute the tries diverge, except what this client
 		// stamped itself — it has those already.
 		const since = new Timestamp(divergedAt, 0, "0").toString()
-		const rows = db.all(
+		const rows = await db.all(
 			"SELECT content FROM messages_binary WHERE group_id = ? AND timestamp > ? AND timestamp NOT LIKE ? ORDER BY timestamp",
 			[groupId, since, `%-${clientId}`]
 		)
@@ -63,7 +63,7 @@ export function relay(db, { groupId, clientId, merkle: clientMerkle, messages })
 	})
 }
 
-function loadTrie(db, groupId) {
-	const row = db.get("SELECT merkle FROM messages_merkles WHERE group_id = ?", [groupId])
+async function loadTrie(db, groupId) {
+	const row = await db.get("SELECT merkle FROM messages_merkles WHERE group_id = ?", [groupId])
 	return row ? JSON.parse(row.merkle) : merkle.emptyTrie()
 }
