@@ -172,7 +172,8 @@
 				"noUselessTernary": "error"
 			},
 			"performance": {
-				"noAccumulatingSpread": "error"
+				"noAccumulatingSpread": "error",
+				"noJsxPropsBind": "off"
 			},
 			"nursery": {
 				"useSortedClasses": "off"

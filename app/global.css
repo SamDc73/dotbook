@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "nativewind/theme";
-
-/* Every design value lives in one file. See theme/tokens.css. */
 @import "./theme/tokens.css";
+
+/* Hour tints are picked at runtime (`text-hour-${hh}`), so Tailwind cannot see
+   them in source. Generate all 24 up front. */
+@source inline("text-hour-{00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23}");
