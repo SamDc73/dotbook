@@ -1,11 +1,11 @@
 import { fuzzyFind } from "@dotbook/core/parse"
 import { Pressable, ScrollView, View } from "react-native"
+import { COMMANDS } from "../db/commands"
 import { Badge } from "./ui/Badge"
 import { Text } from "./ui/Text"
 
-// `/` at column 0 opens this list; V0.1 ships one command, but it is a list.
+// `/` at column 0 opens this list — the commands `app/db/commands.js` runs.
 // Our own ~50 lines — every editor that ships a command menu drags in a document model.
-const COMMANDS = [{ name: "timer", hint: "minutes, or take the suggestion" }]
 const NAMES = COMMANDS.map((command) => command.name)
 
 export function SlashMenu({ query, onPick }) {

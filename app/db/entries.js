@@ -55,7 +55,8 @@ function kindFor(parsed, now) {
 // `source` says where the line came from — `manual` when typed, `voice` when transcribed.
 // `stampedAt`: the moment the app wrote the time into `text` itself because the
 // line was typed without one. Null when the person typed it. Kept, not shown.
-export async function addEntry(db, { day, text, source = "manual", stampedAt = null }) {
+// `kind` overrides the time rule — `/plan` says "this is a plan" whatever the clock.
+export async function addEntry(db, { day, text, source = "manual", stampedAt = null, kind = null }) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
 	const id = uuidv7()
@@ -67,7 +68,7 @@ export async function addEntry(db, { day, text, source = "manual", stampedAt = n
 		ts_start: parsed.tsStart,
 		ts_end: parsed.tsEnd,
 		text,
-		kind: kindFor(parsed, now),
+		kind: kind ?? kindFor(parsed, now),
 		source,
 		created_at: now,
 		deleted_at: null,

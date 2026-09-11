@@ -150,3 +150,36 @@ function clock(epochMs) {
 	const at = new Date(epochMs)
 	return `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}`
 }
+
+// ------------------------------------------------------------------ in the log
+
+// The open todos a day shows at the top of its log: due that day or earlier, so
+// a late one keeps surfacing (V0.1: carry-over is a view). Only for today and
+// days ahead — a past day's log shows what was done, and a closed todo already
+// stands there as its own `done:` / `trashed:` line (see `closeTodo`), which is
+// why nothing closed is queried here: one row per todo, never two.
+export function todosForDay(db, day, today) {
+	if (day < today) return Promise.resolve([])
+	// Today shows everything due by today (late ones included); a day ahead
+	// shows only what is due that day.
+	const from = day === today ? "0000-00-00" : day
+	return db.sql`SELECT t.*,
+			CASE WHEN t.due_on < ${today}
+				THEN CAST(julianday(${today}) - julianday(t.due_on) AS INTEGER)
+			END AS days_late,
+			p.ts_start AS planned_start, p.ts_end AS planned_end
+		FROM todos t
+		LEFT JOIN entries p ON p.id = (
+			SELECT l.entry_id FROM todo_links l JOIN entries e ON e.id = l.entry_id
+			WHERE l.todo_id = t.id AND l.origin = 'planned' AND e.deleted_at IS NULL
+			ORDER BY l.confirmed_at DESC LIMIT 1)
+		WHERE t.status = 'open' AND t.deleted_at IS NULL AND t.due_on >= ${from} AND t.due_on <= ${day}
+		ORDER BY t.due_on, t.created_at`
+}
+
+// The rows the Today list renders: open todos first (tagged `kind: "todo"` so
+// the list can tell them from lines), then the day's lines as they are.
+export function mergeTodosIntoLog(entries, todos) {
+	if (todos.length === 0) return entries
+	return [...todos.map((todo) => ({ ...todo, kind: "todo" })), ...entries]
+}

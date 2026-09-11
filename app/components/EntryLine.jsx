@@ -10,6 +10,7 @@ import { reconcile } from "../notifications/reminders"
 import { TemplateExpansion } from "./TemplateExpansion"
 import { TimePill } from "./TimePill"
 import { TimerLine } from "./TimerLine"
+import { DoneLine } from "./TodoLine"
 import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
 import { Text } from "./ui/Text"
@@ -43,6 +44,10 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 
 	if (entry.kind === "timer") {
 		return <TimerLine entry={entry} onStop={onStop} onAbandon={onLongPress} />
+	}
+	// A closed todo's own line: struck through, with its box.
+	if (entry.source === "todo") {
+		return <DoneLine entry={entry} hour={hour} endHour={endHour} />
 	}
 
 	function press() {
