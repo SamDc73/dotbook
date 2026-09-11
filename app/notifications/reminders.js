@@ -1,8 +1,8 @@
 import { parseLineTime } from "@dotbook/core/parse"
-import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
 import { allReminders, answeredOn } from "../db/reminders"
 import { today } from "../lib/day"
+import * as Notifications from "./native"
 import { CATEGORY, CHANNEL } from "./setup"
 import { clearAll, notifyAt, requestPermission } from "./web"
 

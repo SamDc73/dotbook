@@ -1,5 +1,11 @@
 import { useState } from "react"
-import { Pressable, Text, TextInput, View } from "react-native"
+import { Text, View } from "react-native"
+import { Badge } from "./ui/Badge"
+import { Button } from "./ui/Button"
+import { Input } from "./ui/Input"
+import { Text as Label } from "./ui/Text"
+
+const STYLES = ["notify", "alarm"]
 
 // A template's daily reminder: the time, an optional second nudge (T2, minutes
 // after), and whether it should be a plain notification or an alarm.
@@ -26,20 +32,19 @@ export function ReminderForm({ onSubmit, onCancel }) {
 				keyboardType="number-pad"
 			/>
 			<View className="flex-row gap-xs">
-				<Choice label="Notify" selected={style === "notify"} onPress={() => setStyle("notify")} />
-				<Choice label="Alarm" selected={style === "alarm"} onPress={() => setStyle("alarm")} />
+				{STYLES.map((option) => (
+					<Badge key={option} variant={style === option ? "secondary" : "plain"} onPress={() => setStyle(option)}>
+						{option}
+					</Badge>
+				))}
 			</View>
 			<View className="flex-row justify-end gap-sm">
-				<Pressable onPress={onCancel} className="rounded-md px-sm py-xs active:bg-surface-container">
-					<Text className="text-label text-on-surface-variant">Cancel</Text>
-				</Pressable>
-				<Pressable
-					onPress={submit}
-					disabled={!complete}
-					className={complete ? "rounded-md bg-primary px-sm py-xs" : "rounded-md bg-surface-variant px-sm py-xs"}
-				>
-					<Text className={complete ? "text-label text-on-primary" : "text-label text-on-surface-variant"}>Save</Text>
-				</Pressable>
+				<Button variant="text" onPress={onCancel}>
+					<Label>Cancel</Label>
+				</Button>
+				<Button onPress={submit} disabled={!complete}>
+					<Label>Save</Label>
+				</Button>
 			</View>
 		</View>
 	)
@@ -49,20 +54,7 @@ function Field({ label, ...input }) {
 	return (
 		<View className="gap-2xs">
 			<Text className="text-caption text-on-surface-variant">{label}</Text>
-			<TextInput className="rounded-sm bg-surface px-sm py-xs text-body text-on-surface" {...input} />
+			<Input {...input} />
 		</View>
-	)
-}
-
-function Choice({ label, selected, onPress }) {
-	return (
-		<Pressable
-			onPress={onPress}
-			className={selected ? "rounded-md bg-secondary-container px-sm py-xs" : "rounded-md bg-surface px-sm py-xs"}
-		>
-			<Text className={selected ? "text-label text-on-secondary-container" : "text-label text-on-surface-variant"}>
-				{label}
-			</Text>
-		</Pressable>
 	)
 }

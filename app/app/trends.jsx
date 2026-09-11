@@ -1,12 +1,13 @@
 import { MIN_PAIRS } from "@dotbook/core/analysis"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { ChevronLeft } from "lucide-react-native"
-import { useCallback, useState } from "react"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import { useState } from "react"
 import { Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Sparkline } from "../components/Sparkline"
 import { StatRow } from "../components/StatRow"
+import { Badge } from "../components/ui/Badge"
 import { Icon } from "../components/ui/Icon"
 import { Text } from "../components/ui/Text"
 import { comparisonRows, correlationRows, days, seriesFor, windowRows } from "../db/analysis"
@@ -26,8 +27,7 @@ export default function Trends() {
 
 	const end = today()
 	const start = shiftDay(end, 1 - window)
-	const query = useCallback(() => windowRows(db, start, end), [db, start, end])
-	const rows = useLiveQuery(db, query)
+	const rows = useLiveQuery(["trends", start, end], () => windowRows(db, start, end))
 
 	const series = seriesFor(rows, days(start, end))
 	const pairs = correlationRows(series)
@@ -46,21 +46,14 @@ export default function Trends() {
 				<Text variant="subheading">Trends</Text>
 				<View className="ml-auto flex-row gap-xs">
 					{WINDOWS.map((option) => (
-						<Pressable
+						<Badge
 							key={option}
+							variant={option === window ? "primary" : "plain"}
 							onPress={() => setWindow(option)}
-							className={
-								option === window ? "rounded-sm bg-primary-container px-2xs py-3xs" : "rounded-sm px-2xs py-3xs"
-							}
 							accessibilityLabel={`Last ${option} days`}
 						>
-							<Text
-								variant="label"
-								className={option === window ? "text-on-primary-container" : "text-on-surface-variant"}
-							>
-								{option}
-							</Text>
-						</Pressable>
+							{option}
+						</Badge>
 					))}
 				</View>
 			</View>

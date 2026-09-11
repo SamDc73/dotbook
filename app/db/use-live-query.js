@@ -1,25 +1,17 @@
-import { addDatabaseChangeListener } from "expo-sqlite"
-import { useEffect, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 
-// Runs `query(db)` and runs it again whenever any table changes.
-// Wrap `query` in useCallback so it only changes when its inputs do.
-export function useLiveQuery(db, query) {
-	const [rows, setRows] = useState([])
+// A query over the local database that stays current: TanStack Query caches the
+// rows under `key` and LiveQueries (app/_layout.jsx) invalidates every key when
+// the database changes. `key` must name everything `queryFn` reads — the day,
+// the order, the id — exactly like a useEffect dependency list.
+//
+//   const entries = useLiveQuery(["entries", day, order], () => entriesForDay(db, day, order))
 
-	useEffect(() => {
-		let alive = true
-		const run = () =>
-			query(db).then((result) => {
-				if (alive) setRows(result)
-			})
+// Hoisted so a query that has not answered yet hands every caller the same
+// empty array, and nothing downstream re-runs on a fresh `[]` each render.
+const NONE = []
 
-		run()
-		const subscription = addDatabaseChangeListener(run)
-		return () => {
-			alive = false
-			subscription.remove()
-		}
-	}, [db, query])
-
-	return rows
+export function useLiveQuery(key, queryFn, options) {
+	const { data } = useQuery({ queryKey: key, queryFn, ...options })
+	return data ?? NONE
 }

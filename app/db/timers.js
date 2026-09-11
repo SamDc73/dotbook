@@ -1,12 +1,12 @@
 import { localDay, parseLineTime } from "@dotbook/core/parse"
+import Storage from "expo-sqlite/kv-store"
+import { Platform } from "react-native"
+import { uuidv7 } from "uuidv7"
 import {
 	cancelScheduledNotificationAsync,
 	SchedulableTriggerInputTypes,
 	scheduleNotificationAsync,
-} from "expo-notifications"
-import Storage from "expo-sqlite/kv-store"
-import { Platform } from "react-native"
-import { uuidv7 } from "uuidv7"
+} from "../notifications/native"
 import { insertRow, updateRow } from "./sync"
 import { linkTimerToActiveTodo } from "./todos"
 

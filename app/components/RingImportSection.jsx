@@ -1,9 +1,10 @@
 import { detectRingconnFile } from "@dotbook/core/import"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
 import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { View } from "react-native"
 import { importRingconn } from "../db/ringconn"
 import { useLiveQuery } from "../db/use-live-query"
@@ -14,18 +15,18 @@ import { Text } from "./ui/Text"
 // each file reports what it added. Counts only — the trends screen draws them.
 
 const IMPORTED_AT_KEY = "ringconn-imported-at"
+const IMPORTED_AT_QUERY = ["pref", IMPORTED_AT_KEY]
 
 export function RingImportSection() {
 	const db = useSQLiteContext()
+	const queryClient = useQueryClient()
 	const [results, setResults] = useState([]) // [{ name, line }] of the last import
-	const [importedAt, setImportedAt] = useState(null)
 
-	const totalsQuery = useCallback(() => totals(db), [db])
-	const [stored] = useLiveQuery(db, totalsQuery)
-
-	useEffect(() => {
-		Storage.getItemAsync(IMPORTED_AT_KEY).then((at) => at && setImportedAt(Number(at)))
-	}, [])
+	const { data: importedAt = null } = useQuery({
+		queryKey: IMPORTED_AT_QUERY,
+		queryFn: () => Storage.getItemAsync(IMPORTED_AT_KEY).then((at) => (at === null ? null : Number(at))),
+	})
+	const [stored] = useLiveQuery(["ringconn", "totals"], () => totals(db))
 
 	async function pick() {
 		const files = await pickFiles()
@@ -38,8 +39,8 @@ export function RingImportSection() {
 		}
 		setResults(lines)
 		const now = Date.now()
-		setImportedAt(now)
 		Storage.setItemAsync(IMPORTED_AT_KEY, String(now))
+		queryClient.setQueryData(IMPORTED_AT_QUERY, now)
 	}
 
 	return (

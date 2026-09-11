@@ -1,6 +1,10 @@
 import { useState } from "react"
-import { Pressable, Text, TextInput, View } from "react-native"
+import { Text, View } from "react-native"
 import { today } from "../lib/day"
+import { Badge } from "./ui/Badge"
+import { Button } from "./ui/Button"
+import { Input } from "./ui/Input"
+import { Text as Label } from "./ui/Text"
 
 // "class every Tue/Thu at 14:00" as a form. Its output is the `parts` shape
 // core's ruleFromParts takes, plus the line text, an optional duration, and
@@ -15,9 +19,9 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 	const [freq, setFreq] = useState(initial?.parts.freq ?? "weekly")
 	const [byDay, setByDay] = useState(initial?.parts.byDay ?? [])
 	const [interval, setEvery] = useState(String(initial?.parts.interval ?? 1))
-	const [time, setTime] = useState(initial ? clock(initial.parts) : "")
+	const [time, setTime] = useState(() => (initial ? clock(initial.parts) : ""))
 	const [duration, setDuration] = useState(initial?.durationMin ? String(initial.durationMin) : "")
-	const [dtstart, setDtstart] = useState(initial?.parts.dtstart ?? today())
+	const [dtstart, setDtstart] = useState(initial?.parts.dtstart ?? today)
 	const [kind, setKind] = useState(initial?.kind ?? "plan")
 
 	const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(time.trim())
@@ -25,7 +29,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 		text.trim() !== "" && timeMatch !== null && /^\d{4}-\d{2}-\d{2}$/.test(dtstart) && Number(interval) >= 1
 
 	function toggleDay(code) {
-		setByDay(byDay.includes(code) ? byDay.filter((day) => day !== code) : [...byDay, code])
+		setByDay((days) => (days.includes(code) ? days.filter((day) => day !== code) : [...days, code]))
 	}
 
 	function save() {
@@ -47,73 +51,62 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 
 	return (
 		<View className="mx-md mb-sm gap-sm rounded-md bg-surface-container-low p-sm">
-			<TextInput className={FIELD} value={text} onChangeText={setText} placeholder="class" autoFocus />
+			<Input value={text} onChangeText={setText} placeholder="class" autoFocus />
 
 			<Row label="Every">
 				{FREQS.map((value) => (
-					<Chip key={value} selected={freq === value} onPress={() => setFreq(value)}>
+					<Choice key={value} selected={freq === value} onPress={() => setFreq(value)}>
 						{value}
-					</Chip>
+					</Choice>
 				))}
-				<TextInput
-					className={SMALL_FIELD}
-					value={interval}
-					onChangeText={setEvery}
-					keyboardType="number-pad"
-					placeholder="1"
-				/>
+				<Input className={SMALL} value={interval} onChangeText={setEvery} keyboardType="number-pad" placeholder="1" />
 			</Row>
 
 			{freq === "weekly" ? (
 				<Row label="On">
 					{WEEKDAYS.map((code) => (
-						<Chip key={code} selected={byDay.includes(code)} onPress={() => toggleDay(code)}>
+						<Choice key={code} selected={byDay.includes(code)} onPress={() => toggleDay(code)}>
 							{code}
-						</Chip>
+						</Choice>
 					))}
 				</Row>
 			) : null}
 
 			<Row label="At">
-				<TextInput className={SMALL_FIELD} value={time} onChangeText={setTime} placeholder="14:00" />
+				<Input className={SMALL} value={time} onChangeText={setTime} placeholder="14:00" />
 				<Text className="text-caption text-on-surface-variant">for</Text>
-				<TextInput
-					className={SMALL_FIELD}
+				<Input
+					className={SMALL}
 					value={duration}
 					onChangeText={setDuration}
 					keyboardType="number-pad"
 					placeholder="min"
 				/>
 				<Text className="text-caption text-on-surface-variant">from</Text>
-				<TextInput className={SMALL_FIELD} value={dtstart} onChangeText={setDtstart} placeholder="YYYY-MM-DD" />
+				<Input className={SMALL} value={dtstart} onChangeText={setDtstart} placeholder="YYYY-MM-DD" />
 			</Row>
 
 			<Row label="As">
 				{KINDS.map((value) => (
-					<Chip key={value} selected={kind === value} onPress={() => setKind(value)}>
+					<Choice key={value} selected={kind === value} onPress={() => setKind(value)}>
 						{value}
-					</Chip>
+					</Choice>
 				))}
 			</Row>
 
 			<View className="flex-row justify-end gap-xs">
-				<Pressable onPress={onCancel} className="rounded-md px-sm py-2xs active:bg-surface-container">
-					<Text className="text-label text-on-surface-variant">Cancel</Text>
-				</Pressable>
-				<Pressable
-					onPress={save}
-					disabled={!canSave}
-					className={canSave ? "rounded-md bg-primary px-sm py-2xs" : "rounded-md bg-surface-variant px-sm py-2xs"}
-				>
-					<Text className={canSave ? "text-label text-on-primary" : "text-label text-on-surface-variant"}>Save</Text>
-				</Pressable>
+				<Button variant="text" size="sm" onPress={onCancel}>
+					<Label>Cancel</Label>
+				</Button>
+				<Button size="sm" onPress={save} disabled={!canSave}>
+					<Label>Save</Label>
+				</Button>
 			</View>
 		</View>
 	)
 }
 
-const FIELD = "rounded-sm bg-surface px-sm py-2xs text-body text-on-surface"
-const SMALL_FIELD = "rounded-sm bg-surface px-sm py-2xs text-label text-on-surface"
+const SMALL = "py-2xs text-label"
 
 function Row({ label, children }) {
 	return (
@@ -124,16 +117,11 @@ function Row({ label, children }) {
 	)
 }
 
-function Chip({ selected, onPress, children }) {
+function Choice({ selected, onPress, children }) {
 	return (
-		<Pressable
-			onPress={onPress}
-			className={selected ? "rounded-sm bg-primary-container px-2xs py-3xs" : "rounded-sm px-2xs py-3xs"}
-		>
-			<Text className={selected ? "text-label text-on-primary-container" : "text-label text-on-surface-variant"}>
-				{children}
-			</Text>
-		</Pressable>
+		<Badge variant={selected ? "primary" : "plain"} onPress={onPress}>
+			{children}
+		</Badge>
 	)
 }
 

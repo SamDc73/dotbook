@@ -1,6 +1,7 @@
 import { useSQLiteContext } from "expo-sqlite"
-import { Pressable, Text, View } from "react-native"
+import { Text, View } from "react-native"
 import { answerProposal } from "../db/todos"
+import { Badge } from "./ui/Badge"
 
 // Log ranges that look like this todo, waiting for a yes or a no. A proposal is
 // never applied silently (V0.1 → feature 17): "Link" counts the line's time from
@@ -30,12 +31,12 @@ function Proposal({ todoId, entry, db }) {
 			<Text className="flex-1 text-label text-on-surface-variant" numberOfLines={2}>
 				{entry.text}
 			</Text>
-			<Pressable onPress={link} className="rounded-sm bg-primary-container px-2xs py-3xs active:opacity-80">
-				<Text className="text-label text-on-primary-container">Link</Text>
-			</Pressable>
-			<Pressable onPress={notThis} className="rounded-sm px-2xs py-3xs active:bg-surface-container">
-				<Text className="text-label text-on-surface-variant">Not this</Text>
-			</Pressable>
+			<Badge variant="primary" onPress={link}>
+				Link
+			</Badge>
+			<Badge variant="plain" onPress={notThis}>
+				Not this
+			</Badge>
 		</View>
 	)
 }

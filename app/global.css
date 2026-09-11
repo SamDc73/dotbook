@@ -1,4 +1,10 @@
-@import "tailwindcss";
+/* `important`: on the web, react-native-web styles every View and Text with its
+   own unlayered classes (flex-direction: column, padding: 0, …). Tailwind 4
+   puts utilities in `@layer utilities`, and unlayered rules always beat layered
+   ones — so without this our classes lose to react-native-web's defaults and
+   the page renders unstyled. `important` marks every utility !important, which
+   is what NativeWind needs to win. Native ignores the flag. */
+@import "tailwindcss" important;
 @import "nativewind/theme";
 @import "./theme/tokens.css";
 

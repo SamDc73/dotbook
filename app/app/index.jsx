@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
@@ -15,34 +16,36 @@ import { shiftDay, today } from "../lib/day"
 import { saveVoiceNote } from "../voice/notes"
 
 const ORDER_KEY = "entry-order" // "typing" | "chronological"
+const ORDER_QUERY = ["pref", ORDER_KEY]
 
 export default function Today() {
 	const db = useSQLiteContext()
+	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	const [day, setDay] = useState(today)
-	const [order, setOrder] = useState("typing")
 	const [editing, setEditing] = useState(null) // the entry loaded into the composer
 
-	useEffect(() => {
-		Storage.getItemAsync(ORDER_KEY).then((saved) => saved && setOrder(saved))
-	}, [])
+	const { data: order = "typing" } = useQuery({
+		queryKey: ORDER_QUERY,
+		queryFn: () => Storage.getItemAsync(ORDER_KEY).then((saved) => saved ?? "typing"),
+	})
+	const entries = useLiveQuery(["entries", day, order], () => entriesForDay(db, day, order))
 
-	// Recurring rules become lines the first time a day is looked at; the live
-	// query below picks them up through the change listener.
+	// Recurring rules become lines the first time a day is looked at. Today's on
+	// open; any other day when it is navigated to (in `shift`, the interaction).
 	useEffect(() => {
-		materializeDay(db, day)
-	}, [db, day])
-
-	const query = useCallback(() => entriesForDay(db, day, order), [db, day, order])
-	const entries = useLiveQuery(db, query)
+		materializeDay(db, today())
+	}, [db])
 
 	function shift(delta) {
-		setDay(shiftDay(day, delta))
+		const next = shiftDay(day, delta)
+		materializeDay(db, next)
+		setDay(next)
 	}
 
 	function toggleOrder() {
 		const next = order === "chronological" ? "typing" : "chronological"
-		setOrder(next)
+		queryClient.setQueryData(ORDER_QUERY, next)
 		Storage.setItemAsync(ORDER_KEY, next)
 	}
 
@@ -59,26 +62,27 @@ export default function Today() {
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 	}
 
-	function remove(entry) {
-		if (entry.kind === "timer") abandonTimer(db, entry)
-		else deleteEntry(db, entry.id)
-		if (editing?.id === entry.id) setEditing(null)
-	}
+	// The row handlers are stable so the memoised EntryLine rows only re-render
+	// when their own entry changes — a ticking timer row does not redraw the log.
+	const remove = useCallback(
+		(entry) => {
+			if (entry.kind === "timer") abandonTimer(db, entry)
+			else deleteEntry(db, entry.id)
+			setEditing((current) => (current?.id === entry.id ? null : current))
+		},
+		[db]
+	)
+	const confirm = useCallback((entry) => confirmPlan(db, entry.id), [db])
+	const stop = useCallback((entry) => stopTimer(db, entry), [db])
+	const renderEntry = useCallback(
+		({ item }) => (
+			<EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
+		),
+		[remove, confirm, stop]
+	)
 
 	function timer(minutes, text) {
 		startTimer(db, { minutes, text })
-	}
-
-	function confirm(entry) {
-		confirmPlan(db, entry.id)
-	}
-
-	function stop(entry) {
-		stopTimer(db, entry)
-	}
-
-	function renderEntry({ item }) {
-		return <EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
 	}
 
 	return (
@@ -90,7 +94,7 @@ export default function Today() {
 			<DayHeader day={day} order={order} onShiftDay={shift} onToggleOrder={toggleOrder} />
 			<FlatList
 				data={entries}
-				keyExtractor={(entry) => entry.id}
+				keyExtractor={keyOf}
 				renderItem={renderEntry}
 				contentContainerClassName="py-sm"
 				keyboardShouldPersistTaps="handled"
@@ -106,4 +110,8 @@ export default function Today() {
 			<StatusBar style="auto" />
 		</KeyboardAvoidingView>
 	)
+}
+
+function keyOf(entry) {
+	return entry.id
 }

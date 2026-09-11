@@ -1,12 +1,17 @@
-import { CircleCheck, CircleDashed, CircleSlash } from "lucide-react-native"
+import CircleCheck from "lucide-react-native/icons/circle-check"
+import CircleDashed from "lucide-react-native/icons/circle-dashed"
+import CircleSlash from "lucide-react-native/icons/circle-slash"
+import { memo } from "react"
 import { Pressable, Text, View } from "react-native"
+import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
 
 // One habit for one day. Shape carries the state — filled ring kept, ring struck
 // through broken, dashed ring pending — and the word is printed beside it, so it
 // survives with colour removed (AGENTS.md → the palette). A proposal from the
 // classifier is a chip and its reasoning; nothing counts them, nothing nags.
-export function HabitRow({ habit, tick, strip, onCycle, onAccept, onRemove }) {
+// Memoised: it sits in a list.
+export const HabitRow = memo(function HabitRow({ habit, tick, strip, onCycle, onAccept, onRemove }) {
 	const state = tick?.value ?? "pending"
 	const proposed = tick?.by === "llm"
 
@@ -34,11 +39,9 @@ export function HabitRow({ habit, tick, strip, onCycle, onAccept, onRemove }) {
 				<Text className="flex-1 text-body text-on-surface">{habit.name}</Text>
 				<Text className="text-caption text-on-surface-variant">{habit.kind}</Text>
 				{proposed ? (
-					<Pressable onPress={accept} accessibilityLabel="Accept proposal">
-						<Text className="rounded-sm bg-tertiary-container px-2xs text-label text-on-tertiary-container">
-							proposed
-						</Text>
-					</Pressable>
+					<Badge variant="tertiary" onPress={accept} accessibilityLabel="Accept proposal">
+						proposed
+					</Badge>
 				) : null}
 			</View>
 			{proposed ? <Text className="text-caption text-on-surface-variant">{tick.reasoning}</Text> : null}
@@ -49,7 +52,7 @@ export function HabitRow({ habit, tick, strip, onCycle, onAccept, onRemove }) {
 			</View>
 		</Pressable>
 	)
-}
+})
 
 const GLYPH = { kept: CircleCheck, broken: CircleSlash, pending: CircleDashed }
 const COLOUR = { kept: "text-success", broken: "text-error", pending: "text-on-surface-variant" }

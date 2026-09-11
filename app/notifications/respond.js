@@ -1,7 +1,8 @@
 import { localDay } from "@dotbook/core/parse"
-import * as Notifications from "expo-notifications"
 import { addEntry } from "../db/entries"
 import { recordAnswer } from "../db/reminders"
+import { clock } from "../lib/format"
+import * as Notifications from "./native"
 import { reconcile } from "./reminders"
 import { ACTION, CATEGORY } from "./setup"
 
@@ -46,10 +47,4 @@ export async function answerResponse(db, response) {
 		})
 	}
 	await reconcile(db)
-}
-
-// `9:05`, the way a person types it, so the line parses like any other.
-function clock(epochMs) {
-	const at = new Date(epochMs)
-	return `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}`
 }

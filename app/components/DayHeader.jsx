@@ -1,17 +1,15 @@
 import { useRouter } from "expo-router"
-import {
-	ChevronLeft,
-	ChevronRight,
-	CircleCheck,
-	Clock,
-	Crosshair,
-	Layers,
-	List,
-	ListChecks,
-	Repeat,
-	Settings,
-	TrendingUp,
-} from "lucide-react-native"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
+import CircleCheck from "lucide-react-native/icons/circle-check"
+import Clock from "lucide-react-native/icons/clock"
+import Crosshair from "lucide-react-native/icons/crosshair"
+import Layers from "lucide-react-native/icons/layers"
+import List from "lucide-react-native/icons/list"
+import ListChecks from "lucide-react-native/icons/list-checks"
+import Repeat from "lucide-react-native/icons/repeat"
+import Settings from "lucide-react-native/icons/settings"
+import TrendingUp from "lucide-react-native/icons/trending-up"
 import { Pressable, Text, View } from "react-native"
 import { dayLabel } from "../lib/day"
 import { Icon } from "./ui/Icon"

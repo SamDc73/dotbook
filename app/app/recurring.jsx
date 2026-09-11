@@ -3,12 +3,15 @@ import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { ChevronLeft } from "lucide-react-native"
-import { useCallback, useState } from "react"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import { useState } from "react"
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { RecurrenceForm } from "../components/RecurrenceForm"
+import { Badge } from "../components/ui/Badge"
+import { Button } from "../components/ui/Button"
 import { Icon } from "../components/ui/Icon"
+import { Text as Label } from "../components/ui/Text"
 import { addRecurrence, importIcs, recurrences, removeRecurrence, replaceRecurrence } from "../db/recurrences"
 import { useLiveQuery } from "../db/use-live-query"
 
@@ -21,8 +24,7 @@ export default function Recurring() {
 	const [editing, setEditing] = useState(null) // null | "new" | a rule row
 	const [imported, setImported] = useState(null) // { rules, oneOffs } of the last import
 
-	const query = useCallback(() => recurrences(db), [db])
-	const rules = useLiveQuery(db, query)
+	const rules = useLiveQuery(["recurrences"], () => recurrences(db))
 
 	function back() {
 		router.back()
@@ -69,7 +71,7 @@ export default function Recurring() {
 			</View>
 			<FlatList
 				data={rules}
-				keyExtractor={(rule) => rule.id}
+				keyExtractor={keyOf}
 				renderItem={renderItem}
 				keyboardShouldPersistTaps="handled"
 				ListFooterComponent={
@@ -89,15 +91,19 @@ export default function Recurring() {
 				/>
 			)}
 			<View className="flex-row gap-xs bg-surface-container px-md py-sm">
-				<Pressable onPress={startNew} className="rounded-md bg-primary px-sm py-2xs active:opacity-80">
-					<Text className="text-label text-on-primary">New rule</Text>
-				</Pressable>
-				<Pressable onPress={pickIcs} className="rounded-md bg-secondary-container px-sm py-2xs active:opacity-80">
-					<Text className="text-label text-on-secondary-container">Import .ics</Text>
-				</Pressable>
+				<Button size="sm" onPress={startNew}>
+					<Label>New rule</Label>
+				</Button>
+				<Button variant="tonal" size="sm" onPress={pickIcs}>
+					<Label>Import .ics</Label>
+				</Button>
 			</View>
 		</KeyboardAvoidingView>
 	)
+}
+
+function keyOf(rule) {
+	return rule.id
 }
 
 function RuleRow({ rule, onPress, onLongPress }) {
@@ -112,11 +118,7 @@ function RuleRow({ rule, onPress, onLongPress }) {
 			<View className="flex-row items-center gap-xs">
 				<Text className="flex-1 text-body text-on-surface">{rule.text}</Text>
 				<Text className="text-caption text-on-surface-variant">{rule.kind}</Text>
-				{rule.source === "import:ics" ? (
-					<Text className="rounded-sm bg-tertiary-container px-2xs text-label text-on-tertiary-container">
-						import:ics
-					</Text>
-				) : null}
+				{rule.source === "import:ics" ? <Badge variant="tertiary">import:ics</Badge> : null}
 			</View>
 			<Text className="text-label text-on-surface-variant">{describe(rule)}</Text>
 		</Pressable>

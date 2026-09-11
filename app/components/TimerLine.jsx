@@ -1,6 +1,7 @@
-import { Square } from "lucide-react-native"
+import Square from "lucide-react-native/icons/square"
 import { useEffect, useState } from "react"
 import { Pressable, Text, View } from "react-native"
+import { countdown } from "../lib/format"
 import { Icon } from "./ui/Icon"
 
 // A running timer in the log: a live countdown on its own line. Remaining time
@@ -46,11 +47,4 @@ export function TimerLine({ entry, onStop, onAbandon }) {
 			</View>
 		</Pressable>
 	)
-}
-
-// `mm:ss`
-function countdown(ms) {
-	const seconds = Math.ceil(ms / 1000)
-	const minutes = Math.floor(seconds / 60)
-	return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
 }

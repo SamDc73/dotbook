@@ -1,12 +1,13 @@
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
 import { StatusBar } from "expo-status-bar"
-import { ChevronLeft } from "lucide-react-native"
-import { useCallback, useEffect, useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, TextInput, View } from "react-native"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import { useEffect, useState } from "react"
+import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Scrubber } from "../components/Scrubber"
 import { Icon } from "../components/ui/Icon"
+import { Input } from "../components/ui/Input"
 import { activeCountdown, upNext } from "../db/blocks"
 import { addEntry } from "../db/entries"
 import { useLiveQuery } from "../db/use-live-query"
@@ -31,10 +32,9 @@ export default function Focus() {
 	// re-run once a minute. A timer can end mid-minute: it is hidden the second
 	// it ends, and whatever block is underneath appears at the next whole minute.
 	const minute = Math.floor(now / 60000) * 60000
-	const currentQuery = useCallback((database) => activeCountdown(database, minute), [minute])
-	const [current = null] = useLiveQuery(db, currentQuery)
-	const nextQuery = useCallback((database) => upNext(database, minute, today()), [minute])
-	const [next = null] = useLiveQuery(db, nextQuery)
+	const day = today()
+	const [current = null] = useLiveQuery(["blocks", "current", minute], () => activeCountdown(db, minute))
+	const [next = null] = useLiveQuery(["blocks", "next", minute, day], () => upNext(db, minute, day))
 	const ended = current !== null && current.ts_end <= now
 
 	function back() {
@@ -66,8 +66,8 @@ export default function Focus() {
 			<Scrubber current={ended ? null : current} next={next} now={now} />
 
 			<View className="border-t border-outline-variant px-md py-sm">
-				<TextInput
-					className="text-body text-on-surface"
+				<Input
+					className="bg-background"
 					value={text}
 					onChangeText={setText}
 					onSubmitEditing={submit}

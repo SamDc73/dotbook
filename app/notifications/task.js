@@ -1,7 +1,7 @@
-import * as Notifications from "expo-notifications"
 import { openDatabaseAsync } from "expo-sqlite"
 import * as TaskManager from "expo-task-manager"
 import { Platform } from "react-native"
+import * as Notifications from "./native"
 import { answerResponse } from "./respond"
 
 // "Yes" from the shade, app closed. On Android, expo-notifications runs the

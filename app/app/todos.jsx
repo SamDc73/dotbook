@@ -1,69 +1,85 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { ChevronLeft } from "lucide-react-native"
-import { useCallback, useEffect, useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, SectionList, Text, TextInput, View } from "react-native"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import { useCallback, useState } from "react"
+import { KeyboardAvoidingView, Platform, Pressable, SectionList, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { TodoEditor } from "../components/TodoEditor"
 import { TodoRow } from "../components/TodoRow"
+import { Badge } from "../components/ui/Badge"
 import { Icon } from "../components/ui/Icon"
+import { Input } from "../components/ui/Input"
 import { activeTodoId, addTodo, closedTodos, closeTodo, openTodos, setActiveTodo } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
+
+const ACTIVE_QUERY = ["active-todo"]
+const DUE_CHOICES = ["queue", "today", "tomorrow"]
 
 // Three places a todo can live — a date, today, or the queue — and two ways to
 // close. Overdue items surface at the top of every later day until closed; the
 // queue asks nothing of you. See V0.1 → feature 17.
 export default function Todos() {
 	const db = useSQLiteContext()
+	const queryClient = useQueryClient()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const day = today()
 	const [editingId, setEditingId] = useState(null)
 	const [showClosed, setShowClosed] = useState(false)
 	const [text, setText] = useState("")
-	const [due, setDue] = useState("queue") // queue | today | tomorrow
-	const [activeId, setActiveId] = useState(null) // the todo a `/timer` attaches to
+	const [due, setDue] = useState("queue")
 
-	useEffect(() => {
-		activeTodoId().then(setActiveId)
-	}, [])
-
-	const openQuery = useCallback(() => openTodos(db, day), [db, day])
-	const open = useLiveQuery(db, openQuery)
-	const closedQuery = useCallback(() => (showClosed ? closedTodos(db) : Promise.resolve([])), [db, showClosed])
-	const closed = useLiveQuery(db, closedQuery)
+	// The todo a `/timer` attaches to. Lives in kv-store; read here, changed only
+	// through `activate`, which updates the cache in the same step.
+	const { data: activeId = null } = useQuery({ queryKey: ACTIVE_QUERY, queryFn: activeTodoId })
+	const open = useLiveQuery(["todos", "open", day], () => openTodos(db, day))
+	const closed = useLiveQuery(["todos", "closed"], () => closedTodos(db), { enabled: showClosed })
 
 	const sections = [
+		// `filter` already made a fresh array, so sorting it in place mutates nothing shared.
 		{ title: "Late", data: open.filter((todo) => todo.days_late > 0).sort((a, b) => b.days_late - a.days_late) },
 		{ title: "Today", data: open.filter((todo) => todo.due_on === day) },
 		{ title: "Later", data: open.filter((todo) => todo.due_on > day) },
 		{ title: "Queue", data: open.filter((todo) => todo.due_on === null) },
-		{ title: "Closed", data: closed },
+		{ title: "Closed", data: showClosed ? closed : [] },
 	].filter((section) => section.data.length > 0)
 
 	function back() {
 		router.back()
 	}
 	function toggleClosed() {
-		setShowClosed(!showClosed)
+		setShowClosed((shown) => !shown)
 	}
 	function stopEditing() {
 		setEditingId(null)
 	}
-	function startEditing(todo) {
-		setEditingId(todo.id === editingId ? null : todo.id)
-	}
-	function close(todo, status) {
-		closeTodo(db, todo, status, day)
-		if (todo.id === activeId) setActiveId(null)
-	}
+
+	// Stable handlers: TodoRow is memoised. State they need is read at call time
+	// (functional updates, the query cache), so none of them closes over it.
+	const startEditing = useCallback((todo) => {
+		setEditingId((current) => (todo.id === current ? null : todo.id))
+	}, [])
+	const close = useCallback(
+		(todo, status) => {
+			closeTodo(db, todo, status, day)
+			if (queryClient.getQueryData(ACTIVE_QUERY) === todo.id) {
+				setActiveTodo(null)
+				queryClient.setQueryData(ACTIVE_QUERY, null)
+			}
+		},
+		[db, day, queryClient]
+	)
 	// One todo is worked on at a time; tapping the active one clears it.
-	function activate(todo) {
-		const next = todo.id === activeId ? null : todo.id
-		setActiveTodo(next)
-		setActiveId(next)
-	}
+	const activate = useCallback(
+		(todo) => {
+			const next = queryClient.getQueryData(ACTIVE_QUERY) === todo.id ? null : todo.id
+			setActiveTodo(next)
+			queryClient.setQueryData(ACTIVE_QUERY, next)
+		},
+		[queryClient]
+	)
 
 	function add() {
 		if (text.trim() === "") return
@@ -104,7 +120,7 @@ export default function Todos() {
 			</View>
 			<SectionList
 				sections={sections}
-				keyExtractor={(todo) => todo.id}
+				keyExtractor={keyOf}
 				renderItem={renderItem}
 				renderSectionHeader={renderSectionHeader}
 				keyboardShouldPersistTaps="handled"
@@ -115,35 +131,24 @@ export default function Todos() {
 				}
 			/>
 			<View className="flex-row items-center gap-xs bg-surface-container px-md py-sm">
-				<TextInput
-					className="flex-1 text-body text-on-surface"
+				<Input
+					className="flex-1"
 					value={text}
 					onChangeText={setText}
 					onSubmitEditing={add}
 					submitBehavior="submit"
 					placeholder="call the dentist"
 				/>
-				<DueChip value="queue" current={due} onPress={setDue} />
-				<DueChip value="today" current={due} onPress={setDue} />
-				<DueChip value="tomorrow" current={due} onPress={setDue} />
+				{DUE_CHOICES.map((choice) => (
+					<Badge key={choice} variant={choice === due ? "primary" : "plain"} onPress={() => setDue(choice)}>
+						{choice}
+					</Badge>
+				))}
 			</View>
 		</KeyboardAvoidingView>
 	)
 }
 
-function DueChip({ value, current, onPress }) {
-	const selected = value === current
-	function press() {
-		onPress(value)
-	}
-	return (
-		<Pressable
-			onPress={press}
-			className={selected ? "rounded-sm bg-primary-container px-2xs py-3xs" : "rounded-sm px-2xs py-3xs"}
-		>
-			<Text className={selected ? "text-label text-on-primary-container" : "text-label text-on-surface-variant"}>
-				{value}
-			</Text>
-		</Pressable>
-	)
+function keyOf(todo) {
+	return todo.id
 }

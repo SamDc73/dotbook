@@ -1,4 +1,5 @@
 import { View } from "react-native"
+import { clock, countdown, dateLabel } from "../lib/format"
 import { Text } from "./ui/Text"
 
 // The focus view's centre: the block is the track. Everything here is derived
@@ -16,9 +17,9 @@ export function Scrubber({ current, next, now }) {
 				</Text>
 			</View>
 
-			{current !== null && <Countdown current={current} now={now} />}
+			{current !== null ? <Countdown current={current} now={now} /> : null}
 
-			{next !== null && (
+			{next !== null ? (
 				<View className="flex-row gap-md border-t border-outline-variant pt-md">
 					<Text variant="label" className="text-on-surface-variant">
 						UP NEXT
@@ -27,7 +28,7 @@ export function Scrubber({ current, next, now }) {
 						{clock(next.ts_start)} · {next.title}
 					</Text>
 				</View>
-			)}
+			) : null}
 		</View>
 	)
 }
@@ -62,29 +63,4 @@ function Countdown({ current, now }) {
 			</View>
 		</View>
 	)
-}
-
-/** `18:42`, or `1:03:07` once an hour or more is left. */
-function countdown(ms) {
-	const totalSeconds = Math.floor(ms / 1000)
-	const hours = Math.floor(totalSeconds / 3600)
-	const minutes = Math.floor((totalSeconds % 3600) / 60)
-	const seconds = totalSeconds % 60
-	const mmss = `${hours > 0 ? pad(minutes) : minutes}:${pad(seconds)}`
-	return hours > 0 ? `${hours}:${mmss}` : mmss
-}
-
-/** `14:21` — 24-hour wall clock. */
-function clock(ts) {
-	const date = new Date(ts)
-	return `${date.getHours()}:${pad(date.getMinutes())}`
-}
-
-/** `Tue 9 Sep` */
-function dateLabel(ts) {
-	return new Date(ts).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })
-}
-
-function pad(n) {
-	return String(n).padStart(2, "0")
 }

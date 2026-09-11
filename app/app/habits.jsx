@@ -1,12 +1,15 @@
 import { effectiveTick } from "@dotbook/core/habits"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { ChevronLeft, ChevronRight } from "lucide-react-native"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useCallback, useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native"
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { HabitRow } from "../components/HabitRow"
+import { Badge } from "../components/ui/Badge"
 import { Icon } from "../components/ui/Icon"
+import { Input } from "../components/ui/Input"
 import { addHabit, grid, habits, removeHabit, tick, ticksOn, untick } from "../db/habits"
 import { useLiveQuery } from "../db/use-live-query"
 import { dayLabel, shiftDay, today } from "../lib/day"
@@ -27,43 +30,41 @@ export default function Habits() {
 	const [name, setName] = useState("")
 	const [kind, setKind] = useState("do")
 
-	const habitsQuery = useCallback(() => habits(db), [db])
-	const list = useLiveQuery(db, habitsQuery)
-	const ticksQuery = useCallback(() => ticksOn(db, day), [db, day])
-	const ticks = useLiveQuery(db, ticksQuery)
 	const stripStart = shiftDay(day, 1 - STRIP_DAYS)
-	const gridQuery = useCallback(() => grid(db, stripStart, day), [db, stripStart, day])
-	const history = useLiveQuery(db, gridQuery)
+	const list = useLiveQuery(["habits"], () => habits(db))
+	const ticks = useLiveQuery(["habit-ticks", day], () => ticksOn(db, day))
+	const history = useLiveQuery(["habit-grid", stripStart, day], () => grid(db, stripStart, day))
 
+	// Indexed once per render instead of filtering every row for every habit and day.
+	const ticksByHabit = groupBy(ticks, (row) => row.habit_id)
+	const historyByHabitDay = groupBy(history, (row) => `${row.habit_id}|${row.day}`)
 	const days = Array.from({ length: STRIP_DAYS }, (_, i) => shiftDay(stripStart, i))
 
 	function back() {
 		router.back()
 	}
 	function previousDay() {
-		setDay(shiftDay(day, -1))
+		setDay((current) => shiftDay(current, -1))
 	}
 	function nextDay() {
-		setDay(shiftDay(day, 1))
+		setDay((current) => shiftDay(current, 1))
 	}
 	function toggleKind() {
-		setKind(kind === "do" ? "avoid" : "do")
+		setKind((current) => (current === "do" ? "avoid" : "do"))
 	}
 
-	function cycle(habit, current) {
-		const next = NEXT[current?.value ?? "pending"]
-		if (next === null) {
-			untick(db, habit.id, day)
-			return
-		}
-		tick(db, habit.id, day, next)
-	}
-	function accept(habit, proposal) {
-		tick(db, habit.id, day, proposal.value)
-	}
-	function remove(habit) {
-		removeHabit(db, habit.id)
-	}
+	// Stable handlers for the memoised rows; `day` is the only state they need.
+	const cycle = useCallback(
+		(habit, current) => {
+			const next = NEXT[current?.value ?? "pending"]
+			if (next === null) untick(db, habit.id, day)
+			else tick(db, habit.id, day, next)
+		},
+		[db, day]
+	)
+	const accept = useCallback((habit, proposal) => tick(db, habit.id, day, proposal.value), [db, day])
+	const remove = useCallback((habit) => removeHabit(db, habit.id), [db])
+
 	function add() {
 		if (name.trim() === "") return
 		addHabit(db, { name, kind })
@@ -71,15 +72,14 @@ export default function Habits() {
 	}
 
 	function renderHabit({ item }) {
-		const own = (rows) => rows.filter((row) => row.habit_id === item.id)
 		const strip = days.map((d) => ({
 			day: d,
-			value: effectiveTick(own(history).filter((row) => row.day === d))?.value,
+			value: effectiveTick(historyByHabitDay.get(`${item.id}|${d}`) ?? NONE)?.value,
 		}))
 		return (
 			<HabitRow
 				habit={item}
-				tick={effectiveTick(own(ticks))}
+				tick={effectiveTick(ticksByHabit.get(item.id) ?? NONE)}
 				strip={strip}
 				onCycle={cycle}
 				onAccept={accept}
@@ -117,24 +117,42 @@ export default function Habits() {
 			</View>
 			<FlatList
 				data={list}
-				keyExtractor={(habit) => habit.id}
+				keyExtractor={keyOf}
 				renderItem={renderHabit}
 				contentContainerClassName="py-sm"
 				keyboardShouldPersistTaps="handled"
 			/>
 			<View className="flex-row items-center gap-xs bg-surface-container px-md py-sm">
-				<TextInput
-					className="flex-1 text-body text-on-surface"
+				<Input
+					className="flex-1"
 					value={name}
 					onChangeText={setName}
 					onSubmitEditing={add}
 					submitBehavior="submit"
 					placeholder="no porn"
 				/>
-				<Pressable onPress={toggleKind} className="rounded-sm bg-primary-container px-2xs py-3xs">
-					<Text className="text-label text-on-primary-container">{kind}</Text>
-				</Pressable>
+				<Badge variant="primary" onPress={toggleKind}>
+					{kind}
+				</Badge>
 			</View>
 		</KeyboardAvoidingView>
 	)
+}
+
+const NONE = []
+
+function keyOf(habit) {
+	return habit.id
+}
+
+/** rows → Map<key, rows[]>, one pass. */
+function groupBy(rows, keyOfRow) {
+	const groups = new Map()
+	for (const row of rows) {
+		const key = keyOfRow(row)
+		const group = groups.get(key)
+		if (group) group.push(row)
+		else groups.set(key, [row])
+	}
+	return groups
 }

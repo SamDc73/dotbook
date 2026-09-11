@@ -1,19 +1,15 @@
 import { localDay } from "@dotbook/core/parse"
+import { addDays, format, parseISO } from "date-fns"
 
 // Days are local calendar dates as "YYYY-MM-DD" strings — the `entries.day` column.
+// Labels for people live in format.js.
 
 export function today() {
 	return localDay(Date.now())
 }
 
-// Noon avoids DST edges: adding a day at 00:00 can land on 23:00 the same day.
 export function shiftDay(day, delta) {
-	const date = new Date(`${day}T12:00`)
-	date.setDate(date.getDate() + delta)
-	return localDay(date.getTime())
+	return format(addDays(parseISO(day), delta), "yyyy-MM-dd")
 }
 
-export function dayLabel(day) {
-	if (day === today()) return "Today"
-	return new Date(`${day}T12:00`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })
-}
+export { dayLabel } from "./format"

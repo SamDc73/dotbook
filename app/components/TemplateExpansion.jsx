@@ -1,8 +1,11 @@
 import { applyDeviation, diffItems } from "@dotbook/core/templates"
 import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
-import { Pressable, Text, TextInput, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 import { saveDeviation } from "../db/templates"
+import { Button } from "./ui/Button"
+import { Input } from "./ui/Input"
+import { Text as Label } from "./ui/Text"
 
 // What a templated line actually contained: its snapshot with this entry's
 // deviation applied. Editing here changes this entry only — never the version.
@@ -31,14 +34,14 @@ export function TemplateExpansion({ entry }) {
 	if (draft !== null) {
 		return (
 			<View className="mx-md mb-xs gap-xs rounded-md bg-surface-container-low p-sm">
-				<TextInput className="text-body text-on-surface" value={draft} onChangeText={setDraft} multiline autoFocus />
+				<Input value={draft} onChangeText={setDraft} multiline autoFocus />
 				<View className="flex-row justify-end gap-sm">
-					<Pressable onPress={cancel} className="rounded-md px-sm py-xs active:bg-surface-container">
-						<Text className="text-label text-on-surface-variant">Cancel</Text>
-					</Pressable>
-					<Pressable onPress={save} className="rounded-md bg-primary px-sm py-xs">
-						<Text className="text-label text-on-primary">Save</Text>
-					</Pressable>
+					<Button variant="text" size="sm" onPress={cancel}>
+						<Label>Cancel</Label>
+					</Button>
+					<Button size="sm" onPress={save}>
+						<Label>Save</Label>
+					</Button>
 				</View>
 			</View>
 		)
@@ -51,7 +54,7 @@ export function TemplateExpansion({ entry }) {
 					{item}
 				</Text>
 			))}
-			{entry.deviation !== null && <Text className="mt-2xs text-caption text-warning">edited on this day</Text>}
+			{entry.deviation !== null ? <Text className="mt-2xs text-caption text-warning">edited on this day</Text> : null}
 		</Pressable>
 	)
 }

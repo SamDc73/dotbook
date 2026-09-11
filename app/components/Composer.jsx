@@ -1,8 +1,9 @@
 import { MarkdownTextInput } from "@expensify/react-native-live-markdown"
+import { useQuery } from "@tanstack/react-query"
 import { useSQLiteContext } from "expo-sqlite"
 import { styled } from "nativewind"
-import { useEffect, useState } from "react"
-import { View } from "react-native"
+import { useState } from "react"
+import { Platform, View } from "react-native"
 import { suggestions } from "../db/timers"
 import { useTokenColour } from "../lib/use-token-colour"
 import { MicButton } from "./MicButton"
@@ -29,11 +30,11 @@ function parser(text) {
 }
 
 const TIMER = /^\/timer\s+(\d+)\s*$/
+const NO_SUGGESTIONS = []
 
 export function Composer({ day, defaultText = "", editing = false, onSubmit, onTimer }) {
 	const db = useSQLiteContext()
 	const [text, setText] = useState(defaultText)
-	const [offered, setOffered] = useState([])
 	// The recording behind the current text, when it came from the microphone.
 	// Submitted with the line so it is marked `source: voice` and the audio is kept.
 	const [voice, setVoice] = useState(null)
@@ -42,15 +43,23 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 	const menuOpen = text.startsWith("/") && !text.includes(" ")
 	const timerOpen = text.startsWith("/timer")
 
+	// The durations to offer, read when `/timer` is open and re-read when the
+	// database changes (LiveQueries) — the next plan block may have moved.
+	const { data: offered = NO_SUGGESTIONS } = useQuery({
+		queryKey: ["timer-suggestions", day],
+		queryFn: () => suggestions(db, day, Date.now()),
+		enabled: timerOpen,
+	})
+
 	const markdownStyle = {
 		syntax: { color: useTokenColour("--color-on-surface-variant") },
 		code: { color: useTokenColour("--color-primary"), backgroundColor: useTokenColour("--color-primary-container") },
 	}
-
-	useEffect(() => {
-		if (!timerOpen) return
-		suggestions(db, day, Date.now()).then(setOffered)
-	}, [db, day, timerOpen])
+	// On the web live-markdown's input is its own DOM element: className does not
+	// reach it, so the few values it needs come through the same live-token hook.
+	const onSurface = useTokenColour("--color-on-surface")
+	const bodySize = useTokenColour("--text-body")
+	const webStyle = Platform.OS === "web" ? { flex: 1, borderWidth: 0, color: onSurface, fontSize: bodySize } : undefined
 
 	function pickCommand(command) {
 		setText(`/${command.name} `)
@@ -99,9 +108,10 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 		<View className={editing ? "py-sm bg-primary-container" : "py-sm bg-surface-container"}>
 			{menuOpen ? <SlashMenu query={text.slice(1)} onPick={pickCommand} /> : null}
 			{timerOpen ? <TimerSuggestions suggestions={offered} onPick={pickMinutes} /> : null}
-			<View className="flex-row items-center pr-sm">
+			<View className="flex-row items-center pl-md pr-sm">
 				<Input
-					className="flex-1 px-md text-body text-on-surface"
+					className="flex-1 text-body text-on-surface"
+					style={webStyle}
 					value={text}
 					onChangeText={change}
 					onKeyPress={keyPress}

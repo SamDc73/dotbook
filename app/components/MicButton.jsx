@@ -1,5 +1,5 @@
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition"
-import { Mic } from "lucide-react-native"
+import Mic from "lucide-react-native/icons/mic"
 import { useRef, useState } from "react"
 import { Pressable } from "react-native"
 import { available, startListening, stopListening } from "../voice/recognizer"

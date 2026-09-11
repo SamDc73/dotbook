@@ -1,15 +1,14 @@
 import { fuzzyFind } from "@dotbook/core/parse"
 import { Pressable, ScrollView, Text, View } from "react-native"
+import { Badge } from "./ui/Badge"
 
 // `/` at column 0 opens this list; V0.1 ships one command, but it is a list.
-// Our own ~60 lines — every editor that ships a command menu drags in a document model.
+// Our own ~50 lines — every editor that ships a command menu drags in a document model.
 const COMMANDS = [{ name: "timer", hint: "minutes, or take the suggestion" }]
+const NAMES = COMMANDS.map((command) => command.name)
 
 export function SlashMenu({ query, onPick }) {
-	const { ranked } = fuzzyFind(
-		query,
-		COMMANDS.map((command) => command.name)
-	)
+	const { ranked } = fuzzyFind(query, NAMES)
 	const matches = ranked.map((index) => COMMANDS[index])
 
 	return (
@@ -44,19 +43,15 @@ export function TimerSuggestions({ suggestions, onPick }) {
 	return (
 		<ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerClassName="gap-xs px-md pb-2xs">
 			{suggestions.map((suggestion) => (
-				<Chip key={suggestion.label} suggestion={suggestion} onPick={onPick} />
+				<Badge
+					key={suggestion.label}
+					variant="primary"
+					className="rounded-lg px-sm py-2xs"
+					onPress={() => onPick(suggestion.minutes)}
+				>
+					{suggestion.label}
+				</Badge>
 			))}
 		</ScrollView>
-	)
-}
-
-function Chip({ suggestion, onPick }) {
-	function pick() {
-		onPick(suggestion.minutes)
-	}
-	return (
-		<Pressable onPress={pick} className="rounded-lg bg-primary-container px-sm py-2xs active:opacity-80">
-			<Text className="text-label text-on-primary-container">{suggestion.label}</Text>
-		</Pressable>
 	)
 }

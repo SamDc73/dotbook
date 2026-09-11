@@ -1,5 +1,5 @@
-import * as Notifications from "expo-notifications"
 import { Platform } from "react-native"
+import * as Notifications from "./native"
 
 // One-time notification plumbing for Android. Web has its own path in web.js.
 //

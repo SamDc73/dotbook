@@ -1,25 +1,22 @@
 import { nextLabel } from "@dotbook/core/templates"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { Bell, ChevronLeft, Plus, X } from "lucide-react-native"
-import { styled } from "nativewind"
-import { useCallback, useState } from "react"
+import Bell from "lucide-react-native/icons/bell"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
+import Plus from "lucide-react-native/icons/plus"
+import X from "lucide-react-native/icons/x"
+import { useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PromotionCard } from "../components/PromotionCard"
 import { ReminderForm } from "../components/ReminderForm"
 import { TemplateForm } from "../components/TemplateForm"
+import { Icon } from "../components/ui/Icon"
 import { addReminder, remindersFor, removeReminder } from "../db/reminders"
 import { addVersion, createTemplate, decline, overview, promote } from "../db/templates"
 import { useLiveQuery } from "../db/use-live-query"
 import { today } from "../lib/day"
 import { ensurePermission, reconcile } from "../notifications/reminders"
-
-const ICON = { className: { target: "style", nativeStyleMapping: { color: "color" } } }
-const BackIcon = styled(ChevronLeft, ICON)
-const AddIcon = styled(Plus, ICON)
-const BellIcon = styled(Bell, ICON)
-const RemoveIcon = styled(X, ICON)
 
 // Templates and their versions, plus the promotion prompts — computed live from
 // the uses, so there is no stored "pending question" to go stale.
@@ -31,15 +28,13 @@ export default function Templates() {
 	const [adding, setAdding] = useState(false) // the form is open
 	const [remindingId, setRemindingId] = useState(null) // the reminder form is open for this template
 
-	const query = useCallback(() => overview(db, today()), [db])
-	const all = useLiveQuery(db, query)
+	const day = today()
+	const all = useLiveQuery(["templates", "overview", day], () => overview(db, day))
 	const selected = all.find((template) => template.id === selectedId) ?? null
 	const prompted = all.filter((template) => template.candidate !== null)
-	const remindersQuery = useCallback(
-		() => (selectedId ? remindersFor(db, selectedId) : Promise.resolve([])),
-		[db, selectedId]
-	)
-	const reminders = useLiveQuery(db, remindersQuery)
+	const reminders = useLiveQuery(["reminders", "template", selectedId], () => remindersFor(db, selectedId), {
+		enabled: selectedId !== null,
+	})
 
 	function back() {
 		if (adding || remindingId) {
@@ -87,12 +82,12 @@ export default function Templates() {
 		>
 			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
 				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<BackIcon className="text-on-surface-variant" />
+					<Icon as={ChevronLeft} className="text-on-surface-variant" />
 				</Pressable>
 				<Text className="flex-1 text-subheading text-on-surface">{selected ? selected.name : "Templates"}</Text>
-				{!adding && (
+				{adding ? null : (
 					<Pressable onPress={open} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Add">
-						<AddIcon className="text-primary" />
+						<Icon as={Plus} className="text-primary" />
 					</Pressable>
 				)}
 			</View>
@@ -106,17 +101,19 @@ export default function Templates() {
 						onCancel={back}
 					/>
 				) : null}
-				{selected === null &&
-					prompted.map((template) => (
-						<PromotionCard
-							key={template.id}
-							template={template}
-							onAccept={() => promote(db, template, template.candidate)}
-							onDecline={() => decline(db, template, template.candidate)}
-						/>
-					))}
-				{selected === null &&
-					all.map((template) => <TemplateRow key={template.id} template={template} onPress={setSelectedId} />)}
+				{selected === null
+					? prompted.map((template) => (
+							<PromotionCard
+								key={template.id}
+								template={template}
+								onAccept={() => promote(db, template, template.candidate)}
+								onDecline={() => decline(db, template, template.candidate)}
+							/>
+						))
+					: null}
+				{selected === null
+					? all.map((template) => <TemplateRow key={template.id} template={template} onPress={setSelectedId} />)
+					: null}
 				{selected?.versions.map((version) => (
 					<VersionCard key={version.id} version={version} current={version.id === selected.current?.id} />
 				))}
@@ -129,7 +126,7 @@ export default function Templates() {
 								className="rounded-md p-xs active:bg-surface-container"
 								accessibilityLabel="Add reminder"
 							>
-								<BellIcon className="text-primary" />
+								<Icon as={Bell} className="text-primary" />
 							</Pressable>
 						</View>
 						{reminders.map((reminder) => (
@@ -189,7 +186,7 @@ function ReminderRow({ reminder, onRemove }) {
 		<View className="flex-row items-center gap-sm rounded-md bg-surface-container-low px-sm py-xs">
 			<Text className="flex-1 text-body text-on-surface">{parts.join(" · ")}</Text>
 			<Pressable onPress={remove} className="rounded-md p-2xs active:bg-surface-container" accessibilityLabel="Remove">
-				<RemoveIcon className="text-on-surface-variant" />
+				<Icon as={X} className="text-on-surface-variant" />
 			</Pressable>
 		</View>
 	)

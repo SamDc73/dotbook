@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { ChevronLeft } from "lucide-react-native"
+import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { RingImportSection } from "../components/RingImportSection"

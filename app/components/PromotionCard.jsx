@@ -1,5 +1,7 @@
 import { nextLabel } from "@dotbook/core/templates"
-import { Pressable, Text, View } from "react-native"
+import { Text, View } from "react-native"
+import { Button } from "./ui/Button"
+import { Text as Label } from "./ui/Text"
 
 // The one question a repeated deviation earns. It sits here, on a calm surface,
 // never as a modal — and both answers are one tap. See V0.1 → "Promotion rules".
@@ -15,12 +17,12 @@ export function PromotionCard({ template, onAccept, onDecline }) {
 				{candidate.effectiveFrom}?
 			</Text>
 			<View className="flex-row justify-end gap-sm">
-				<Pressable onPress={onDecline} className="rounded-md px-sm py-xs active:bg-surface-container">
-					<Text className="text-label text-on-warning-container">No, keep v{versions[0].label}</Text>
-				</Pressable>
-				<Pressable onPress={onAccept} className="rounded-md bg-primary px-sm py-xs">
-					<Text className="text-label text-on-primary">Make it v{label}</Text>
-				</Pressable>
+				<Button variant="text" onPress={onDecline}>
+					<Label className="text-on-warning-container">No, keep v{versions[0].label}</Label>
+				</Button>
+				<Button onPress={onAccept}>
+					<Label>Make it v{label}</Label>
+				</Button>
 			</View>
 		</View>
 	)
