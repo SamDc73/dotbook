@@ -98,7 +98,7 @@ export function detectRingconnFile(headerLine) {
  * @returns {{ kind: "activity" | "sleep" | "vitals" | null, rows: object[] }}
  */
 export function parseRingconnCsv(text, { tzid }) {
-	const kind = detectRingconnFile(text.slice(0, text.indexOf("\n")))
+	const kind = detectRingconnFile(text.split(/\r?\n/, 1)[0])
 	if (kind === null) {
 		return { kind, rows: [] }
 	}

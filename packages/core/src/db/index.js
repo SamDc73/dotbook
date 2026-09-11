@@ -166,6 +166,89 @@ export const MIGRATIONS = [
 			)`,
 		],
 	},
+	{
+		// Phase 4 — reminders and alarms. See V0.1 → feature 4 and feature 13.
+		version: 6,
+		statements: [
+			// A reminder belongs to a template (daily at `at`, HH:MM local) or to
+			// one entry (a plan block, fired at its ts_start) — never both.
+			// `escalation_min` is T2: the second nudge, that many minutes after T1,
+			// sent only on days nothing was answered.
+			`CREATE TABLE reminders (
+				id             TEXT PRIMARY KEY,
+				template_id    TEXT REFERENCES templates (id),
+				entry_id       TEXT REFERENCES entries (id),
+				at             TEXT,
+				escalation_min INTEGER,
+				style          TEXT    NOT NULL DEFAULT 'notify',
+				created_at     INTEGER NOT NULL,
+				deleted_at     INTEGER,
+				CHECK ((template_id IS NULL) <> (entry_id IS NULL))
+			)`,
+			"CREATE INDEX reminders_by_template ON reminders (template_id)",
+			"CREATE INDEX reminders_by_entry ON reminders (entry_id)",
+			// Every tap on a reminder: yes | not_yet | snooze. `key` names the exact
+			// notification fire that was answered, so the same tap arriving twice
+			// (foreground listener and background task) is stored once.
+			`CREATE TABLE reminder_answers (
+				id          TEXT PRIMARY KEY,
+				reminder_id TEXT    NOT NULL REFERENCES reminders (id),
+				day         TEXT    NOT NULL,
+				answer      TEXT    NOT NULL,
+				answered_at INTEGER NOT NULL,
+				key         TEXT    NOT NULL UNIQUE
+			)`,
+			"CREATE INDEX reminder_answers_by_day ON reminder_answers (reminder_id, day)",
+		],
+	},
+	{
+		// Phase 12 — RingConn CSV import. See V0.1 → feature 8 and ringconn/README.md.
+		// Observations, not caches: they come from a device, so they are kept and
+		// synced like entries. Each table's natural key is the CSV's own key, which
+		// is what makes re-importing an overlapping export idempotent.
+		version: 7,
+		statements: [
+			// One row per sleep session. A day can hold several (naps), so the key is
+			// the session's exact start, not the date. Minutes as the ring reports them.
+			`CREATE TABLE sleep_sessions (
+				id         TEXT PRIMARY KEY,
+				start_ts   INTEGER NOT NULL UNIQUE,
+				end_ts     INTEGER NOT NULL,
+				asleep_ts  INTEGER,
+				wake_ts    INTEGER,
+				ratio      REAL,
+				asleep_min INTEGER,
+				awake_min  INTEGER,
+				rem_min    INTEGER,
+				light_min  INTEGER,
+				deep_min   INTEGER,
+				source     TEXT    NOT NULL,
+				created_at INTEGER NOT NULL
+			)`,
+			// One row per calendar day.
+			`CREATE TABLE daily_vitals (
+				day        TEXT PRIMARY KEY,
+				avg_hr     INTEGER,
+				min_hr     INTEGER,
+				max_hr     INTEGER,
+				avg_spo2   REAL,
+				min_spo2   REAL,
+				max_spo2   REAL,
+				avg_hrv    INTEGER,
+				min_hrv    INTEGER,
+				max_hrv    INTEGER,
+				source     TEXT    NOT NULL,
+				created_at INTEGER NOT NULL
+			)`,
+			`CREATE TABLE daily_activity (
+				day        TEXT PRIMARY KEY,
+				steps      INTEGER,
+				kcal       INTEGER,
+				source     TEXT    NOT NULL,
+				created_at INTEGER NOT NULL
+			)`,
+		],
+	},
 ]
 
 /** Migrations newer than the database's current `user_version`, oldest first. */
