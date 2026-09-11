@@ -36,6 +36,61 @@ export const SYNCED = {
 		keys: ["recurrence_id", "occurrence_ts"],
 		columns: ["entry_id"],
 	},
+	todos: {
+		keys: ["id"],
+		columns: ["text", "due_on", "status", "closed_at", "created_at", "deleted_at"],
+	},
+	todo_links: {
+		keys: ["todo_id", "entry_id"],
+		columns: ["origin", "confirmed_at"],
+	},
+	reminders: {
+		keys: ["id"],
+		columns: ["template_id", "entry_id", "at", "escalation_min", "style", "created_at", "deleted_at"],
+	},
+	reminder_answers: {
+		keys: ["id"],
+		columns: ["reminder_id", "day", "answer", "answered_at", "key"],
+	},
+	// Ring observations. `voice_notes` is deliberately absent: its audio file
+	// lives on one device, so the row would point at nothing elsewhere.
+	sleep_sessions: {
+		keys: ["id"],
+		columns: [
+			"start_ts",
+			"end_ts",
+			"asleep_ts",
+			"wake_ts",
+			"ratio",
+			"asleep_min",
+			"awake_min",
+			"rem_min",
+			"light_min",
+			"deep_min",
+			"source",
+			"created_at",
+		],
+	},
+	daily_vitals: {
+		keys: ["day"],
+		columns: [
+			"avg_hr",
+			"min_hr",
+			"max_hr",
+			"avg_spo2",
+			"min_spo2",
+			"max_spo2",
+			"avg_hrv",
+			"min_hrv",
+			"max_hrv",
+			"source",
+			"created_at",
+		],
+	},
+	daily_activity: {
+		keys: ["day"],
+		columns: ["steps", "kcal", "source", "created_at"],
+	},
 	// Written by the server (browser time) and, later, the phone (app time).
 	time_rollups: {
 		keys: ["day", "source", "device", "key"],
