@@ -2,6 +2,7 @@ import { useRouter } from "expo-router"
 import { ChevronLeft } from "lucide-react-native"
 import { Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { RingImportSection } from "../components/RingImportSection"
 import { ScreenTimeSection } from "../components/ScreenTimeSection"
 import { ServerSettings } from "../components/ServerSettings"
 import { Icon } from "../components/ui/Icon"
@@ -27,6 +28,7 @@ export default function Settings() {
 			<ScrollView>
 				<ServerSettings />
 				<ScreenTimeSection />
+				<RingImportSection />
 			</ScrollView>
 		</View>
 	)
