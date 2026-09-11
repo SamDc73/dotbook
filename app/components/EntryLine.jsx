@@ -27,7 +27,7 @@ import { Text } from "./ui/Text"
 // row whose entry changed should render again.
 export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, onConfirm, onStop }) {
 	const db = useSQLiteContext()
-	const { timeText, body } = parseLineTime(entry.text, entry.day)
+	const { body } = parseLineTime(entry.text, entry.day)
 	const hour = hourOf(entry.ts_start)
 	const endHour = hourOf(entry.ts_end)
 	const [expanded, setExpanded] = useState(false)
@@ -45,8 +45,9 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 	if (entry.kind === "timer") {
 		return <TimerLine entry={entry} onStop={onStop} onAbandon={onLongPress} />
 	}
-	// A closed todo's own line: struck through, with its box.
-	if (entry.source === "todo") {
+	// A todo's own line — written by the app, or typed in so many words
+	// ("anki deck done") and linked to it: its box, struck when it closed it.
+	if (entry.source === "todo" || entry.todo_role) {
 		return <DoneLine entry={entry} hour={hour} endHour={endHour} />
 	}
 
@@ -79,7 +80,9 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 						◇
 					</Text>
 				) : null}
-				{!passive && timeText !== "" ? <TimePill timeText={timeText} hour={hour} endHour={endHour} /> : null}
+				{!passive && entry.ts_start !== null ? (
+					<TimePill tsStart={entry.ts_start} tsEnd={entry.ts_end} hour={hour} endHour={endHour} />
+				) : null}
 				<Text variant="line" className={bodyClass(isPlan, passive)}>
 					{segments(body).map((part) => (
 						<Text

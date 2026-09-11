@@ -1,6 +1,7 @@
 import { fuzzyFind, localDay, parseLineTime } from "@dotbook/core/parse"
 import Storage from "expo-sqlite/kv-store"
 import { uuidv7 } from "uuidv7"
+import { clock } from "../lib/format"
 import { addEntry } from "./entries"
 import { insertRow, updateRow } from "./sync"
 
@@ -12,7 +13,9 @@ import { insertRow, updateRow } from "./sync"
 // Every open todo, with what the screen shows beside it:
 //   days_late      whole days past `due_on`, null for the queue and for the future
 //   planned_*      the newest live `plan` line linked to it — only when one exists
-//   spent_ms       time attributed through confirmed `timer` / `matched` links
+//   spent_ms       time attributed through confirmed `timer` / `matched` links,
+//                  plus a `started` line to a `finished` line on the same day
+//   started_ts     when a "starting …" line last picked it up — "working on it"
 export function openTodos(db, today) {
 	return db.sql`SELECT t.*,
 			CASE WHEN t.due_on < ${today}
@@ -22,7 +25,15 @@ export function openTodos(db, today) {
 			(SELECT coalesce(sum(e.ts_end - e.ts_start), 0)
 				FROM todo_links l JOIN entries e ON e.id = l.entry_id
 				WHERE l.todo_id = t.id AND l.origin IN ('timer', 'matched') AND l.confirmed_at IS NOT NULL
-					AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL AND e.deleted_at IS NULL) AS spent_ms
+					AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL AND e.deleted_at IS NULL)
+			+ coalesce((SELECT f.ts_start - s.ts_start
+				FROM todo_links lf JOIN entries f ON f.id = lf.entry_id
+				JOIN todo_links ls ON ls.todo_id = lf.todo_id JOIN entries s ON s.id = ls.entry_id
+				WHERE lf.todo_id = t.id AND lf.origin = 'finished' AND ls.origin = 'started'
+					AND f.day = s.day AND f.ts_start > s.ts_start AND f.deleted_at IS NULL AND s.deleted_at IS NULL
+				ORDER BY f.ts_start DESC LIMIT 1), 0) AS spent_ms,
+			(SELECT max(s.ts_start) FROM todo_links ls JOIN entries s ON s.id = ls.entry_id
+				WHERE ls.todo_id = t.id AND ls.origin = 'started' AND s.deleted_at IS NULL) AS started_ts
 		FROM todos t
 		LEFT JOIN entries p ON p.id = (
 			SELECT l.entry_id FROM todo_links l JOIN entries e ON e.id = l.entry_id
@@ -64,8 +75,16 @@ export async function closeTodo(db, todo, status, today) {
 	const now = Date.now()
 	await updateRow(db, "todos", { id: todo.id }, { status, closed_at: now })
 	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
-	const id = await addEntry(db, { day: today, text: `${clock(now)} ${status}: ${todo.text}` })
+	await todoLine(db, today, `${status}: ${todo.text}`, now)
+}
+
+// A line the app writes on a todo's behalf — `21:14 done: write report`,
+// `9:05 started: anki deck` — marked `source: todo` so it is drawn as the
+// todo's own row, struck or not, and never mistaken for something typed.
+async function todoLine(db, day, body, now) {
+	const id = await addEntry(db, { day, text: `${clock(now)} ${body}` })
 	await updateRow(db, "entries", { id }, { source: "todo" })
+	return id
 }
 
 // Scheduling is an ordinary `plan` line linked back to the todo. The window is
@@ -145,10 +164,57 @@ async function link(db, todoId, entryId, origin, confirmedAt) {
 	await insertRow(db, "todo_links", { todo_id: todoId, entry_id: entryId, origin, confirmed_at: confirmedAt })
 }
 
-// `H:MM`, 24-hour, the prefix the line parser reads back.
-function clock(epochMs) {
-	const at = new Date(epochMs)
-	return `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}`
+// ------------------------------------------------------------ said in so many words
+
+// Open todos as the intent matcher wants them: id and text, one query.
+export function openTodosBrief(db) {
+	return db.sql`SELECT id, text FROM todos WHERE status = 'open' AND deleted_at IS NULL ORDER BY created_at`
+}
+
+// Act on what a line said about a todo (todoIntent in @dotbook/core/parse).
+// `todos` is the list the intent's `index` points into; `entryId` is the line
+// that said it, when there is one — it is linked to the todo with the role
+// the words gave it (`started`, `finished`, `trashed`), confirmed at once.
+// V0.1 wants fuzzy matches proposed, never applied; a person writing "anki
+// deck done" has done the proposing, so these links are the one exception.
+export async function applyTodoIntent(db, intent, todos, { day, entryId = null }) {
+	const now = Date.now()
+	let todo = todos[intent.index] ?? null
+	if (intent.action === "start" && todo === null) {
+		// `/todo starting reply to landlord` with nothing open by that name: it is new.
+		const id = uuidv7()
+		await insertRow(db, "todos", {
+			id,
+			text: intent.rest,
+			due_on: day,
+			status: "open",
+			closed_at: null,
+			created_at: now,
+			deleted_at: null,
+		})
+		todo = { id, text: intent.rest }
+	}
+	if (intent.action === "start") {
+		await setActiveTodo(todo.id)
+		// From `/todo starting …` there is no line yet: write the moment down, the
+		// way `closeTodo` does — it is when the time on this todo begins.
+		const startLine = entryId ?? (await todoLine(db, day, `started: ${todo.text}`, now))
+		await link(db, todo.id, startLine, "started", now)
+		return todo
+	}
+	if (intent.action === "later") {
+		await setDueOn(db, todo.id, intent.dueOn)
+		return todo
+	}
+	// done / trash: closed without a second line — the one that said it stands
+	// for the record, struck (see DoneLine), and carries the time.
+	const status = intent.action === "done" ? "done" : "trashed"
+	await updateRow(db, "todos", { id: todo.id }, { status, closed_at: now })
+	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
+	// `/todo … done` said it without a line of its own: write the record line.
+	const closeLine = entryId ?? (await todoLine(db, day, `${status}: ${todo.text}`, now))
+	await link(db, todo.id, closeLine, status === "done" ? "finished" : "trashed", now)
+	return todo
 }
 
 // ------------------------------------------------------------------ in the log
@@ -167,7 +233,9 @@ export function todosForDay(db, day, today) {
 			CASE WHEN t.due_on < ${today}
 				THEN CAST(julianday(${today}) - julianday(t.due_on) AS INTEGER)
 			END AS days_late,
-			p.ts_start AS planned_start, p.ts_end AS planned_end
+			p.ts_start AS planned_start, p.ts_end AS planned_end,
+			(SELECT max(s.ts_start) FROM todo_links ls JOIN entries s ON s.id = ls.entry_id
+				WHERE ls.todo_id = t.id AND ls.origin = 'started' AND s.deleted_at IS NULL) AS started_ts
 		FROM todos t
 		LEFT JOIN entries p ON p.id = (
 			SELECT l.entry_id FROM todo_links l JOIN entries e ON e.id = l.entry_id

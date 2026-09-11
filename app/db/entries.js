@@ -1,5 +1,6 @@
 import { extractItems, localDay, parseLineTime } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
+import { clock } from "../lib/format"
 import { insertRow, updateRow } from "./sync"
 import { recordUse } from "./templates"
 
@@ -9,12 +10,19 @@ import { recordUse } from "./templates"
 
 // A day's lines with their template use, if any. `snapshot`/`deviation` come back parsed.
 // Two devices can hand out the same seq offline; the id breaks that tie the same way everywhere.
+// `todo_role` / `todo_status` / `todo_text`: set when the line said something
+// about a todo in so many words (`started`, `finished`, `trashed` — see
+// todos.js applyTodoIntent), so the log can draw it as that todo's row.
 export async function entriesForDay(db, day, order) {
-	const rows = await db.sql`SELECT e.*, u.snapshot, u.deviation, t.name AS template_name, v.label AS version_label
+	const rows = await db.sql`SELECT e.*, u.snapshot, u.deviation, t.name AS template_name, v.label AS version_label,
+			tl.origin AS todo_role, td.status AS todo_status, td.text AS todo_text
 		FROM entries e
 		LEFT JOIN template_uses u ON u.entry_id = e.id
 		LEFT JOIN templates t ON t.id = u.template_id
 		LEFT JOIN template_versions v ON v.id = u.version_id
+		LEFT JOIN todo_links tl ON tl.entry_id = e.id AND tl.origin IN ('started', 'finished', 'trashed')
+			AND tl.confirmed_at IS NOT NULL
+		LEFT JOIN todos td ON td.id = tl.todo_id
 		WHERE e.day = ${day} AND e.deleted_at IS NULL
 		ORDER BY e.seq, e.id`
 	const entries = rows.map(parseUse)
@@ -89,6 +97,17 @@ export async function updateEntryText(db, id, text, day) {
 	}
 	await updateRow(db, "entries", { id }, changes)
 	await annotate(db, id, parsed)
+}
+
+// A line typed today without a time is stamped with the current one — the time
+// is the bullet, so every line gets one. Written into the text itself, exactly
+// as if typed, so the row stays a plain line; `stampedAt` remembers the app did
+// it (kept, not shown). Other days and `/` commands are left alone.
+export function stampedNow(text, day, now = Date.now()) {
+	if (text.startsWith("/") || day !== localDay(now) || parseLineTime(text, day, now).timeText !== "") {
+		return { text, stampedAt: null }
+	}
+	return { text: `${clock(now)} ${text}`, stampedAt: now }
 }
 
 // "Did it?" — a plan line becomes a log line when you confirm what happened.

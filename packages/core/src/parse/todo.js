@@ -20,11 +20,12 @@ const QUEUE_WORD = /\s+(queue|later)$/i
 
 /**
  * @param {string} text  what followed `/todo`
- * @param {{ day: string, now?: number }} options  the day it was typed on, and the clock
+ * @param {{ day: string, now?: number, bare?: boolean }} options  the day it was typed on, the clock,
+ *   and `bare`: let the whole text be the date (`fri` after "later" — see todoIntent.js)
  * @returns {{ text: string, dueOn: string | null, when: string }}
  *   `when` is the phrase that set the date ("" when none), for the caller to show or test.
  */
-export function parseTodo(text, { day, now = Date.now() }) {
+export function parseTodo(text, { day, now = Date.now(), bare = false }) {
 	const trimmed = text.trim()
 
 	const queue = QUEUE_WORD.exec(trimmed)
@@ -32,7 +33,7 @@ export function parseTodo(text, { day, now = Date.now() }) {
 		return { text: trimmed.slice(0, queue.index).trim(), dueOn: null, when: queue[1] }
 	}
 
-	const phrase = trailingDate(trimmed, day, now)
+	const phrase = trailingDate(trimmed, day, now, bare)
 	if (phrase) {
 		return { text: trimmed.slice(0, phrase.index).trim(), dueOn: phrase.day, when: phrase.text }
 	}
@@ -41,10 +42,10 @@ export function parseTodo(text, { day, now = Date.now() }) {
 
 // A date phrase chrono finds that runs to the end of the text, with some
 // text before it — the todo itself.
-function trailingDate(text, day, now) {
+function trailingDate(text, day, now, bare) {
 	const results = chrono.casual.parse(text, referenceOn(day, now), { forwardDate: true })
 	const last = results.at(-1)
-	if (!last || last.index === 0 || last.index + last.text.length !== text.length) {
+	if (!last || (last.index === 0 && !bare) || last.index + last.text.length !== text.length) {
 		return null
 	}
 	return { index: last.index, text: last.text, day: localDay(last.start.date().getTime()) }
