@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, Clock, List } from "lucide-react-native"
+import { useRouter } from "expo-router"
+import { ChevronLeft, ChevronRight, Clock, Layers, List } from "lucide-react-native"
 import { styled } from "nativewind"
 import { Pressable, Text, View } from "react-native"
 import { dayLabel } from "../lib/day"
@@ -9,15 +10,20 @@ const PrevIcon = styled(ChevronLeft, ICON)
 const NextIcon = styled(ChevronRight, ICON)
 const ChronologicalIcon = styled(Clock, ICON)
 const TypingIcon = styled(List, ICON)
+const TemplatesIcon = styled(Layers, ICON)
 
 export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	const OrderIcon = order === "chronological" ? ChronologicalIcon : TypingIcon
+	const router = useRouter()
 
 	function previousDay() {
 		onShiftDay(-1)
 	}
 	function nextDay() {
 		onShiftDay(1)
+	}
+	function openTemplates() {
+		router.push("/templates")
 	}
 
 	return (
@@ -43,6 +49,13 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 				accessibilityLabel={`Order: ${order}`}
 			>
 				<OrderIcon className="text-primary" />
+			</Pressable>
+			<Pressable
+				onPress={openTemplates}
+				className="p-xs rounded-md active:bg-surface-container"
+				accessibilityLabel="Templates"
+			>
+				<TemplatesIcon className="text-on-surface-variant" />
 			</Pressable>
 		</View>
 	)
