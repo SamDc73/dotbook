@@ -58,6 +58,7 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 	// On the web live-markdown's input is its own DOM element: className does not
 	// reach it, so the few values it needs come through the same live-token hook.
 	const onSurface = useTokenColour("--color-on-surface")
+	const placeholderColour = useTokenColour("--color-outline")
 	const bodySize = useTokenColour("--text-body")
 	const bodyFace = useTokenColour("--font-body")
 	const webStyle =
@@ -130,6 +131,7 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 					parser={parser}
 					markdownStyle={markdownStyle}
 					placeholder="7:36 woke up"
+					placeholderTextColor={placeholderColour}
 					autoFocus
 				/>
 				<MicButton onTranscript={setText} onDone={heard} />

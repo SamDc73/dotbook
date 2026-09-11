@@ -27,7 +27,8 @@ import { Text } from "./ui/Text"
 export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, onConfirm, onStop }) {
 	const db = useSQLiteContext()
 	const { timeText, body } = parseLineTime(entry.text, entry.day)
-	const hour = entry.ts_start === null ? null : String(new Date(entry.ts_start).getHours()).padStart(2, "0")
+	const hour = hourOf(entry.ts_start)
+	const endHour = hourOf(entry.ts_end)
 	const [expanded, setExpanded] = useState(false)
 
 	const isPlan = entry.kind === "plan"
@@ -73,7 +74,7 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 						◇
 					</Text>
 				) : null}
-				{!passive && timeText !== "" ? <TimePill timeText={timeText} hour={hour} /> : null}
+				{!passive && timeText !== "" ? <TimePill timeText={timeText} hour={hour} endHour={endHour} /> : null}
 				<Text variant="line" className={bodyClass(isPlan, passive)}>
 					{segments(body).map((part) => (
 						<Text
@@ -134,4 +135,10 @@ function hasPassed(entry) {
 	const moment = entry.ts_end ?? entry.ts_start
 	if (moment !== null) return moment < now
 	return entry.day < localDay(now)
+}
+
+// The zero-padded local hour an instant falls in — the key of its tint token.
+function hourOf(ts) {
+	if (ts === null) return null
+	return String(new Date(ts).getHours()).padStart(2, "0")
 }

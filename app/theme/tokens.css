@@ -155,6 +155,31 @@
 	--color-hour-21: #756f77;
 	--color-hour-22: #667383;
 	--color-hour-23: #667383;
+	/* The hour tint at 14% over the ground — the Wash pill's body. Opaque on purpose. */
+	--color-hour-00-wash: #e3e8ed;
+	--color-hour-01-wash: #e3e8ed;
+	--color-hour-02-wash: #e3e8ed;
+	--color-hour-03-wash: #e3e8ed;
+	--color-hour-04-wash: #e3e8ed;
+	--color-hour-05-wash: #e3e8ed;
+	--color-hour-06-wash: #e5e8ea;
+	--color-hour-07-wash: #e7e7e7;
+	--color-hour-08-wash: #e6e7e8;
+	--color-hour-09-wash: #e6e7e8;
+	--color-hour-10-wash: #e5e8e9;
+	--color-hour-11-wash: #e5e8ea;
+	--color-hour-12-wash: #e5e8ea;
+	--color-hour-13-wash: #e4e8eb;
+	--color-hour-14-wash: #e4e8eb;
+	--color-hour-15-wash: #e4e8eb;
+	--color-hour-16-wash: #e5e8eb;
+	--color-hour-17-wash: #e6e7ea;
+	--color-hour-18-wash: #e7e7e9;
+	--color-hour-19-wash: #e7e7e9;
+	--color-hour-20-wash: #e7e7e9;
+	--color-hour-21-wash: #e5e7eb;
+	--color-hour-22-wash: #e3e8ed;
+	--color-hour-23-wash: #e3e8ed;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -242,5 +267,29 @@
 		--color-hour-21: #9c969e;
 		--color-hour-22: #8c9aab;
 		--color-hour-23: #8d99ab;
+		--color-hour-00-wash: #21262a;
+		--color-hour-01-wash: #21262b;
+		--color-hour-02-wash: #21262b;
+		--color-hour-03-wash: #21262b;
+		--color-hour-04-wash: #21262b;
+		--color-hour-05-wash: #21262b;
+		--color-hour-06-wash: #242627;
+		--color-hour-07-wash: #262524;
+		--color-hour-08-wash: #252524;
+		--color-hour-09-wash: #252525;
+		--color-hour-10-wash: #242626;
+		--color-hour-11-wash: #242626;
+		--color-hour-12-wash: #232627;
+		--color-hour-13-wash: #232628;
+		--color-hour-14-wash: #232628;
+		--color-hour-15-wash: #222629;
+		--color-hour-16-wash: #242528;
+		--color-hour-17-wash: #252527;
+		--color-hour-18-wash: #262526;
+		--color-hour-19-wash: #262526;
+		--color-hour-20-wash: #262526;
+		--color-hour-21-wash: #242528;
+		--color-hour-22-wash: #21262a;
+		--color-hour-23-wash: #21262a;
 	}
 }
