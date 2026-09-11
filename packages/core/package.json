@@ -12,7 +12,8 @@
 		"./habits": "./src/habits/index.js",
 		"./sync": "./src/sync/index.js",
 		"./db": "./src/db/index.js",
-		"./import": "./src/import/index.js"
+		"./import": "./src/import/index.js",
+		"./analysis": "./src/analysis/index.js"
 	},
 	"dependencies": {
 		"@actual-app/crdt": "3.1.2",
