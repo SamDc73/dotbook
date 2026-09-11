@@ -9,12 +9,18 @@ import { runCommand } from "../db/commands"
 import { suggestions } from "../db/timers"
 import { clock } from "../lib/format"
 import { useTokenColour } from "../lib/use-token-colour"
+import { Seam } from "./LogList"
 import { MicButton } from "./MicButton"
 import { SlashMenu, TimerSuggestions } from "./SlashMenu"
 import { Text } from "./ui/Text"
 
-// One line of input. Enter submits and keeps focus, so the next line can start at once.
-// Mount it with a `key` per entry being edited so `defaultText` is picked up fresh.
+// The next line of the log — not a box beneath it. This is the log's last row:
+// same grid as a line, a dashed seam above it when there are lines, none below.
+// Where the pill will be sits a ghost pill — a dashed hairline around the
+// current minute, muted — until a time is typed with a body, at which point the
+// pill forms inside the input itself and the ghost steps aside. Enter commits
+// the line above and the row is empty again, focus kept. Mount it with a `key`
+// per entry being edited so `defaultText` is picked up fresh.
 //
 // The composer styles text; it does not host views (AGENTS.md). live-markdown's
 // parser tags character ranges with a closed set of types. The time prefix is
@@ -45,7 +51,7 @@ function parser(text) {
 const NO_SUGGESTIONS = []
 const MINUTE_MS = 60 * 1000
 
-export function Composer({ day, defaultText = "", editing = false, onSubmit }) {
+export function Composer({ day, defaultText = "", editing = false, seam = false, onSubmit }) {
 	const db = useSQLiteContext()
 	const [text, setText] = useState(defaultText)
 	// The recording behind the current text, when it came from the microphone.
@@ -66,7 +72,7 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit }) {
 	})
 
 	// The pill inside the input takes the typed hour's tokens; no time typed
-	// yet means no pill, and the line will be stamped with `now` on Enter.
+	// yet means the ghost stays, and the line is stamped with `now` on Enter.
 	const typed = parseLineTime(text, day, now)
 	const hour = String(new Date(typed.tsStart ?? now).getHours()).padStart(2, "0")
 	const markdownStyle = {
@@ -80,13 +86,13 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit }) {
 	// reach it, so the few values it needs come through the same live-token hook.
 	const onSurface = useTokenColour("--color-on-surface")
 	const placeholderColour = useTokenColour("--color-outline")
-	const bodySize = useTokenColour("--text-body")
+	const lineSize = useTokenColour("--text-line")
 	const bodyFace = useTokenColour("--font-body")
 	const webStyle =
 		Platform.OS === "web"
-			? { flex: 1, borderWidth: 0, outlineStyle: "none", color: onSurface, fontSize: bodySize, fontFamily: bodyFace }
+			? { flex: 1, borderWidth: 0, outlineStyle: "none", color: onSurface, fontSize: lineSize, fontFamily: bodyFace }
 			: undefined
-	const ghost = !editing && text !== "" && !text.startsWith("/") && typed.timeText === ""
+	const ghost = !editing && !text.startsWith("/") && typed.timeText === ""
 
 	function pickCommand(command) {
 		setText(`/${command.name} `)
@@ -130,24 +136,21 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit }) {
 	}
 
 	return (
-		<View
-			className={
-				editing
-					? "border-t border-primary-line bg-primary-wash py-sm"
-					: "border-t border-outline-variant bg-surface py-sm"
-			}
-		>
+		<View className={editing ? "bg-primary-wash" : undefined}>
+			{seam ? <Seam /> : null}
 			{menuOpen ? <SlashMenu query={text.slice(1)} onPick={pickCommand} /> : null}
 			{timerOpen ? <TimerSuggestions suggestions={offered} onPick={pickMinutes} /> : null}
-			<View className="flex-row items-center gap-xs pl-md pr-sm">
+			<View className="flex-row items-center gap-sm py-xs">
 				{/* The time this line will get if none is typed — a ghost, not yet a pill. */}
 				{ghost ? (
-					<Text variant="mono" className="text-outline">
-						{clock(now)}
-					</Text>
+					<View className="rounded-sm border border-dashed border-outline-variant px-xs py-3xs">
+						<Text variant="mono" className="text-on-surface-variant">
+							{clock(now)}
+						</Text>
+					</View>
 				) : null}
 				<Input
-					className="flex-1 font-body text-body text-on-surface"
+					className="flex-1 font-body text-line text-on-surface"
 					style={webStyle}
 					value={text}
 					onChangeText={change}

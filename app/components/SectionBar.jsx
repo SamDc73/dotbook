@@ -1,36 +1,40 @@
 import { useRouter } from "expo-router"
-import CircleCheck from "lucide-react-native/icons/circle-check"
-import Crosshair from "lucide-react-native/icons/crosshair"
-import Ellipsis from "lucide-react-native/icons/ellipsis"
-import Layers from "lucide-react-native/icons/layers"
-import ListChecks from "lucide-react-native/icons/list-checks"
-import NotebookPen from "lucide-react-native/icons/notebook-pen"
-import Repeat from "lucide-react-native/icons/repeat"
-import Settings from "lucide-react-native/icons/settings"
-import TrendingUp from "lucide-react-native/icons/trending-up"
 import { Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useWide } from "../lib/wide"
+import {
+	FocusGlyph,
+	HabitGlyph,
+	MoreGlyph,
+	RecurringGlyph,
+	SettingsGlyph,
+	TemplatesGlyph,
+	TodayGlyph,
+	TodoGlyph,
+	TrendsGlyph,
+} from "./icons/Glyphs"
 import { Icon } from "./ui/Icon"
 import { Text } from "./ui/Text"
 
-// The template's rail on wide screens, the phone's bottom bar below it — from
-// one list of places. The rail shows everything; a phone bar holds four, so the
-// rest live behind More. The active item is primary, with a 2px rule on the
-// edge that touches the content: left on the rail, top on the bar.
+// The palette page's rail on wide screens and its phone bar below the
+// breakpoint, drawn from one list of places. Copied values: the rail is 11.5rem
+// on the surface with a right hairline, the wordmark in Fraunces, items in the
+// body face at line size with .42rem of vertical padding, the active one on the
+// primary wash in primary, semibold — no rule, no uppercase. The bar is the
+// surface with a top hairline, an icon above a small label, active in primary.
 
 const PLACES = [
-	{ name: "index", href: "/", label: "Today", glyph: NotebookPen },
-	{ name: "todos", href: "/todos", label: "Todos", glyph: ListChecks },
-	{ name: "habits", href: "/habits", label: "Habits", glyph: CircleCheck },
-	{ name: "focus", href: "/focus", label: "Focus", glyph: Crosshair },
-	{ name: "templates", href: "/templates", label: "Templates", glyph: Layers },
-	{ name: "recurring", href: "/recurring", label: "Recurring", glyph: Repeat },
-	{ name: "trends", href: "/trends", label: "Trends", glyph: TrendingUp },
-	{ name: "settings", href: "/settings", label: "Settings", glyph: Settings },
+	{ name: "index", href: "/", label: "Today", glyph: TodayGlyph },
+	{ name: "todos", href: "/todos", label: "Todos", glyph: TodoGlyph },
+	{ name: "habits", href: "/habits", label: "Habits", glyph: HabitGlyph },
+	{ name: "focus", href: "/focus", label: "Focus", glyph: FocusGlyph },
+	{ name: "templates", href: "/templates", label: "Templates", glyph: TemplatesGlyph },
+	{ name: "recurring", href: "/recurring", label: "Recurring", glyph: RecurringGlyph },
+	{ name: "trends", href: "/trends", label: "Trends", glyph: TrendsGlyph },
+	{ name: "settings", href: "/settings", label: "Settings", glyph: SettingsGlyph },
 ]
 const PHONE = ["index", "todos", "habits"]
-const MORE = { name: "more", href: "/more", label: "More", glyph: Ellipsis }
+const MORE = { name: "more", href: "/more", label: "More", glyph: MoreGlyph }
 
 export function SectionBar({ state }) {
 	const wide = useWide()
@@ -42,10 +46,11 @@ export function SectionBar({ state }) {
 function Rail({ current }) {
 	const insets = useSafeAreaInsets()
 	return (
-		<View className="gap-3xs border-r border-outline-variant bg-surface px-sm py-md" style={{ paddingTop: insets.top }}>
-			<Text variant="heading" className="px-sm pb-md">
-				Dotbook
-			</Text>
+		<View
+			className="w-rail gap-3xs border-r border-outline-variant bg-surface px-sm py-md"
+			style={{ paddingTop: insets.top }}
+		>
+			<Text className="font-display-medium text-subheading px-sm pb-md">Dotbook</Text>
 			{PLACES.map((place) => (
 				<RailItem key={place.name} place={place} active={place.name === current} />
 			))}
@@ -62,13 +67,15 @@ function RailItem({ place, active }) {
 			accessibilityState={{ selected: active }}
 			className={
 				active
-					? "flex-row items-center gap-sm rounded-seg bg-primary-wash px-sm py-xs"
-					: "flex-row items-center gap-sm rounded-seg px-sm py-xs active:bg-surface-container"
+					? "flex-row items-center gap-sm rounded-seg bg-primary-wash px-sm py-navitem"
+					: "flex-row items-center gap-sm rounded-seg px-sm py-navitem active:bg-surface-container"
 			}
 		>
-			<View className={active ? "absolute left-0 h-full w-3xs rounded-full bg-primary" : "hidden"} />
-			<Icon as={place.glyph} className={active ? "text-primary" : "text-on-surface-variant"} />
-			<Text variant="eyebrow" className={active ? "text-primary" : undefined}>
+			<Icon
+				as={place.glyph}
+				className={active ? "h-icon w-icon text-primary" : "h-icon w-icon text-on-surface-variant"}
+			/>
+			<Text variant="line" className={active ? "font-body-semibold text-primary" : "text-on-surface-variant"}>
 				{place.label}
 			</Text>
 		</Pressable>
@@ -81,7 +88,10 @@ function Bar({ current }) {
 	// Anything not in the bar is reached through More, which then reads as active.
 	const moreActive = !PHONE.includes(current)
 	return (
-		<View className="flex-row border-t border-outline-variant bg-surface" style={{ paddingBottom: insets.bottom }}>
+		<View
+			className="flex-row border-t border-outline-variant bg-surface px-2xs pt-xs pb-sm"
+			style={{ paddingBottom: insets.bottom }}
+		>
 			{items.map((place) => (
 				<BarItem key={place.name} place={place} active={place.name === current} />
 			))}
@@ -97,14 +107,13 @@ function BarItem({ place, active }) {
 			onPress={() => router.navigate(place.href)}
 			accessibilityRole="tab"
 			accessibilityState={{ selected: active }}
-			className={
-				active
-					? "flex-1 items-center gap-3xs border-t-2 border-primary pt-xs pb-2xs"
-					: "flex-1 items-center gap-3xs border-t-2 border-transparent pt-xs pb-2xs active:bg-surface-container"
-			}
+			className="flex-1 items-center gap-3xs rounded-seg py-xs active:bg-surface-container"
 		>
-			<Icon as={place.glyph} className={active ? "text-primary" : "text-on-surface-variant"} />
-			<Text variant="caption" className={active ? "font-body-semibold text-primary" : "text-on-surface-variant"}>
+			<Icon
+				as={place.glyph}
+				className={active ? "h-icon w-icon text-primary" : "h-icon w-icon text-on-surface-variant"}
+			/>
+			<Text className={active ? "font-body-semibold text-tab text-primary" : "text-tab text-on-surface-variant"}>
 				{place.label}
 			</Text>
 		</Pressable>

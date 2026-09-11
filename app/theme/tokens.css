@@ -68,6 +68,12 @@
 	--radius-seg: 0.4rem;
 	--radius-panel: 0.7rem;
 
+	/* The rail and the bar, as the palette page draws them */
+	--spacing-rail: 11.5rem;
+	--spacing-navitem: 0.42rem;
+	--spacing-icon: 1.15rem;
+	--text-tab: 0.64rem;
+
 	/* Reading width on wide screens — the log never runs the full width of a monitor. */
 	--container-page: 66rem;
 	/* Past this width the rail replaces the bottom bar and gutters widen — the template's 46rem. */

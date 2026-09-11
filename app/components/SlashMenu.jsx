@@ -5,7 +5,10 @@ import { Badge } from "./ui/Badge"
 import { Text } from "./ui/Text"
 
 // `/` at column 0 opens this list — the commands `app/db/commands.js` runs.
-// Our own ~50 lines — every editor that ships a command menu drags in a document model.
+// It is drawn as rows of the log directly above the composer's row, not as a
+// panel: the same seam, the command in mono where the pill would be, its hint
+// as the line. Our own ~50 lines — every editor that ships a command menu
+// drags in a document model.
 const NAMES = COMMANDS.map((command) => command.name)
 
 export function SlashMenu({ query, onPick }) {
@@ -13,12 +16,12 @@ export function SlashMenu({ query, onPick }) {
 	const matches = ranked.map((index) => COMMANDS[index])
 
 	return (
-		<View className="mx-md mb-2xs overflow-hidden rounded-seg border border-outline-variant bg-surface">
+		<View>
 			{matches.map((command) => (
 				<Command key={command.name} command={command} onPick={onPick} />
 			))}
 			{matches.length === 0 ? (
-				<Text variant="label" className="px-sm py-xs text-on-surface-variant">
+				<Text variant="label" className="py-xs text-on-surface-variant">
 					no command
 				</Text>
 			) : null}
@@ -33,24 +36,30 @@ function Command({ command, onPick }) {
 	return (
 		<Pressable
 			onPress={pick}
-			className="flex-row items-baseline gap-sm px-sm py-xs active:bg-surface-container-highest"
+			className="flex-row items-baseline gap-sm border-b border-dashed border-outline-variant py-xs active:bg-primary-wash"
 		>
 			<Text variant="mono" className="text-primary">
 				/{command.name}
 			</Text>
-			<Text variant="label" className="text-on-surface-variant">
+			<Text variant="line" className="text-on-surface-variant">
 				{command.hint}
 			</Text>
 		</Pressable>
 	)
 }
 
-// Durations offered for `/timer`, as chips. Tapping one writes the number into
-// the line — always visible before it commits, never applied silently.
+// Durations offered for `/timer`, as chips on a row of their own. Tapping one
+// writes the number into the line — always visible before it commits, never
+// applied silently.
 export function TimerSuggestions({ suggestions, onPick }) {
 	if (suggestions.length === 0) return null
 	return (
-		<ScrollView horizontal keyboardShouldPersistTaps="handled" contentContainerClassName="gap-xs px-md pb-2xs">
+		<ScrollView
+			horizontal
+			keyboardShouldPersistTaps="handled"
+			className="border-b border-dashed border-outline-variant"
+			contentContainerClassName="gap-xs py-xs"
+		>
 			{suggestions.map((suggestion) => (
 				<Badge
 					key={suggestion.label}

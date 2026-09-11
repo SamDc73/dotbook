@@ -5,7 +5,7 @@ import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
 import Clock from "lucide-react-native/icons/clock"
 import List from "lucide-react-native/icons/list"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Composer } from "../../components/Composer"
@@ -33,6 +33,7 @@ export default function Today() {
 	const insets = useSafeAreaInsets()
 	const [day, setDay] = useState(today)
 	const [editing, setEditing] = useState(null) // the entry loaded into the composer
+	const list = useRef(null)
 
 	const { data: order = "typing" } = useQuery({
 		queryKey: ORDER_QUERY,
@@ -77,6 +78,8 @@ export default function Today() {
 		const stamped = stampedNow(text, day)
 		const id = await addEntry(db, { day, ...stamped, source: voice ? "voice" : "manual" })
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
+		// The composer is the log's last row: keep it in view as the log grows.
+		list.current?.scrollToEnd({ animated: true })
 	}
 
 	// The row handlers are stable so the memoised EntryLine rows only re-render
@@ -117,20 +120,24 @@ export default function Today() {
 			</DateHeadline>
 			<View className="flex-1" {...pan.panHandlers}>
 				<LogList
+					ref={list}
 					data={items}
 					keyExtractor={keyOf}
 					renderItem={renderItem}
 					contentContainerClassName="py-sm"
 					keyboardShouldPersistTaps="handled"
+					ListFooterComponent={
+						<Composer
+							key={editing?.id ?? "new"}
+							day={day}
+							defaultText={editing?.text ?? ""}
+							editing={editing !== null}
+							seam={items.length > 0}
+							onSubmit={submit}
+						/>
+					}
 				/>
 			</View>
-			<Composer
-				key={editing?.id ?? "new"}
-				day={day}
-				defaultText={editing?.text ?? ""}
-				editing={editing !== null}
-				onSubmit={submit}
-			/>
 			<StatusBar style="auto" />
 		</KeyboardAvoidingView>
 	)
