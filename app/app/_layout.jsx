@@ -8,6 +8,7 @@ import { reconcile } from "../notifications/reminders"
 import { answerResponse } from "../notifications/respond"
 import { setupNotifications } from "../notifications/setup"
 import { registerResponseTask } from "../notifications/task"
+import { useSync } from "../sync/use-sync"
 import { MaterialYou } from "../theme/MaterialYou"
 import "../global.css"
 
@@ -21,6 +22,7 @@ export default function RootLayout() {
 				useSuspense
 			>
 				<Reminders />
+				<Sync />
 				<MaterialYou>
 					<Stack screenOptions={{ headerShown: false }} />
 				</MaterialYou>
@@ -57,5 +59,13 @@ function Reminders() {
 		}
 	}, [db])
 
+	return null
+}
+
+// Syncs with the server when there is one configured: on start, on foreground,
+// and after local changes settle. See app/sync.
+function Sync() {
+	const db = useSQLiteContext()
+	useSync(db)
 	return null
 }

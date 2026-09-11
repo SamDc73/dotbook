@@ -7,9 +7,11 @@ import {
 	sameDeviation,
 } from "@dotbook/core/templates"
 import { uuidv7 } from "uuidv7"
+import { insertRow, updateRow } from "./sync"
 
 // Versioned templates: rows in, rows out. `contents`, `snapshot` and `deviation`
 // are JSON text in SQLite; they are parsed here, once, so screens see arrays/objects.
+// Writes go through insertRow/updateRow (db/sync.js) so every device agrees.
 
 export function templates(db) {
 	return db.sql`SELECT * FROM templates WHERE deleted_at IS NULL ORDER BY name`
@@ -24,15 +26,21 @@ export async function versionsOf(db, templateId) {
 
 export async function createTemplate(db, { name, label, effectiveFrom, contents }) {
 	const id = uuidv7()
-	await db.sql`INSERT INTO templates (id, name, created_at) VALUES (${id}, ${name.trim()}, ${Date.now()})`
+	await insertRow(db, "templates", { id, name: name.trim(), created_at: Date.now(), deleted_at: null })
 	await addVersion(db, id, { label, effectiveFrom, contents })
 	return id
 }
 
 export async function addVersion(db, templateId, { label, effectiveFrom, contents }) {
 	const id = uuidv7()
-	await db.sql`INSERT INTO template_versions (id, template_id, label, effective_from, contents, created_at)
-		VALUES (${id}, ${templateId}, ${label.trim()}, ${effectiveFrom}, ${JSON.stringify(contents)}, ${Date.now()})`
+	await insertRow(db, "template_versions", {
+		id,
+		template_id: templateId,
+		label: label.trim(),
+		effective_from: effectiveFrom,
+		contents: JSON.stringify(contents),
+		created_at: Date.now(),
+	})
 	return id
 }
 
@@ -47,24 +55,35 @@ export async function recordUse(db, { id, day, body }) {
 	)
 	const template = all.find((candidate) => candidate.name === name)
 	const version = template ? resolveVersion(await versionsOf(db, template.id), day) : null
+	const existing = await db.sql`SELECT version_id FROM template_uses WHERE entry_id = ${id}`.first()
 
 	if (!version) {
+		// Local only: template_uses has no deleted_at, so this rare edit (a line
+		// that stops naming a template) leaves a stale chip on other devices.
 		await db.sql`DELETE FROM template_uses WHERE entry_id = ${id}`
 		return
 	}
 	// Same version as before: keep the existing snapshot and deviation — they are history.
-	const existing = await db.sql`SELECT version_id FROM template_uses WHERE entry_id = ${id}`.first()
 	if (existing?.version_id === version.id) {
 		return
 	}
-	await db.sql`INSERT OR REPLACE INTO template_uses (entry_id, template_id, version_id, snapshot, deviation)
-		VALUES (${id}, ${template.id}, ${version.id}, ${JSON.stringify(version.contents)}, NULL)`
+	const use = {
+		template_id: template.id,
+		version_id: version.id,
+		snapshot: JSON.stringify(version.contents),
+		deviation: null,
+	}
+	if (existing) {
+		await updateRow(db, "template_uses", { entry_id: id }, use)
+		return
+	}
+	await insertRow(db, "template_uses", { entry_id: id, ...use })
 }
 
 // Rule 2: an edit is a deviation on this entry alone. The version is untouched.
-export async function saveDeviation(db, entryId, deviation) {
+export function saveDeviation(db, entryId, deviation) {
 	const json = deviation ? JSON.stringify(deviation) : null
-	await db.sql`UPDATE template_uses SET deviation = ${json} WHERE entry_id = ${entryId}`
+	return updateRow(db, "template_uses", { entry_id: entryId }, { deviation: json })
 }
 
 // The last uses of one template, newest first — the window the promotion rule counts over.
@@ -105,7 +124,7 @@ export async function promote(db, template, candidate) {
 	const uses = await recentUses(db, template.id, 5)
 	for (const use of uses) {
 		if (sameDeviation(JSON.parse(use.deviation), candidate.deviation)) {
-			await db.sql`UPDATE template_uses SET version_id = ${versionId} WHERE entry_id = ${use.entryId}`
+			await updateRow(db, "template_uses", { entry_id: use.entryId }, { version_id: versionId })
 		}
 	}
 	await answer(db, template.id, candidate.deviation, "promoted")
@@ -117,6 +136,11 @@ export function decline(db, template, candidate) {
 }
 
 function answer(db, templateId, deviation, verdict) {
-	return db.sql`INSERT INTO template_prompts (id, template_id, deviation, answer, answered_at)
-		VALUES (${uuidv7()}, ${templateId}, ${JSON.stringify(deviation)}, ${verdict}, ${Date.now()})`
+	return insertRow(db, "template_prompts", {
+		id: uuidv7(),
+		template_id: templateId,
+		deviation: JSON.stringify(deviation),
+		answer: verdict,
+		answered_at: Date.now(),
+	})
 }

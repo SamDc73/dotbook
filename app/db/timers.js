@@ -7,11 +7,13 @@ import {
 import Storage from "expo-sqlite/kv-store"
 import { Platform } from "react-native"
 import { uuidv7 } from "uuidv7"
+import { insertRow, updateRow } from "./sync"
 import { linkTimerToActiveTodo } from "./todos"
 
 // A timer is a row, not runtime state (AGENTS.md → "Timers are rows"): `kind: timer`
 // with ts_start and ts_end. Remaining time is always ts_end − now, so it survives
-// an app kill, a reboot, and a sync from another device.
+// an app kill, a reboot, and a sync from another device. The row is written
+// through insertRow/updateRow (db/sync.js), which is what makes the last part true.
 
 const MINUTE_MS = 60 * 1000
 
@@ -24,8 +26,18 @@ export async function startTimer(db, { minutes, text }) {
 	const id = uuidv7()
 	const tsEnd = now + minutes * MINUTE_MS
 	const { next } = await db.sql`SELECT coalesce(max(seq), 0) + 1 AS next FROM entries WHERE day = ${day}`.first()
-	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, created_at)
-		VALUES (${id}, ${day}, ${next}, ${now}, ${tsEnd}, ${text}, 'timer', ${now})`
+	await insertRow(db, "entries", {
+		id,
+		day,
+		seq: next,
+		ts_start: now,
+		ts_end: tsEnd,
+		text,
+		kind: "timer",
+		source: "manual",
+		created_at: now,
+		deleted_at: null,
+	})
 	// Working on a todo? Its time is this timer's. See todos.js.
 	await linkTimerToActiveTodo(db, id, now)
 	await notifyAtEnd(id, tsEnd, minutes)
@@ -34,13 +46,13 @@ export async function startTimer(db, { minutes, text }) {
 
 // Completing writes ts_end as it actually happened.
 export async function stopTimer(db, entry) {
-	await db.sql`UPDATE entries SET ts_end = ${Date.now()} WHERE id = ${entry.id}`
+	await updateRow(db, "entries", { id: entry.id }, { ts_end: Date.now() })
 	await cancelEndNotification(entry.id)
 }
 
 // Abandoning is a soft delete, not a silent disappearance.
 export async function abandonTimer(db, entry) {
-	await db.sql`UPDATE entries SET deleted_at = ${Date.now()} WHERE id = ${entry.id}`
+	await updateRow(db, "entries", { id: entry.id }, { deleted_at: Date.now() })
 	await cancelEndNotification(entry.id)
 }
 

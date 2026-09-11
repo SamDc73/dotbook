@@ -1,11 +1,14 @@
 import { extractItems, localDay, parseLineTime } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
+import { insertRow, updateRow } from "./sync"
 import { recordUse } from "./templates"
 
 // Every function here takes the open expo-sqlite database first.
-// `db.sql` is expo-sqlite's tagged template: values are bound, never concatenated.
+// Reads are `db.sql` tagged templates: values are bound, never concatenated.
+// Writes to `entries` go through insertRow/updateRow (db/sync.js) so they sync.
 
 // A day's lines with their template use, if any. `snapshot`/`deviation` come back parsed.
+// Two devices can hand out the same seq offline; the id breaks that tie the same way everywhere.
 export async function entriesForDay(db, day, order) {
 	const rows = await db.sql`SELECT e.*, u.snapshot, u.deviation, t.name AS template_name, v.label AS version_label
 		FROM entries e
@@ -13,7 +16,7 @@ export async function entriesForDay(db, day, order) {
 		LEFT JOIN templates t ON t.id = u.template_id
 		LEFT JOIN template_versions v ON v.id = u.version_id
 		WHERE e.day = ${day} AND e.deleted_at IS NULL
-		ORDER BY e.seq`
+		ORDER BY e.seq, e.id`
 	const entries = rows.map(parseUse)
 	if (order === "chronological") {
 		entries.sort(byTime)
@@ -55,8 +58,18 @@ export async function addEntry(db, { day, text, source = "manual" }) {
 	const parsed = parseLineTime(text, day, now)
 	const id = uuidv7()
 	const { next } = await db.sql`SELECT coalesce(max(seq), 0) + 1 AS next FROM entries WHERE day = ${parsed.day}`.first()
-	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, source, created_at)
-		VALUES (${id}, ${parsed.day}, ${next}, ${parsed.tsStart}, ${parsed.tsEnd}, ${text}, ${kindFor(parsed, now)}, ${source}, ${now})`
+	await insertRow(db, "entries", {
+		id,
+		day: parsed.day,
+		seq: next,
+		ts_start: parsed.tsStart,
+		ts_end: parsed.tsEnd,
+		text,
+		kind: kindFor(parsed, now),
+		source,
+		created_at: now,
+		deleted_at: null,
+	})
 	await annotate(db, id, parsed)
 	return id
 }
@@ -64,28 +77,50 @@ export async function addEntry(db, { day, text, source = "manual" }) {
 export async function updateEntryText(db, id, text, day) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
-	await db.sql`UPDATE entries SET text = ${text}, day = ${parsed.day}, ts_start = ${parsed.tsStart},
-		ts_end = ${parsed.tsEnd}, kind = ${kindFor(parsed, now)} WHERE id = ${id}`
+	await updateRow(
+		db,
+		"entries",
+		{ id },
+		{ text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: kindFor(parsed, now) }
+	)
 	await annotate(db, id, parsed)
 }
 
 // "Did it?" — a plan line becomes a log line when you confirm what happened.
 export function confirmPlan(db, id) {
-	return db.sql`UPDATE entries SET kind = 'log' WHERE id = ${id}`
+	return updateRow(db, "entries", { id }, { kind: "log" })
 }
 
-// Everything derived from a line: quantities, durations, tags (a cache, so
-// replace-all is right) and the template use. The text itself is never rewritten.
+// Everything derived from a line: quantities, durations, tags, and the template
+// use. The text itself is never rewritten.
 async function annotate(db, id, { day, body }) {
+	await extractInto(db, id, body)
+	await recordUse(db, { id, day, body })
+}
+
+// `entry_items` is a derived cache and does not sync, so replace-all is right.
+async function extractInto(db, id, body) {
 	await db.sql`DELETE FROM entry_items WHERE entry_id = ${id}`
 	for (const item of extractItems(body)) {
 		await db.sql`INSERT INTO entry_items (id, entry_id, name, qty, unit, extractor, confidence)
 			VALUES (${uuidv7()}, ${id}, ${item.name}, ${item.qty}, ${item.unit}, ${item.extractor}, ${item.confidence})`
 	}
-	await recordUse(db, { id, day, body })
+}
+
+// Lines that arrived by sync carry their template use already (template_uses
+// syncs too); only the items cache is local to this device, so only it is rebuilt.
+export async function reannotate(db, entryIds) {
+	for (const id of entryIds) {
+		const entry = await db.sql`SELECT text, day, deleted_at FROM entries WHERE id = ${id}`.first()
+		if (!entry || entry.deleted_at !== null) {
+			await db.sql`DELETE FROM entry_items WHERE entry_id = ${id}`
+			continue
+		}
+		await extractInto(db, id, parseLineTime(entry.text, entry.day).body)
+	}
 }
 
 // Soft delete: the row stays so it can still sync and be audited.
-export async function deleteEntry(db, id) {
-	await db.sql`UPDATE entries SET deleted_at = ${Date.now()} WHERE id = ${id}`
+export function deleteEntry(db, id) {
+	return updateRow(db, "entries", { id }, { deleted_at: Date.now() })
 }
