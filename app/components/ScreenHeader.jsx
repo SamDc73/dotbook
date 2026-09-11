@@ -1,24 +1,12 @@
-import { useRouter } from "expo-router"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
-import { Pressable, View } from "react-native"
-import { Icon } from "./ui/Icon"
+import { View } from "react-native"
 import { Text } from "./ui/Text"
 
-// The template's `.head`, for every screen but Today: the one Fraunces heading a
-// screen gets, a muted lede if it has one, a way back, and room for one action.
-export function ScreenHeader({ title, lede = null, onBack, children = null }) {
-	const router = useRouter()
-
-	function back() {
-		if (onBack) onBack()
-		else router.back()
-	}
-
+// The template's `.head`, for a screen that is not day-scoped: the one Fraunces
+// heading it gets, a muted lede if it has one, and room for one action. No way
+// back — these screens are tabs, reached from the rail or the bar.
+export function ScreenHeader({ title, lede = null, children = null }) {
 	return (
 		<View className="flex-row items-end gap-sm border-b border-outline-variant px-md pt-sm pb-md">
-			<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-				<Icon as={ChevronLeft} className="text-on-surface-variant" />
-			</Pressable>
 			<View className="flex-1 gap-3xs">
 				<Text variant="heading">{title}</Text>
 				{lede ? (

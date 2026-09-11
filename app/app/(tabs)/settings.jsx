@@ -1,10 +1,10 @@
 import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { RingImportSection } from "../components/RingImportSection"
-import { ScreenHeader } from "../components/ScreenHeader"
-import { ScreenTimeSection } from "../components/ScreenTimeSection"
-import { ServerSettings } from "../components/ServerSettings"
-import { Panel } from "../components/ui/Panel"
+import { RingImportSection } from "../../components/RingImportSection"
+import { ScreenHeader } from "../../components/ScreenHeader"
+import { ScreenTimeSection } from "../../components/ScreenTimeSection"
+import { ServerSettings } from "../../components/ServerSettings"
+import { Panel } from "../../components/ui/Panel"
 
 // Settings. Each section is its own component in its own panel, so they can be
 // added one at a time.

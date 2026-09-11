@@ -1,19 +1,16 @@
 import { effectiveTick } from "@dotbook/core/habits"
 import { useSQLiteContext } from "expo-sqlite"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
-import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useCallback, useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
+import { FlatList, KeyboardAvoidingView, Platform, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { HabitRow } from "../components/HabitRow"
-import { ScreenHeader } from "../components/ScreenHeader"
-import { Badge } from "../components/ui/Badge"
-import { Icon } from "../components/ui/Icon"
-import { Input } from "../components/ui/Input"
-import { Text } from "../components/ui/Text"
-import { addHabit, grid, habits, removeHabit, tick, ticksOn, untick } from "../db/habits"
-import { useLiveQuery } from "../db/use-live-query"
-import { dayLabel, shiftDay, today } from "../lib/day"
+import { DateHeadline } from "../../components/DateHeadline"
+import { HabitRow } from "../../components/HabitRow"
+import { Badge } from "../../components/ui/Badge"
+import { Input } from "../../components/ui/Input"
+import { addHabit, grid, habits, removeHabit, tick, ticksOn, untick } from "../../db/habits"
+import { useLiveQuery } from "../../db/use-live-query"
+import { shiftDay, today } from "../../lib/day"
+import { useDayNav } from "../../lib/use-day-nav"
 
 const STRIP_DAYS = 14
 
@@ -40,12 +37,9 @@ export default function Habits() {
 	const historyByHabitDay = groupBy(history, (row) => `${row.habit_id}|${row.day}`)
 	const days = Array.from({ length: STRIP_DAYS }, (_, i) => shiftDay(stripStart, i))
 
-	function previousDay() {
-		setDay((current) => shiftDay(current, -1))
-	}
-	function nextDay() {
-		setDay((current) => shiftDay(current, 1))
-	}
+	// Same gestures as Today: swipe, arrow keys, hover chevrons, tap the date.
+	const shift = useCallback((delta) => setDay((current) => shiftDay(current, delta)), [])
+	const pan = useDayNav(shift)
 	function toggleKind() {
 		setKind((current) => (current === "do" ? "avoid" : "do"))
 	}
@@ -91,28 +85,11 @@ export default function Habits() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<ScreenHeader title="Habits" lede="Shape first, colour second — kept, broken, not yet">
-				<View className="flex-row items-center gap-2xs pb-2xs">
-					<Pressable
-						onPress={previousDay}
-						className="rounded-md p-xs active:bg-surface-container"
-						accessibilityLabel="Previous day"
-					>
-						<Icon as={ChevronLeft} className="text-on-surface-variant" />
-					</Pressable>
-					<Text variant="mono" className="text-on-surface-variant">
-						{dayLabel(day)}
-					</Text>
-					<Pressable
-						onPress={nextDay}
-						className="rounded-md p-xs active:bg-surface-container"
-						accessibilityLabel="Next day"
-					>
-						<Icon as={ChevronRight} className="text-on-surface-variant" />
-					</Pressable>
-				</View>
-			</ScreenHeader>
-			<View className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
+			<DateHeadline day={day} section="Habits" onShift={shift} onPick={setDay} />
+			<View
+				className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel"
+				{...pan.panHandlers}
+			>
 				<FlatList
 					data={list}
 					keyExtractor={keyOf}

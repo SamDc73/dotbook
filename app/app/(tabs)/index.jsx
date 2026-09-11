@@ -3,20 +3,26 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
+import Clock from "lucide-react-native/icons/clock"
+import List from "lucide-react-native/icons/list"
 import { useCallback, useEffect, useState } from "react"
-import { KeyboardAvoidingView, Platform } from "react-native"
+import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Composer } from "../components/Composer"
-import { DayHeader } from "../components/DayHeader"
-import { EntryLine } from "../components/EntryLine"
-import { LogList } from "../components/LogList"
-import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../db/entries"
-import { materializeDay } from "../db/recurrences"
-import { abandonTimer, startTimer, stopTimer } from "../db/timers"
-import { useLiveQuery } from "../db/use-live-query"
-import { shiftDay, today } from "../lib/day"
-import { clock } from "../lib/format"
-import { saveVoiceNote } from "../voice/notes"
+import { Composer } from "../../components/Composer"
+import { DateHeadline } from "../../components/DateHeadline"
+import { EntryLine } from "../../components/EntryLine"
+import { LogList } from "../../components/LogList"
+import { TodoLine } from "../../components/TodoLine"
+import { Icon } from "../../components/ui/Icon"
+import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../../db/entries"
+import { materializeDay } from "../../db/recurrences"
+import { abandonTimer, stopTimer } from "../../db/timers"
+import { closeTodo, mergeTodosIntoLog, todosForDay } from "../../db/todos"
+import { useLiveQuery } from "../../db/use-live-query"
+import { shiftDay, today } from "../../lib/day"
+import { clock } from "../../lib/format"
+import { useDayNav } from "../../lib/use-day-nav"
+import { saveVoiceNote } from "../../voice/notes"
 
 const ORDER_KEY = "entry-order" // "typing" | "chronological"
 const ORDER_QUERY = ["pref", ORDER_KEY]
@@ -33,18 +39,25 @@ export default function Today() {
 		queryFn: () => Storage.getItemAsync(ORDER_KEY).then((saved) => saved ?? "typing"),
 	})
 	const entries = useLiveQuery(["entries", day, order], () => entriesForDay(db, day, order))
+	// The day's todos sit in the log as lines with a box where the pill would be;
+	// today's finished ones stay, struck, and are gone from tomorrow's log.
+	const todos = useLiveQuery(["todos", "day", day], () => todosForDay(db, day, today()))
+	const items = mergeTodosIntoLog(entries, todos)
 
-	// Recurring rules become lines the first time a day is looked at. Today's on
-	// open; any other day when it is navigated to (in `shift`, the interaction).
+	// Moving between days: the headline's gestures and keys land here, and a
+	// day is materialised the moment it is looked at.
+	const pick = useCallback(
+		(next) => {
+			materializeDay(db, next)
+			setDay(next)
+		},
+		[db]
+	)
+	const shift = useCallback((delta) => setDay((current) => shiftDay(current, delta)), [])
+	const pan = useDayNav(shift)
 	useEffect(() => {
-		materializeDay(db, today())
-	}, [db])
-
-	function shift(delta) {
-		const next = shiftDay(day, delta)
-		materializeDay(db, next)
-		setDay(next)
-	}
+		materializeDay(db, day)
+	}, [db, day])
 
 	function toggleOrder() {
 		const next = order === "chronological" ? "typing" : "chronological"
@@ -78,16 +91,14 @@ export default function Today() {
 	)
 	const confirm = useCallback((entry) => confirmPlan(db, entry.id), [db])
 	const stop = useCallback((entry) => stopTimer(db, entry), [db])
-	const renderEntry = useCallback(
-		({ item }) => (
-			<EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
-		),
-		[remove, confirm, stop]
+	const closeOne = useCallback((todo, status) => closeTodo(db, todo, status, today()), [db])
+	const renderItem = useCallback(
+		({ item }) => {
+			if (item.kind === "todo") return <TodoLine todo={item} onClose={closeOne} />
+			return <EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
+		},
+		[remove, confirm, stop, closeOne]
 	)
-
-	function timer(minutes, text) {
-		startTimer(db, { minutes, text })
-	}
 
 	return (
 		<KeyboardAvoidingView
@@ -95,29 +106,39 @@ export default function Today() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<DayHeader day={day} order={order} onShiftDay={shift} onToggleOrder={toggleOrder} />
-			<LogList
-				data={entries}
-				keyExtractor={keyOf}
-				renderItem={renderEntry}
-				contentContainerClassName="py-sm"
-				keyboardShouldPersistTaps="handled"
-			/>
+			<DateHeadline day={day} onShift={shift} onPick={pick}>
+				<Pressable
+					onPress={toggleOrder}
+					className="rounded-md p-xs active:bg-surface-container"
+					accessibilityLabel={`Order: ${order}`}
+				>
+					<Icon as={order === "chronological" ? Clock : List} className="text-primary" />
+				</Pressable>
+			</DateHeadline>
+			<View className="flex-1" {...pan.panHandlers}>
+				<LogList
+					data={items}
+					keyExtractor={keyOf}
+					renderItem={renderItem}
+					contentContainerClassName="py-sm"
+					keyboardShouldPersistTaps="handled"
+				/>
+			</View>
 			<Composer
 				key={editing?.id ?? "new"}
 				day={day}
 				defaultText={editing?.text ?? ""}
 				editing={editing !== null}
 				onSubmit={submit}
-				onTimer={timer}
 			/>
 			<StatusBar style="auto" />
 		</KeyboardAvoidingView>
 	)
 }
 
-function keyOf(entry) {
-	return entry.id
+// Todos and entries share the list; their ids come from different tables.
+function keyOf(item) {
+	return item.kind === "todo" ? `todo:${item.id}` : item.id
 }
 
 // A line typed today without a time is stamped with the current one — the time
