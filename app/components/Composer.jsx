@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { View } from "react-native"
 import { suggestions } from "../db/timers"
 import { useTokenColour } from "../lib/use-token-colour"
+import { MicButton } from "./MicButton"
 import { SlashMenu, TimerSuggestions } from "./SlashMenu"
 
 // One line of input. Enter submits and keeps focus, so the next line can start at once.
@@ -33,6 +34,9 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 	const db = useSQLiteContext()
 	const [text, setText] = useState(defaultText)
 	const [offered, setOffered] = useState([])
+	// The recording behind the current text, when it came from the microphone.
+	// Submitted with the line so it is marked `source: voice` and the audio is kept.
+	const [voice, setVoice] = useState(null)
 
 	// `/` only at column 0; a space closes the menu, so mid-line `/` is just a slash.
 	const menuOpen = text.startsWith("/") && !text.includes(" ")
@@ -60,6 +64,19 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 		if (menuOpen && event.nativeEvent.key === "Escape") setText("")
 	}
 
+	function change(next) {
+		setText(next)
+		// Clearing the line drops the recording with it: what is submitted must be what was heard.
+		if (next === "") setVoice(null)
+	}
+
+	// The transcript lands in the line and is NOT submitted: a transcribed line
+	// is an ordinary line, and a misheard word gets fixed before Enter.
+	function heard(take) {
+		setText(take.transcript)
+		setVoice(take)
+	}
+
 	function submit() {
 		const line = text.trim()
 		const timer = TIMER.exec(line)
@@ -73,26 +90,30 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 			setText("/timer ")
 			return
 		}
-		onSubmit(line)
+		onSubmit(line, voice)
 		setText("")
+		setVoice(null)
 	}
 
 	return (
 		<View className={editing ? "py-sm bg-primary-container" : "py-sm bg-surface-container"}>
 			{menuOpen ? <SlashMenu query={text.slice(1)} onPick={pickCommand} /> : null}
 			{timerOpen ? <TimerSuggestions suggestions={offered} onPick={pickMinutes} /> : null}
-			<Input
-				className="px-md text-body text-on-surface"
-				value={text}
-				onChangeText={setText}
-				onKeyPress={keyPress}
-				onSubmitEditing={submit}
-				submitBehavior="submit"
-				parser={parser}
-				markdownStyle={markdownStyle}
-				placeholder="7:36 woke up"
-				autoFocus
-			/>
+			<View className="flex-row items-center pr-sm">
+				<Input
+					className="flex-1 px-md text-body text-on-surface"
+					value={text}
+					onChangeText={change}
+					onKeyPress={keyPress}
+					onSubmitEditing={submit}
+					submitBehavior="submit"
+					parser={parser}
+					markdownStyle={markdownStyle}
+					placeholder="7:36 woke up"
+					autoFocus
+				/>
+				<MicButton onTranscript={setText} onDone={heard} />
+			</View>
 		</View>
 	)
 }

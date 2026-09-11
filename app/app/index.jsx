@@ -11,6 +11,7 @@ import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } fr
 import { abandonTimer, startTimer, stopTimer } from "../db/timers"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
+import { saveVoiceNote } from "../voice/notes"
 
 const ORDER_KEY = "entry-order" // "typing" | "chronological"
 
@@ -38,13 +39,17 @@ export default function Today() {
 		Storage.setItemAsync(ORDER_KEY, next)
 	}
 
-	function submit(text) {
+	// `voice` is set when the line was transcribed: the row is marked `source: voice`
+	// and the recording, when the platform could keep one, is saved against it.
+	async function submit(text, voice) {
 		if (editing) {
 			if (text !== "") updateEntryText(db, editing.id, text, editing.day)
 			setEditing(null)
 			return
 		}
-		if (text !== "") addEntry(db, { day, text })
+		if (text === "") return
+		const id = await addEntry(db, { day, text, source: voice ? "voice" : "manual" })
+		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 	}
 
 	function remove(entry) {

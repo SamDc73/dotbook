@@ -49,13 +49,14 @@ function kindFor(parsed, now) {
 }
 
 // `day` is the day being viewed; a natural prefix (`ytd 9pm …`) may land the line elsewhere.
-export async function addEntry(db, { day, text }) {
+// `source` says where the line came from — `manual` when typed, `voice` when transcribed.
+export async function addEntry(db, { day, text, source = "manual" }) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
 	const id = uuidv7()
 	const { next } = await db.sql`SELECT coalesce(max(seq), 0) + 1 AS next FROM entries WHERE day = ${parsed.day}`.first()
-	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, created_at)
-		VALUES (${id}, ${parsed.day}, ${next}, ${parsed.tsStart}, ${parsed.tsEnd}, ${text}, ${kindFor(parsed, now)}, ${now})`
+	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, source, created_at)
+		VALUES (${id}, ${parsed.day}, ${next}, ${parsed.tsStart}, ${parsed.tsEnd}, ${text}, ${kindFor(parsed, now)}, ${source}, ${now})`
 	await annotate(db, id, parsed)
 	return id
 }
