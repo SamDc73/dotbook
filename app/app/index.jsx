@@ -8,6 +8,7 @@ import { Composer } from "../components/Composer"
 import { DayHeader } from "../components/DayHeader"
 import { EntryLine } from "../components/EntryLine"
 import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../db/entries"
+import { materializeDay } from "../db/recurrences"
 import { abandonTimer, startTimer, stopTimer } from "../db/timers"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
@@ -25,6 +26,12 @@ export default function Today() {
 	useEffect(() => {
 		Storage.getItemAsync(ORDER_KEY).then((saved) => saved && setOrder(saved))
 	}, [])
+
+	// Recurring rules become lines the first time a day is looked at; the live
+	// query below picks them up through the change listener.
+	useEffect(() => {
+		materializeDay(db, day)
+	}, [db, day])
 
 	const query = useCallback(() => entriesForDay(db, day, order), [db, day, order])
 	const entries = useLiveQuery(db, query)
