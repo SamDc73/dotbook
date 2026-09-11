@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Browser time — settings</title>
+		<style>
+			body { font: 15px/1.5 system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+			label { display: block; margin-top: 1rem; }
+			input { display: block; width: 100%; box-sizing: border-box; font: inherit; padding: 0.4rem; margin-top: 0.25rem; }
+			button { font: inherit; padding: 0.5rem 1rem; margin: 1.5rem 0.5rem 0 0; }
+			p { margin: 0.5rem 0; }
+			#error { color: #b00020; }
+		</style>
+	</head>
+	<body>
+		<h1>Browser time</h1>
+		<p>Active time per site is sent to your own server. Nothing is sent until both fields below are filled in.</p>
+		<form id="settings">
+			<label>Server URL <input id="serverUrl" type="url" placeholder="https://tracker.example.com" required /></label>
+			<label>Token <input id="token" type="password" required /></label>
+			<label>Name this browser <input id="device" type="text" /></label>
+			<button type="submit">Save</button>
+			<button type="button" id="send">Send now</button>
+		</form>
+		<p id="status"></p>
+		<p id="error"></p>
+		<script src="options.js"></script>
+	</body>
+</html>
