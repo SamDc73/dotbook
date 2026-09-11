@@ -1,4 +1,5 @@
 import { View } from "react-native"
+import { clock, rangeParts } from "../lib/format"
 import { Text } from "./ui/Text"
 
 // The time is the bullet, and this is its body. Plex Mono, tabular, so a
@@ -8,29 +9,33 @@ import { Text } from "./ui/Text"
 // in the tint), in dark "Stamp" (the tint as the field, digits in the ground).
 // Nothing here knows which theme is on.
 //
-// A range keeps the start hour's field; each time is coloured by its own hour,
-// so in light the day's drift shows inside one pill. The stored text is
-// untouched; `->` is only drawn as an arrow. Never a semantic colour: a time
-// can never be misread as a habit state.
-const SEPARATOR = /\s*(?:->|→|-|–|—)\s*/
-
-export function TimePill({ timeText, hour, endHour }) {
-	const [start, end] = timeText.trim().split(SEPARATOR)
+// The digits come from the row's instants, not from the typed text, so a line
+// typed as `13:05` reads `1:05 pm` and one typed as `7:36` reads `7:36 am`;
+// the stored text is untouched. A range keeps the start hour's field and each
+// time is coloured by its own hour, so in light the day's drift shows inside
+// one pill. Never a semantic colour: a time can never be misread as a state.
+export function TimePill({ tsStart, tsEnd = null, hour, endHour }) {
+	if (tsEnd === null) {
+		return (
+			<View className={`flex-row items-center gap-2xs rounded-sm px-xs py-3xs bg-hour-${hour}-pill`}>
+				<Text variant="mono" className={`text-hour-${hour}-on-pill`}>
+					{clock(tsStart)}
+				</Text>
+			</View>
+		)
+	}
+	const { start, end } = rangeParts(tsStart, tsEnd)
 	return (
 		<View className={`flex-row items-center gap-2xs rounded-sm px-xs py-3xs bg-hour-${hour}-pill`}>
 			<Text variant="mono" className={`text-hour-${hour}-on-pill`}>
 				{start}
 			</Text>
-			{end ? (
-				<Text variant="mono" className={`text-hour-${hour}-on-pill opacity-60`}>
-					→
-				</Text>
-			) : null}
-			{end ? (
-				<Text variant="mono" className={`text-hour-${endHour ?? hour}-on-pill`}>
-					{end}
-				</Text>
-			) : null}
+			<Text variant="mono" className={`text-hour-${hour}-on-pill opacity-60`}>
+				→
+			</Text>
+			<Text variant="mono" className={`text-hour-${endHour ?? hour}-on-pill`}>
+				{end}
+			</Text>
 		</View>
 	)
 }

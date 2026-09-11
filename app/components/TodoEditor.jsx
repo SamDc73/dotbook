@@ -71,7 +71,7 @@ export function TodoEditor({ todo, today, onDone }) {
 					className="flex-1 py-2xs text-label"
 					value={window}
 					onChangeText={setWindow}
-					placeholder="15:30 -> 16:00"
+					placeholder="3:30 pm -> 4:00 pm"
 				/>
 				<Input className="py-2xs text-label" value={day} onChangeText={setDay} placeholder="YYYY-MM-DD" />
 				<Button size="sm" onPress={schedule} disabled={!canSchedule}>

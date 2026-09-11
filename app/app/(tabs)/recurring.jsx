@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/Button"
 import { Text } from "../../components/ui/Text"
 import { addRecurrence, importIcs, recurrences, removeRecurrence, replaceRecurrence } from "../../db/recurrences"
 import { useLiveQuery } from "../../db/use-live-query"
+import { clockAt } from "../../lib/format"
 
 // The rules behind the lines that fill themselves in: class every Tue/Thu,
 // lunch at 5 daily. Tap to edit, long-press to remove, or import a timetable.
@@ -132,7 +133,7 @@ function RuleRow({ rule, onPress, onLongPress }) {
 // The rule as a person would say it: `every Tue, Thu at 14:00`, `every 2 weeks on Mon at 9:00`.
 function describe(rule) {
 	const parts = partsFromRule(rule)
-	const at = `at ${parts.hour}:${String(parts.minute).padStart(2, "0")}`
+	const at = `at ${clockAt(parts.hour, parts.minute)}`
 	const unit = { daily: "day", weekly: "week", monthly: "month" }[parts.freq]
 	const every = parts.interval > 1 ? `every ${parts.interval} ${unit}s` : `${parts.freq}`
 	const days = parts.byDay.map((code) => DAY_NAME[code.slice(-2)]).join(", ")

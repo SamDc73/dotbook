@@ -6,7 +6,7 @@ import { Platform, View } from "react-native"
 import { rollupsOn } from "../db/screenTime"
 import { useLiveQuery } from "../db/use-live-query"
 import { today } from "../lib/day"
-import { minutesLabel } from "../lib/format"
+import { clock, minutesLabel } from "../lib/format"
 import { collectDays, LABELS_KEY, LAST_COLLECTED_KEY } from "../screenTime/collect"
 import { hasPermission, openSettings } from "../screenTime/usage"
 import { Button } from "./ui/Button"
@@ -59,10 +59,7 @@ export function ScreenTimeSection() {
 		<Section>
 			<Row label="Usage access" value={status.granted ? "granted" : "not granted"} />
 			<Row label="Device" value={device} />
-			<Row
-				label="Last collected"
-				value={status.collectedAt === null ? "never" : new Date(status.collectedAt).toLocaleTimeString()}
-			/>
+			<Row label="Last collected" value={status.collectedAt === null ? "never" : clock(status.collectedAt)} />
 			<View className="flex-row gap-sm">
 				<Button variant="tonal" onPress={openSettings}>
 					<Text>Open settings</Text>

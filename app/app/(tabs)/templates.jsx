@@ -18,6 +18,7 @@ import { addReminder, remindersFor, removeReminder } from "../../db/reminders"
 import { addVersion, createTemplate, decline, overview, promote } from "../../db/templates"
 import { useLiveQuery } from "../../db/use-live-query"
 import { today } from "../../lib/day"
+import { clockAt } from "../../lib/format"
 import { ensurePermission, reconcile } from "../../notifications/reminders"
 
 // Templates and their versions, plus the promotion prompts — computed live from
@@ -194,9 +195,10 @@ function VersionCard({ version, current }) {
 	)
 }
 
-// `09:00 · notify · T2 +30m`
+// `9:00 am · notify · T2 +30m`
 function ReminderRow({ reminder, onRemove }) {
-	const parts = [reminder.at, reminder.style]
+	const [hour, minute] = reminder.at.split(":").map(Number)
+	const parts = [clockAt(hour, minute), reminder.style]
 	if (reminder.escalation_min !== null) parts.push(`T2 +${reminder.escalation_min}m`)
 	function remove() {
 		onRemove(reminder)

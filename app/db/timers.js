@@ -2,6 +2,7 @@ import { localDay, parseLineTime } from "@dotbook/core/parse"
 import Storage from "expo-sqlite/kv-store"
 import { Platform } from "react-native"
 import { uuidv7 } from "uuidv7"
+import { clock } from "../lib/format"
 import {
 	cancelScheduledNotificationAsync,
 	SchedulableTriggerInputTypes,
@@ -90,11 +91,6 @@ async function usualMinutes(db) {
 		WHERE kind = 'timer' AND deleted_at IS NULL AND ts_end > ts_start
 		GROUP BY minutes ORDER BY count(*) DESC, max(created_at) DESC LIMIT 1`.first()
 	return row ? Number(row.minutes) : null
-}
-
-function clock(epochMs) {
-	const at = new Date(epochMs)
-	return `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}`
 }
 
 // End-of-timer notification. Native: expo-notifications, one DATE trigger; the

@@ -8,7 +8,7 @@ import { memo, useState } from "react"
 import { Pressable, View } from "react-native"
 import { linkedEntries, proposedLinks } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
-import { clock, minutesLabel, weekday } from "../lib/format"
+import { clock, minutesLabel, range, weekday } from "../lib/format"
 import { TodoProposals } from "./TodoProposals"
 import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
@@ -134,5 +134,5 @@ function lateLabel(daysLate) {
 function windowLabel(todo, today) {
 	const when = todo.planned_day === today ? "Today" : weekday(todo.planned_day)
 	if (todo.planned_end === null) return `${when} ${clock(todo.planned_start)}`
-	return `${when} ${clock(todo.planned_start)} → ${clock(todo.planned_end)}`
+	return `${when} ${range(todo.planned_start, todo.planned_end)}`
 }

@@ -343,6 +343,7 @@ A suggestion is always visible before it commits — never applied silently.
 - SQLite everywhere — phone, web (OPFS), server. No Postgres.
 - **Use UUIDv7 for all ids** — time-sortable, generated client-side so offline writes need no server round-trip
 - **Store all timestamps as UTC epoch milliseconds.** Never naive local times. Keep the original timezone as a separate field when it matters
+- **Show and write clocks 12-hour** (`7:36 am`), only through `app/lib/format.js` (`clock`, `range`, `clockAt`) — and `renderLine` in core's recurrence module, which cannot import the app. Countdowns are durations (`18:42`), not clocks. The parser accepts 24-hour input; nothing renders it
 - **The observation log is append-only.** Corrections are new rows, never mutations. Soft-delete with `deleted_at`, never hard-delete — a hard delete cannot be synced
 - Derived data (habit ticks, correlations, LLM classifications) is **always recomputable** from the log. Never let a derived value become the only copy of a fact
 - Migration safety: one statement per call, explicit transactions, gate by schema version

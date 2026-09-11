@@ -1,6 +1,8 @@
+import { parseLineTime } from "@dotbook/core/parse"
 import { useState } from "react"
 import { View } from "react-native"
 import { today } from "../lib/day"
+import { clockAt } from "../lib/format"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
@@ -19,14 +21,15 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 	const [freq, setFreq] = useState(initial?.parts.freq ?? "weekly")
 	const [byDay, setByDay] = useState(initial?.parts.byDay ?? [])
 	const [interval, setEvery] = useState(String(initial?.parts.interval ?? 1))
-	const [time, setTime] = useState(() => (initial ? clock(initial.parts) : ""))
+	const [time, setTime] = useState(() => (initial ? clockAt(initial.parts.hour, initial.parts.minute) : ""))
 	const [duration, setDuration] = useState(initial?.durationMin ? String(initial.durationMin) : "")
 	const [dtstart, setDtstart] = useState(initial?.parts.dtstart ?? today)
 	const [kind, setKind] = useState(initial?.kind ?? "plan")
 
-	const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(time.trim())
-	const canSave =
-		text.trim() !== "" && timeMatch !== null && /^\d{4}-\d{2}-\d{2}$/.test(dtstart) && Number(interval) >= 1
+	// The time is read by the line parser: `2:00 pm`, `2:00` and `14:00` all work.
+	const parsedTime = parseLineTime(`${time.trim()} x`, today())
+	const at = parsedTime.tsStart === null || parsedTime.tsEnd !== null ? null : new Date(parsedTime.tsStart)
+	const canSave = text.trim() !== "" && at !== null && /^\d{4}-\d{2}-\d{2}$/.test(dtstart) && Number(interval) >= 1
 
 	function toggleDay(code) {
 		setByDay((days) => (days.includes(code) ? days.filter((day) => day !== code) : [...days, code]))
@@ -39,8 +42,8 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 				freq,
 				interval: Number(interval),
 				byDay: freq === "weekly" ? byDay : [],
-				hour: Number(timeMatch[1]),
-				minute: Number(timeMatch[2]),
+				hour: at.getHours(),
+				minute: at.getMinutes(),
 				dtstart,
 				tzid: Intl.DateTimeFormat().resolvedOptions().timeZone,
 			},
@@ -73,7 +76,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 			) : null}
 
 			<Row label="At">
-				<Input className={SMALL} value={time} onChangeText={setTime} placeholder="14:00" />
+				<Input className={SMALL} value={time} onChangeText={setTime} placeholder="2:00 pm" />
 				<Text variant="eyebrow">for</Text>
 				<Input
 					className={SMALL}
@@ -123,8 +126,4 @@ function Choice({ selected, onPress, children }) {
 			{children}
 		</Badge>
 	)
-}
-
-function clock(parts) {
-	return `${parts.hour}:${String(parts.minute).padStart(2, "0")}`
 }

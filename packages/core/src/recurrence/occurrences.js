@@ -52,16 +52,36 @@ export function occurrenceLines(recurrence, day) {
 	})
 }
 
-/** `14:00 class`, or `14:00 -> 15:30 class` — the prefix `parse/time.js` reads back. */
+/**
+ * `2:00 pm class`, or `2:00 -> 3:30 pm class` — written the way a person types
+ * a line, 12-hour, so `parse/time.js` reads it straight back. A range carries
+ * the meridiem once when both ends share it (the parser applies an end-only
+ * meridiem to the start), and on each end when they differ (`11:30 am -> 1:00 pm`).
+ * The same rule as the app's `lib/format.js`; core cannot import the app.
+ */
 export function renderLine(text, tsStart, tsEnd, tzid) {
 	if (tsEnd === null) {
 		return `${clock(tsStart, tzid)} ${text}`
 	}
-	return `${clock(tsStart, tzid)} -> ${clock(tsEnd, tzid)} ${text}`
+	const start = new TZDate(tsStart, tzid)
+	const end = new TZDate(tsEnd, tzid)
+	const shared = meridiem(start) === meridiem(end)
+	const startText = shared ? digits(start) : `${digits(start)} ${meridiem(start)}`
+	return `${startText} -> ${clock(tsEnd, tzid)} ${text}`
 }
 
-/** Wall-clock `H:MM` in `tzid`, 24-hour, no leading zero on the hour. */
+/** Wall clock in `tzid`: `7:36 am`, `1:05 pm`. */
 function clock(epochMs, tzid) {
 	const at = new TZDate(epochMs, tzid)
-	return `${at.getHours()}:${String(at.getMinutes()).padStart(2, "0")}`
+	return `${digits(at)} ${meridiem(at)}`
+}
+
+/** `7:36`, `1:05` — 12-hour digits, no leading zero on the hour. */
+function digits(at) {
+	const hour = at.getHours() % 12 || 12
+	return `${hour}:${String(at.getMinutes()).padStart(2, "0")}`
+}
+
+function meridiem(at) {
+	return at.getHours() < 12 ? "am" : "pm"
 }
