@@ -12,10 +12,11 @@ const LOCK = "dotbook-db"
 
 // Requested once per page load, never per mount. The callback holds the lock
 // by never settling; `acquired` is how the component learns it has it.
+const NEVER = new Promise(() => undefined)
 const acquired = new Promise((resolve) => {
 	navigator.locks.request(LOCK, () => {
 		resolve()
-		return new Promise(() => {})
+		return NEVER
 	})
 })
 
