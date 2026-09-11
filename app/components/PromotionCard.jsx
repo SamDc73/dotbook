@@ -1,27 +1,30 @@
 import { nextLabel } from "@dotbook/core/templates"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { Button } from "./ui/Button"
-import { Text as Label } from "./ui/Text"
+import { Text } from "./ui/Text"
 
-// The one question a repeated deviation earns. It sits here, on a calm surface,
-// never as a modal — and both answers are one tap. See V0.1 → "Promotion rules".
+// The one question a repeated deviation earns. It sits here, on a calm surface —
+// a panel on the pending wash, never a modal — and both answers are one tap.
+// See V0.1 → "Promotion rules".
 export function PromotionCard({ template, onAccept, onDecline }) {
 	const { candidate, versions } = template
 	const label = nextLabel(versions[0].label)
 
 	return (
-		<View className="gap-sm rounded-md bg-warning-container p-md">
-			<Text className="text-label text-on-warning-container">{template.name}</Text>
-			<Text className="text-body text-on-warning-container">
+		<View className="gap-sm rounded-panel border border-warning-line bg-warning-wash p-md">
+			<Text variant="eyebrow" className="text-warning">
+				{template.name}
+			</Text>
+			<Text variant="line">
 				{describe(candidate.deviation)} the last {candidate.days.length} times — make it v{label} from{" "}
 				{candidate.effectiveFrom}?
 			</Text>
 			<View className="flex-row justify-end gap-sm">
 				<Button variant="text" onPress={onDecline}>
-					<Label className="text-on-warning-container">No, keep v{versions[0].label}</Label>
+					<Text>No, keep v{versions[0].label}</Text>
 				</Button>
 				<Button onPress={onAccept}>
-					<Label>Make it v{label}</Label>
+					<Text>Make it v{label}</Text>
 				</Button>
 			</View>
 		</View>

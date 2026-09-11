@@ -7,7 +7,7 @@ import { TextClassContext } from "./textClass"
 // colour replaced by a role token. Put a <Text> inside for the label — it picks
 // up the matching on-colour through TextClassContext.
 
-const buttonVariants = cva("flex-row items-center justify-center gap-xs rounded-lg active:opacity-80", {
+const buttonVariants = cva("flex-row items-center justify-center gap-xs rounded-seg active:opacity-80", {
 	variants: {
 		variant: {
 			filled: "bg-primary",
@@ -24,7 +24,7 @@ const buttonVariants = cva("flex-row items-center justify-center gap-xs rounded-
 	defaultVariants: { variant: "filled", size: "md" },
 })
 
-const labelVariants = cva("text-label", {
+const labelVariants = cva("font-body-semibold text-label", {
 	variants: {
 		variant: {
 			filled: "text-on-primary",

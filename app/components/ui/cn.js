@@ -20,11 +20,20 @@ const TEXT = [
 	"title1",
 	"display2",
 	"display1",
+	"eyebrow",
+	"chip",
+	"time",
+	"line",
 ]
-const RADIUS = ["xs", "sm", "md", "lg", "xl"]
+const RADIUS = ["xs", "sm", "md", "lg", "xl", "chip", "seg", "panel"]
+const FONT = ["display", "display-medium", "body", "body-medium", "body-semibold", "mono", "mono-regular"]
+const TRACKING = ["eyebrow", "chip"]
+const SHADOW = ["panel"]
 
 const twMerge = extendTailwindMerge({
-	extend: { theme: { spacing: SPACING, text: TEXT, radius: RADIUS } },
+	extend: {
+		theme: { spacing: SPACING, text: TEXT, radius: RADIUS, font: FONT, tracking: TRACKING, shadow: SHADOW },
+	},
 })
 
 export function cn(...inputs) {

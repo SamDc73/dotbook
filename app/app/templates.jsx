@@ -1,17 +1,19 @@
 import { nextLabel } from "@dotbook/core/templates"
-import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
 import Bell from "lucide-react-native/icons/bell"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import Plus from "lucide-react-native/icons/plus"
 import X from "lucide-react-native/icons/x"
 import { useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native"
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PromotionCard } from "../components/PromotionCard"
 import { ReminderForm } from "../components/ReminderForm"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { TemplateForm } from "../components/TemplateForm"
+import { Badge } from "../components/ui/Badge"
 import { Icon } from "../components/ui/Icon"
+import { Panel } from "../components/ui/Panel"
+import { Text } from "../components/ui/Text"
 import { addReminder, remindersFor, removeReminder } from "../db/reminders"
 import { addVersion, createTemplate, decline, overview, promote } from "../db/templates"
 import { useLiveQuery } from "../db/use-live-query"
@@ -22,7 +24,6 @@ import { ensurePermission, reconcile } from "../notifications/reminders"
 // the uses, so there is no stored "pending question" to go stale.
 export default function Templates() {
 	const db = useSQLiteContext()
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const [selectedId, setSelectedId] = useState(null) // a template's versions, or the list
 	const [adding, setAdding] = useState(false) // the form is open
@@ -36,17 +37,18 @@ export default function Templates() {
 		enabled: selectedId !== null,
 	})
 
+	// Back closes what is open first: a form, then the selection, then the screen.
 	function back() {
 		if (adding || remindingId) {
 			setAdding(false)
 			setRemindingId(null)
-			return
+			return true
 		}
 		if (selected) {
 			setSelectedId(null)
-			return
+			return true
 		}
-		router.back()
+		return false
 	}
 
 	function open() {
@@ -80,19 +82,19 @@ export default function Templates() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
-				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text className="flex-1 text-subheading text-on-surface">{selected ? selected.name : "Templates"}</Text>
+			<ScreenHeader
+				title={selected ? selected.name : "Templates"}
+				lede={selected ? "Versions, newest first — history does not move" : "Log once, retype nothing"}
+				onBack={back}
+			>
 				{adding ? null : (
 					<Pressable onPress={open} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Add">
 						<Icon as={Plus} className="text-primary" />
 					</Pressable>
 				)}
-			</View>
+			</ScreenHeader>
 
-			<ScrollView contentContainerClassName="gap-sm p-md" keyboardShouldPersistTaps="handled">
+			<ScrollView contentContainerClassName="gap-md p-md" keyboardShouldPersistTaps="handled">
 				{adding ? (
 					<TemplateForm
 						withName={selected === null}
@@ -111,63 +113,80 @@ export default function Templates() {
 							/>
 						))
 					: null}
-				{selected === null
-					? all.map((template) => <TemplateRow key={template.id} template={template} onPress={setSelectedId} />)
-					: null}
+				{selected === null && all.length > 0 ? (
+					<Panel eyebrow="Templates" className="gap-0 p-0">
+						{all.map((template, i) => (
+							<TemplateRow key={template.id} template={template} first={i === 0} onPress={setSelectedId} />
+						))}
+					</Panel>
+				) : null}
 				{selected?.versions.map((version) => (
 					<VersionCard key={version.id} version={version} current={version.id === selected.current?.id} />
 				))}
 				{selected !== null && !adding ? (
-					<View className="gap-xs pt-sm">
-						<View className="flex-row items-center gap-sm">
-							<Text className="flex-1 text-label text-on-surface-variant">Reminders</Text>
-							<Pressable
-								onPress={() => setRemindingId(selected.id)}
-								className="rounded-md p-xs active:bg-surface-container"
-								accessibilityLabel="Add reminder"
-							>
-								<Icon as={Bell} className="text-primary" />
-							</Pressable>
-						</View>
+					<Panel eyebrow="Reminders">
 						{reminders.map((reminder) => (
 							<ReminderRow key={reminder.id} reminder={reminder} onRemove={dropReminder} />
 						))}
-						{remindingId === selected.id ? <ReminderForm onSubmit={saveReminder} onCancel={back} /> : null}
-					</View>
+						{remindingId === selected.id ? (
+							<ReminderForm onSubmit={saveReminder} onCancel={back} />
+						) : (
+							<Pressable
+								onPress={() => setRemindingId(selected.id)}
+								className="flex-row items-center gap-xs self-start rounded-md py-2xs active:bg-surface-container"
+								accessibilityLabel="Add reminder"
+							>
+								<Icon as={Bell} className="text-primary" />
+								<Text variant="label" className="font-body-medium text-primary">
+									Add a reminder
+								</Text>
+							</Pressable>
+						)}
+					</Panel>
 				) : null}
 			</ScrollView>
 		</KeyboardAvoidingView>
 	)
 }
 
-function TemplateRow({ template, onPress }) {
+function TemplateRow({ template, first, onPress }) {
 	function press() {
 		onPress(template.id)
 	}
 	return (
 		<Pressable
 			onPress={press}
-			className="flex-row items-center gap-sm rounded-md px-sm py-sm active:bg-surface-container"
+			className={`flex-row items-center gap-sm px-md py-sm active:bg-surface-container ${first ? "" : "border-t border-outline-variant"}`}
 		>
-			<Text className="flex-1 text-body text-on-surface">{template.name}</Text>
-			<Text className="text-label text-primary">v{template.current?.label ?? "—"}</Text>
+			<Text variant="line" className="flex-1">
+				{template.name}
+			</Text>
+			<Badge variant="primary">v{template.current?.label ?? "—"}</Badge>
 		</Pressable>
 	)
 }
 
+// A version as the template's `.stackout`: a primary rule down the left, the
+// wash behind, mono items, and the date it took effect. The current one is
+// ringed with the primary hairline.
 function VersionCard({ version, current }) {
 	return (
 		<View
-			className={
-				current ? "gap-2xs rounded-md bg-primary-container p-sm" : "gap-2xs rounded-md bg-surface-container-low p-sm"
-			}
+			className={`gap-2xs rounded-r-sm border-l-2 border-primary bg-primary-wash px-md py-sm ${current ? "rounded-panel border border-l-2 border-primary-line" : ""}`}
 		>
-			<View className="flex-row gap-sm">
-				<Text className="text-label text-primary">v{version.label}</Text>
-				<Text className="text-label text-on-surface-variant">from {version.effective_from}</Text>
+			<View className="flex-row items-baseline gap-sm">
+				<Text variant="mono" className="text-primary">
+					v{version.label}
+				</Text>
+				<Text variant="data">effective {version.effective_from} →</Text>
+				{current ? (
+					<Badge variant="primary" caps>
+						current
+					</Badge>
+				) : null}
 			</View>
 			{version.contents.map((item) => (
-				<Text key={item} className="text-body text-on-surface">
+				<Text key={item} variant="data" className="text-on-surface">
 					{item}
 				</Text>
 			))}
@@ -183,8 +202,10 @@ function ReminderRow({ reminder, onRemove }) {
 		onRemove(reminder)
 	}
 	return (
-		<View className="flex-row items-center gap-sm rounded-md bg-surface-container-low px-sm py-xs">
-			<Text className="flex-1 text-body text-on-surface">{parts.join(" · ")}</Text>
+		<View className="flex-row items-center gap-sm border-b border-dashed border-outline-variant py-xs">
+			<Text variant="mono" className="flex-1 text-on-surface">
+				{parts.join(" · ")}
+			</Text>
 			<Pressable onPress={remove} className="rounded-md p-2xs active:bg-surface-container" accessibilityLabel="Remove">
 				<Icon as={X} className="text-on-surface-variant" />
 			</Pressable>

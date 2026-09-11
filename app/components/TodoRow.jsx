@@ -5,13 +5,14 @@ import SquareCheck from "lucide-react-native/icons/square-check"
 import SquareDashed from "lucide-react-native/icons/square-dashed"
 import Trash from "lucide-react-native/icons/trash"
 import { memo, useState } from "react"
-import { Pressable, Text, View } from "react-native"
+import { Pressable, View } from "react-native"
 import { linkedEntries, proposedLinks } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
 import { clock, minutesLabel, weekday } from "../lib/format"
 import { TodoProposals } from "./TodoProposals"
 import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
+import { Text } from "./ui/Text"
 
 // One todo. Shape carries the state — filled box done, dashed box trashed — so
 // it survives with colour removed. A chip only appears when it has something to
@@ -59,15 +60,14 @@ export const TodoRow = memo(function TodoRow({
 
 	return (
 		<View>
-			<View className="flex-row items-start gap-sm px-md py-xs">
+			<View className="flex-row items-start gap-sm py-xs">
 				<Pressable onPress={done} disabled={!open} className="pt-3xs" accessibilityLabel="Done">
 					<Icon as={boxFor(todo.status)} className={open ? "text-on-surface-variant" : "text-success"} />
 				</Pressable>
 				<Pressable onPress={edit} disabled={!open} className="flex-1 gap-2xs">
 					<Text
-						className={
-							todo.status === "trashed" ? "text-body text-on-surface-variant line-through" : "text-body text-on-surface"
-						}
+						variant="line"
+						className={todo.status === "trashed" ? "text-on-surface-variant line-through" : undefined}
 					>
 						{todo.text}
 					</Text>
@@ -108,7 +108,7 @@ export const TodoRow = memo(function TodoRow({
 			{showProposals && proposals.length > 0 ? <TodoProposals todo={todo} proposals={proposals} /> : null}
 			{showLines
 				? lines.map((line) => (
-						<Text key={line.id} className="px-xl py-2xs text-label text-on-surface-variant">
+						<Text key={line.id} variant="data" className="px-xl py-2xs">
 							{line.text}
 						</Text>
 					))

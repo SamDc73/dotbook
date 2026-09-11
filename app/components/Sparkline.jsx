@@ -28,8 +28,10 @@ export function Sparkline({ series }) {
 	const data = bars.map((value) => (value === null ? GAP_BAR : { value, frontColor: primary }))
 
 	return (
-		<View className="gap-2xs px-md py-xs">
-			<Text variant="label">{label}</Text>
+		<View className="gap-2xs border-t border-outline-variant py-sm">
+			<Text variant="label" className="font-body-medium">
+				{label}
+			</Text>
 			<BarChart
 				data={data}
 				height={HEIGHT}
@@ -44,7 +46,7 @@ export function Sparkline({ series }) {
 				disableScroll
 				disablePress
 			/>
-			<Text variant="caption" className="text-on-surface-variant">
+			<Text variant="data">
 				min {format(kind, min)} · max {format(kind, max)} · last {format(kind, last)}
 			</Text>
 		</View>

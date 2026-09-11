@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { today } from "../lib/day"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
-import { Text as Label } from "./ui/Text"
+import { Text } from "./ui/Text"
 
 // One form for both "new template" and "new version": a name is asked only when
 // there is no template yet. Contents are one item per line, exactly as they will
@@ -25,7 +25,7 @@ export function TemplateForm({ withName = false, defaultLabel, onSubmit, onCance
 	}
 
 	return (
-		<View className="gap-sm rounded-md bg-surface-container-low p-md">
+		<View className="gap-sm rounded-panel border border-outline-variant bg-surface p-md">
 			{withName ? <Field label="Name" value={name} onChangeText={setName} placeholder="nootstack" autoFocus /> : null}
 			<Field label="Version" value={label} onChangeText={setLabel} placeholder="1.0" />
 			<Field label="Effective from" value={effectiveFrom} onChangeText={setEffectiveFrom} placeholder="YYYY-MM-DD" />
@@ -38,10 +38,10 @@ export function TemplateForm({ withName = false, defaultLabel, onSubmit, onCance
 			/>
 			<View className="flex-row justify-end gap-sm">
 				<Button variant="text" onPress={onCancel}>
-					<Label>Cancel</Label>
+					<Text>Cancel</Text>
 				</Button>
 				<Button onPress={submit} disabled={!complete}>
-					<Label>Save</Label>
+					<Text>Save</Text>
 				</Button>
 			</View>
 		</View>
@@ -51,7 +51,7 @@ export function TemplateForm({ withName = false, defaultLabel, onSubmit, onCance
 function Field({ label, ...input }) {
 	return (
 		<View className="gap-2xs">
-			<Text className="text-caption text-on-surface-variant">{label}</Text>
+			<Text variant="eyebrow">{label}</Text>
 			<Input {...input} />
 		</View>
 	)

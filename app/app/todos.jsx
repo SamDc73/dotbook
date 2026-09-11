@@ -1,15 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useCallback, useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, SectionList, Text, View } from "react-native"
+import { KeyboardAvoidingView, Platform, Pressable, SectionList, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { TodoEditor } from "../components/TodoEditor"
 import { TodoRow } from "../components/TodoRow"
 import { Badge } from "../components/ui/Badge"
-import { Icon } from "../components/ui/Icon"
 import { Input } from "../components/ui/Input"
+import { Text } from "../components/ui/Text"
 import { activeTodoId, addTodo, closedTodos, closeTodo, openTodos, setActiveTodo } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
@@ -23,7 +22,6 @@ const DUE_CHOICES = ["queue", "today", "tomorrow"]
 export default function Todos() {
 	const db = useSQLiteContext()
 	const queryClient = useQueryClient()
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const day = today()
 	const [editingId, setEditingId] = useState(null)
@@ -46,9 +44,6 @@ export default function Todos() {
 		{ title: "Closed", data: showClosed ? closed : [] },
 	].filter((section) => section.data.length > 0)
 
-	function back() {
-		router.back()
-	}
 	function toggleClosed() {
 		setShowClosed((shown) => !shown)
 	}
@@ -103,7 +98,11 @@ export default function Todos() {
 		)
 	}
 	function renderSectionHeader({ section }) {
-		return <Text className="px-md pt-sm pb-2xs text-caption text-on-surface-variant">{section.title}</Text>
+		return (
+			<Text variant="eyebrow" className="bg-background px-md pt-md pb-xs">
+				{section.title}
+			</Text>
+		)
 	}
 
 	return (
@@ -112,25 +111,24 @@ export default function Todos() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
-				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text className="flex-1 text-subheading text-on-surface">Todos</Text>
-			</View>
+			<ScreenHeader title="Todos" lede="A date, today, or the queue — and it never nags" />
 			<SectionList
 				sections={sections}
 				keyExtractor={keyOf}
 				renderItem={renderItem}
 				renderSectionHeader={renderSectionHeader}
+				ItemSeparatorComponent={Seam}
+				contentContainerClassName="px-md"
 				keyboardShouldPersistTaps="handled"
 				ListFooterComponent={
-					<Pressable onPress={toggleClosed} className="self-start px-md py-sm">
-						<Text className="text-label text-primary">{showClosed ? "Hide closed" : "Show closed"}</Text>
+					<Pressable onPress={toggleClosed} className="self-start py-md">
+						<Text variant="label" className="font-body-medium text-primary">
+							{showClosed ? "Hide closed" : "Show closed"}
+						</Text>
 					</Pressable>
 				}
 			/>
-			<View className="flex-row items-center gap-xs bg-surface-container px-md py-sm">
+			<View className="flex-row items-center gap-xs border-t border-outline-variant bg-surface px-md py-sm">
 				<Input
 					className="flex-1"
 					value={text}
@@ -140,7 +138,7 @@ export default function Todos() {
 					placeholder="call the dentist"
 				/>
 				{DUE_CHOICES.map((choice) => (
-					<Badge key={choice} variant={choice === due ? "primary" : "plain"} onPress={() => setDue(choice)}>
+					<Badge key={choice} variant={choice === due ? "primary" : "surface"} onPress={() => setDue(choice)}>
 						{choice}
 					</Badge>
 				))}
@@ -151,4 +149,8 @@ export default function Todos() {
 
 function keyOf(todo) {
 	return todo.id
+}
+
+function Seam() {
+	return <View className="border-b border-dashed border-outline-variant" />
 }

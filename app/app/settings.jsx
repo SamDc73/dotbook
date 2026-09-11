@@ -1,34 +1,29 @@
-import { useRouter } from "expo-router"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
-import { Pressable, ScrollView, View } from "react-native"
+import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { RingImportSection } from "../components/RingImportSection"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { ScreenTimeSection } from "../components/ScreenTimeSection"
 import { ServerSettings } from "../components/ServerSettings"
-import { Icon } from "../components/ui/Icon"
-import { Text } from "../components/ui/Text"
+import { Panel } from "../components/ui/Panel"
 
-// Settings. Each section is its own component so they can be added one at a time.
+// Settings. Each section is its own component in its own panel, so they can be
+// added one at a time.
 export default function Settings() {
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
-
-	function back() {
-		router.back()
-	}
 
 	return (
 		<View className="flex-1 bg-background" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<View className="flex-row items-center gap-sm px-md py-sm">
-				<Pressable onPress={back} className="p-xs rounded-md active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text variant="heading">Settings</Text>
-			</View>
-			<ScrollView>
-				<ServerSettings />
-				<ScreenTimeSection />
-				<RingImportSection />
+			<ScreenHeader title="Settings" lede="Where the server is, what the phone reports, and what the ring exported" />
+			<ScrollView contentContainerClassName="gap-md p-md">
+				<Panel eyebrow="Server">
+					<ServerSettings />
+				</Panel>
+				<Panel eyebrow="Screen time">
+					<ScreenTimeSection />
+				</Panel>
+				<Panel eyebrow="RingConn">
+					<RingImportSection />
+				</Panel>
 			</ScrollView>
 		</View>
 	)

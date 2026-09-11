@@ -44,8 +44,7 @@ export function RingImportSection() {
 	}
 
 	return (
-		<View className="gap-sm px-md py-sm">
-			<Text variant="subheading">RingConn</Text>
+		<View className="gap-sm">
 			<Text variant="caption" className="text-on-surface-variant">
 				Export CSVs from the RingConn app: Activity, Sleep, Vital Signs
 			</Text>

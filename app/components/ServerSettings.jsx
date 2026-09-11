@@ -41,8 +41,7 @@ export function ServerSettings() {
 	}
 
 	return (
-		<View className="gap-sm px-md py-sm">
-			<Text variant="subheading">Server</Text>
+		<View className="gap-sm">
 			<Field label="URL" value={fields.url} onChangeText={edit("url")} placeholder="https://life.example.com" />
 			<Field label="Token" value={fields.token} onChangeText={edit("token")} secureTextEntry />
 			<Field label="Group" value={fields.group} onChangeText={edit("group")} placeholder="default" />

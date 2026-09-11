@@ -3,19 +3,24 @@ import { useSQLiteContext } from "expo-sqlite"
 import Bell from "lucide-react-native/icons/bell"
 import BellRing from "lucide-react-native/icons/bell-ring"
 import { memo, useState } from "react"
-import { Pressable, Text, View } from "react-native"
+import { Pressable, View } from "react-native"
 import { entryReminder, toggleEntryReminder } from "../db/reminders"
 import { useLiveQuery } from "../db/use-live-query"
 import { reconcile } from "../notifications/reminders"
 import { TemplateExpansion } from "./TemplateExpansion"
+import { TimePill } from "./TimePill"
 import { TimerLine } from "./TimerLine"
 import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
+import { Text } from "./ui/Text"
 
-// One log line. The time prefix is the bullet: tinted by the hour it names.
-// A templated line carries a version chip; tapping the chip shows what it contained.
-// A plan line is dimmer; once its time has passed it asks "did it?". While its
-// mark is still ahead, a bell adds or removes a reminder at that mark.
+// One log line, as the template draws it: the time is the bullet, the text
+// follows at baseline, anything in brackets is an aside and reads muted. A line
+// that arrived without being typed — ring, screen time — is passive: a diamond
+// where the time would be, in the tertiary colour. A templated line carries a
+// version chip; tapping it shows what the line contained. A plan line is dimmer;
+// once its time has passed it asks "did it?", and while its mark is still ahead
+// a bell adds or removes a reminder at that mark.
 //
 // Memoised: the log is a list and a timer row redraws every second — only the
 // row whose entry changed should render again.
@@ -26,6 +31,7 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 	const [expanded, setExpanded] = useState(false)
 
 	const isPlan = entry.kind === "plan"
+	const passive = PASSIVE.has(entry.source)
 	const canRemind = isPlan && entry.ts_start !== null && entry.ts_start > Date.now()
 	const reminders = useLiveQuery(
 		["entry-reminder", entry.id],
@@ -60,11 +66,24 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 			<Pressable
 				onPress={press}
 				onLongPress={longPress}
-				className="flex-row items-start gap-sm px-md py-xs active:bg-surface-container"
+				className="flex-row items-baseline gap-sm py-xs active:bg-surface-container"
 			>
-				{timeText !== "" ? <Text className={`text-body font-mono text-hour-${hour}`}>{timeText}</Text> : null}
-				<Text className={isPlan ? "flex-1 text-body text-on-surface-variant" : "flex-1 text-body text-on-surface"}>
-					{body}
+				{passive ? (
+					<Text variant="mono" className="text-tertiary">
+						◇
+					</Text>
+				) : null}
+				{!passive && timeText !== "" ? <TimePill timeText={timeText} hour={hour} /> : null}
+				<Text variant="line" className={bodyClass(isPlan, passive)}>
+					{segments(body).map((part) => (
+						<Text
+							key={part.at}
+							variant="line"
+							className={part.muted || passive ? "text-on-surface-variant" : undefined}
+						>
+							{part.text}
+						</Text>
+					))}
 				</Text>
 				{isPlan && hasPassed(entry) ? (
 					<Badge variant="warning" onPress={confirm}>
@@ -78,7 +97,7 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 				) : null}
 				{entry.template_name !== null ? (
 					<Badge variant="primary" onPress={toggle}>
-						{entry.template_name} v{entry.version_label}
+						{entry.template_name} v{entry.version_label} {expanded ? "▾" : "▸"}
 					</Badge>
 				) : null}
 			</Pressable>
@@ -86,6 +105,27 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 		</View>
 	)
 })
+
+// Sources that write lines nobody typed. They read as the machine's voice.
+const PASSIVE = new Set(["import:ringconn", "android:usagestats", "ext:firefox"])
+
+function bodyClass(isPlan, passive) {
+	if (passive) return "flex-1 text-tertiary"
+	if (isPlan) return "flex-1 text-on-surface-variant"
+	return "flex-1"
+}
+
+// `breakfast ready (did some cleaning) — 3 eggs` → the bracketed part is an
+// aside. Each piece remembers where it started, which is what keys it.
+function segments(body) {
+	const parts = []
+	let at = 0
+	for (const text of body.split(/(\([^)]*\))/)) {
+		if (text !== "") parts.push({ at, text, muted: text.startsWith("(") })
+		at += text.length
+	}
+	return parts
+}
 
 // A plan's moment is its end for a range, its start otherwise; an untimed plan
 // has passed once its day has.

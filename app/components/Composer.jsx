@@ -59,7 +59,11 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 	// reach it, so the few values it needs come through the same live-token hook.
 	const onSurface = useTokenColour("--color-on-surface")
 	const bodySize = useTokenColour("--text-body")
-	const webStyle = Platform.OS === "web" ? { flex: 1, borderWidth: 0, color: onSurface, fontSize: bodySize } : undefined
+	const bodyFace = useTokenColour("--font-body")
+	const webStyle =
+		Platform.OS === "web"
+			? { flex: 1, borderWidth: 0, outlineStyle: "none", color: onSurface, fontSize: bodySize, fontFamily: bodyFace }
+			: undefined
 
 	function pickCommand(command) {
 		setText(`/${command.name} `)
@@ -105,12 +109,18 @@ export function Composer({ day, defaultText = "", editing = false, onSubmit, onT
 	}
 
 	return (
-		<View className={editing ? "py-sm bg-primary-container" : "py-sm bg-surface-container"}>
+		<View
+			className={
+				editing
+					? "border-t border-primary-line bg-primary-wash py-sm"
+					: "border-t border-outline-variant bg-surface py-sm"
+			}
+		>
 			{menuOpen ? <SlashMenu query={text.slice(1)} onPick={pickCommand} /> : null}
 			{timerOpen ? <TimerSuggestions suggestions={offered} onPick={pickMinutes} /> : null}
 			<View className="flex-row items-center pl-md pr-sm">
 				<Input
-					className="flex-1 text-body text-on-surface"
+					className="flex-1 font-body text-body text-on-surface"
 					style={webStyle}
 					value={text}
 					onChangeText={change}

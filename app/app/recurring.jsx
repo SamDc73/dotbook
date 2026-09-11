@@ -1,17 +1,15 @@
 import { partsFromRule } from "@dotbook/core/recurrence"
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
-import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native"
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { RecurrenceForm } from "../components/RecurrenceForm"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { Badge } from "../components/ui/Badge"
 import { Button } from "../components/ui/Button"
-import { Icon } from "../components/ui/Icon"
-import { Text as Label } from "../components/ui/Text"
+import { Text } from "../components/ui/Text"
 import { addRecurrence, importIcs, recurrences, removeRecurrence, replaceRecurrence } from "../db/recurrences"
 import { useLiveQuery } from "../db/use-live-query"
 
@@ -19,16 +17,12 @@ import { useLiveQuery } from "../db/use-live-query"
 // lunch at 5 daily. Tap to edit, long-press to remove, or import a timetable.
 export default function Recurring() {
 	const db = useSQLiteContext()
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const [editing, setEditing] = useState(null) // null | "new" | a rule row
 	const [imported, setImported] = useState(null) // { rules, oneOffs } of the last import
 
 	const rules = useLiveQuery(["recurrences"], () => recurrences(db))
 
-	function back() {
-		router.back()
-	}
 	function startNew() {
 		setEditing("new")
 	}
@@ -63,25 +57,23 @@ export default function Recurring() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
-				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text className="flex-1 text-subheading text-on-surface">Recurring</Text>
+			<ScreenHeader title="Recurring" lede="Rules that write their own lines, ahead of time" />
+			<View className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
+				<FlatList
+					data={rules}
+					keyExtractor={keyOf}
+					renderItem={renderItem}
+					ItemSeparatorComponent={Hairline}
+					keyboardShouldPersistTaps="handled"
+					ListFooterComponent={
+						imported === null ? null : (
+							<Text variant="data" className="px-md py-sm">
+								imported {imported.rules} rules and {imported.oneOffs} one-off lines
+							</Text>
+						)
+					}
+				/>
 			</View>
-			<FlatList
-				data={rules}
-				keyExtractor={keyOf}
-				renderItem={renderItem}
-				keyboardShouldPersistTaps="handled"
-				ListFooterComponent={
-					imported === null ? null : (
-						<Text className="px-md py-sm text-caption text-on-surface-variant">
-							imported {imported.rules} rules and {imported.oneOffs} one-off lines
-						</Text>
-					)
-				}
-			/>
 			{editing === null ? null : (
 				<RecurrenceForm
 					key={editing === "new" ? "new" : editing.id}
@@ -90,12 +82,12 @@ export default function Recurring() {
 					onCancel={stopEditing}
 				/>
 			)}
-			<View className="flex-row gap-xs bg-surface-container px-md py-sm">
+			<View className="flex-row gap-xs border-t border-outline-variant bg-surface px-md py-sm">
 				<Button size="sm" onPress={startNew}>
-					<Label>New rule</Label>
+					<Text>New rule</Text>
 				</Button>
 				<Button variant="tonal" size="sm" onPress={pickIcs}>
-					<Label>Import .ics</Label>
+					<Text>Import .ics</Text>
 				</Button>
 			</View>
 		</KeyboardAvoidingView>
@@ -106,6 +98,10 @@ function keyOf(rule) {
 	return rule.id
 }
 
+function Hairline() {
+	return <View className="border-t border-outline-variant" />
+}
+
 function RuleRow({ rule, onPress, onLongPress }) {
 	function press() {
 		onPress(rule)
@@ -114,13 +110,21 @@ function RuleRow({ rule, onPress, onLongPress }) {
 		onLongPress(rule)
 	}
 	return (
-		<Pressable onPress={press} onLongPress={longPress} className="gap-3xs px-md py-xs active:bg-surface-container">
+		<Pressable onPress={press} onLongPress={longPress} className="gap-3xs px-md py-sm active:bg-surface-container">
 			<View className="flex-row items-center gap-xs">
-				<Text className="flex-1 text-body text-on-surface">{rule.text}</Text>
-				<Text className="text-caption text-on-surface-variant">{rule.kind}</Text>
-				{rule.source === "import:ics" ? <Badge variant="tertiary">import:ics</Badge> : null}
+				<Text variant="line" className="flex-1">
+					{rule.text}
+				</Text>
+				<Badge variant={rule.kind === "plan" ? "warning" : "surface"} caps>
+					{rule.kind}
+				</Badge>
+				{rule.source === "import:ics" ? (
+					<Badge variant="tertiary" caps>
+						ics
+					</Badge>
+				) : null}
 			</View>
-			<Text className="text-label text-on-surface-variant">{describe(rule)}</Text>
+			<Text variant="data">{describe(rule)}</Text>
 		</Pressable>
 	)
 }

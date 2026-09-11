@@ -1,13 +1,13 @@
 import { parseLineTime } from "@dotbook/core/parse"
 import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { scheduleTodo, setDueOn } from "../db/todos"
 import { shiftDay } from "../lib/day"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
-import { Text as Label } from "./ui/Text"
+import { Text } from "./ui/Text"
 
 // Opens under a todo. Two decisions, both a person's: which day it is due
 // (empty = the queue), and — only if wanted — a planned window, which becomes
@@ -45,9 +45,9 @@ export function TodoEditor({ todo, today, onDone }) {
 	}
 
 	return (
-		<View className="mx-md mb-sm gap-sm rounded-md bg-surface-container-low p-sm">
+		<View className="mx-md mb-sm gap-sm rounded-panel border border-outline-variant bg-surface p-sm">
 			<View className="flex-row items-center gap-xs">
-				<Text className="text-caption text-on-surface-variant">Due</Text>
+				<Text variant="eyebrow">Due</Text>
 				<Badge variant="surface" onPress={queue}>
 					Queue
 				</Badge>
@@ -66,7 +66,7 @@ export function TodoEditor({ todo, today, onDone }) {
 				/>
 			</View>
 			<View className="flex-row items-center gap-xs">
-				<Text className="text-caption text-on-surface-variant">Plan</Text>
+				<Text variant="eyebrow">Plan</Text>
 				<Input
 					className="flex-1 py-2xs text-label"
 					value={window}
@@ -75,11 +75,11 @@ export function TodoEditor({ todo, today, onDone }) {
 				/>
 				<Input className="py-2xs text-label" value={day} onChangeText={setDay} placeholder="YYYY-MM-DD" />
 				<Button size="sm" onPress={schedule} disabled={!canSchedule}>
-					<Label>Schedule</Label>
+					<Text>Schedule</Text>
 				</Button>
 			</View>
 			<Button variant="text" size="sm" className="self-end" onPress={onDone}>
-				<Label>Close</Label>
+				<Text>Close</Text>
 			</Button>
 		</View>
 	)

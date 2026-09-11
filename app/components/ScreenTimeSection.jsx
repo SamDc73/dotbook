@@ -49,14 +49,14 @@ export function ScreenTimeSection() {
 
 	if (Platform.OS !== "android") {
 		return (
-			<Section title="Screen time">
+			<Section>
 				<Text className="text-on-surface-variant">Android only</Text>
 			</Section>
 		)
 	}
 
 	return (
-		<Section title="Screen time">
+		<Section>
 			<Row label="Usage access" value={status.granted ? "granted" : "not granted"} />
 			<Row label="Device" value={device} />
 			<Row
@@ -90,13 +90,8 @@ export function ScreenTimeSection() {
 	)
 }
 
-function Section({ title, children }) {
-	return (
-		<View className="gap-sm px-md py-sm">
-			<Text variant="subheading">{title}</Text>
-			{children}
-		</View>
-	)
+function Section({ children }) {
+	return <View className="gap-sm">{children}</View>
 }
 
 function Row({ label, value, indented = false }) {

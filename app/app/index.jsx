@@ -4,11 +4,12 @@ import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
 import { useCallback, useEffect, useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform } from "react-native"
+import { KeyboardAvoidingView, Platform } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Composer } from "../components/Composer"
 import { DayHeader } from "../components/DayHeader"
 import { EntryLine } from "../components/EntryLine"
+import { LogList } from "../components/LogList"
 import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../db/entries"
 import { materializeDay } from "../db/recurrences"
 import { abandonTimer, startTimer, stopTimer } from "../db/timers"
@@ -95,7 +96,7 @@ export default function Today() {
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
 			<DayHeader day={day} order={order} onShiftDay={shift} onToggleOrder={toggleOrder} />
-			<FlatList
+			<LogList
 				data={entries}
 				keyExtractor={keyOf}
 				renderItem={renderEntry}

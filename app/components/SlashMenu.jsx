@@ -1,6 +1,7 @@
 import { fuzzyFind } from "@dotbook/core/parse"
-import { Pressable, ScrollView, Text, View } from "react-native"
+import { Pressable, ScrollView, View } from "react-native"
 import { Badge } from "./ui/Badge"
+import { Text } from "./ui/Text"
 
 // `/` at column 0 opens this list; V0.1 ships one command, but it is a list.
 // Our own ~50 lines — every editor that ships a command menu drags in a document model.
@@ -12,11 +13,15 @@ export function SlashMenu({ query, onPick }) {
 	const matches = ranked.map((index) => COMMANDS[index])
 
 	return (
-		<View className="mx-md mb-2xs rounded-md bg-surface-container-high">
+		<View className="mx-md mb-2xs overflow-hidden rounded-seg border border-outline-variant bg-surface">
 			{matches.map((command) => (
 				<Command key={command.name} command={command} onPick={onPick} />
 			))}
-			{matches.length === 0 ? <Text className="px-sm py-xs text-label text-on-surface-variant">no command</Text> : null}
+			{matches.length === 0 ? (
+				<Text variant="label" className="px-sm py-xs text-on-surface-variant">
+					no command
+				</Text>
+			) : null}
 		</View>
 	)
 }
@@ -30,8 +35,12 @@ function Command({ command, onPick }) {
 			onPress={pick}
 			className="flex-row items-baseline gap-sm px-sm py-xs active:bg-surface-container-highest"
 		>
-			<Text className="font-mono text-body text-primary">/{command.name}</Text>
-			<Text className="text-label text-on-surface-variant">{command.hint}</Text>
+			<Text variant="mono" className="text-primary">
+				/{command.name}
+			</Text>
+			<Text variant="label" className="text-on-surface-variant">
+				{command.hint}
+			</Text>
 		</Pressable>
 	)
 }

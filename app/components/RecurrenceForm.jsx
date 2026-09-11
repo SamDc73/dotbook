@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { today } from "../lib/day"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
-import { Text as Label } from "./ui/Text"
+import { Text } from "./ui/Text"
 
 // "class every Tue/Thu at 14:00" as a form. Its output is the `parts` shape
 // core's ruleFromParts takes, plus the line text, an optional duration, and
@@ -50,7 +50,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 	}
 
 	return (
-		<View className="mx-md mb-sm gap-sm rounded-md bg-surface-container-low p-sm">
+		<View className="mx-md mb-sm gap-sm rounded-panel border border-outline-variant bg-surface p-sm">
 			<Input value={text} onChangeText={setText} placeholder="class" autoFocus />
 
 			<Row label="Every">
@@ -74,7 +74,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 
 			<Row label="At">
 				<Input className={SMALL} value={time} onChangeText={setTime} placeholder="14:00" />
-				<Text className="text-caption text-on-surface-variant">for</Text>
+				<Text variant="eyebrow">for</Text>
 				<Input
 					className={SMALL}
 					value={duration}
@@ -82,7 +82,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 					keyboardType="number-pad"
 					placeholder="min"
 				/>
-				<Text className="text-caption text-on-surface-variant">from</Text>
+				<Text variant="eyebrow">from</Text>
 				<Input className={SMALL} value={dtstart} onChangeText={setDtstart} placeholder="YYYY-MM-DD" />
 			</Row>
 
@@ -96,10 +96,10 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 
 			<View className="flex-row justify-end gap-xs">
 				<Button variant="text" size="sm" onPress={onCancel}>
-					<Label>Cancel</Label>
+					<Text>Cancel</Text>
 				</Button>
 				<Button size="sm" onPress={save} disabled={!canSave}>
-					<Label>Save</Label>
+					<Text>Save</Text>
 				</Button>
 			</View>
 		</View>
@@ -111,7 +111,7 @@ const SMALL = "py-2xs text-label"
 function Row({ label, children }) {
 	return (
 		<View className="flex-row flex-wrap items-center gap-xs">
-			<Text className="text-caption text-on-surface-variant">{label}</Text>
+			<Text variant="eyebrow">{label}</Text>
 			{children}
 		</View>
 	)

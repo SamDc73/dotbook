@@ -1,15 +1,16 @@
 import { effectiveTick } from "@dotbook/core/habits"
-import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
 import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useCallback, useState } from "react"
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native"
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { HabitRow } from "../components/HabitRow"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { Badge } from "../components/ui/Badge"
 import { Icon } from "../components/ui/Icon"
 import { Input } from "../components/ui/Input"
+import { Text } from "../components/ui/Text"
 import { addHabit, grid, habits, removeHabit, tick, ticksOn, untick } from "../db/habits"
 import { useLiveQuery } from "../db/use-live-query"
 import { dayLabel, shiftDay, today } from "../lib/day"
@@ -19,12 +20,11 @@ const STRIP_DAYS = 14
 // Tapping the glyph walks the person's tick through these; `null` means untick.
 const NEXT = { pending: "kept", kept: "broken", broken: null }
 
-// One day of habits. The state shown is `effectiveTick`: a person's tick wins
-// over the classifier's while it exists. Proposals are reviewable here and
-// nowhere else — no badge, no count. See V0.1 → feature 6.
+// One day of habits, in the template's bordered list. The state shown is
+// `effectiveTick`: a person's tick wins over the classifier's while it exists.
+// Proposals are reviewable here and nowhere else — no badge, no count.
 export default function Habits() {
 	const db = useSQLiteContext()
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const [day, setDay] = useState(today)
 	const [name, setName] = useState("")
@@ -40,9 +40,6 @@ export default function Habits() {
 	const historyByHabitDay = groupBy(history, (row) => `${row.habit_id}|${row.day}`)
 	const days = Array.from({ length: STRIP_DAYS }, (_, i) => shiftDay(stripStart, i))
 
-	function back() {
-		router.back()
-	}
 	function previousDay() {
 		setDay((current) => shiftDay(current, -1))
 	}
@@ -94,35 +91,37 @@ export default function Habits() {
 			className="flex-1 bg-background"
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
-			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
-				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text className="text-subheading text-on-surface">Habits</Text>
-				<Pressable
-					onPress={previousDay}
-					className="ml-auto rounded-md p-xs active:bg-surface-container"
-					accessibilityLabel="Previous day"
-				>
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text className="text-label text-on-surface">{dayLabel(day)}</Text>
-				<Pressable
-					onPress={nextDay}
-					className="rounded-md p-xs active:bg-surface-container"
-					accessibilityLabel="Next day"
-				>
-					<Icon as={ChevronRight} className="text-on-surface-variant" />
-				</Pressable>
+			<ScreenHeader title="Habits" lede="Shape first, colour second — kept, broken, not yet">
+				<View className="flex-row items-center gap-2xs pb-2xs">
+					<Pressable
+						onPress={previousDay}
+						className="rounded-md p-xs active:bg-surface-container"
+						accessibilityLabel="Previous day"
+					>
+						<Icon as={ChevronLeft} className="text-on-surface-variant" />
+					</Pressable>
+					<Text variant="mono" className="text-on-surface-variant">
+						{dayLabel(day)}
+					</Text>
+					<Pressable
+						onPress={nextDay}
+						className="rounded-md p-xs active:bg-surface-container"
+						accessibilityLabel="Next day"
+					>
+						<Icon as={ChevronRight} className="text-on-surface-variant" />
+					</Pressable>
+				</View>
+			</ScreenHeader>
+			<View className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
+				<FlatList
+					data={list}
+					keyExtractor={keyOf}
+					renderItem={renderHabit}
+					ItemSeparatorComponent={Hairline}
+					keyboardShouldPersistTaps="handled"
+				/>
 			</View>
-			<FlatList
-				data={list}
-				keyExtractor={keyOf}
-				renderItem={renderHabit}
-				contentContainerClassName="py-sm"
-				keyboardShouldPersistTaps="handled"
-			/>
-			<View className="flex-row items-center gap-xs bg-surface-container px-md py-sm">
+			<View className="flex-row items-center gap-xs border-t border-outline-variant bg-surface px-md py-sm">
 				<Input
 					className="flex-1"
 					value={name}
@@ -131,7 +130,7 @@ export default function Habits() {
 					submitBehavior="submit"
 					placeholder="no porn"
 				/>
-				<Badge variant="primary" onPress={toggleKind}>
+				<Badge variant="primary" caps onPress={toggleKind}>
 					{kind}
 				</Badge>
 			</View>
@@ -143,6 +142,10 @@ const NONE = []
 
 function keyOf(habit) {
 	return habit.id
+}
+
+function Hairline() {
+	return <View className="border-t border-outline-variant" />
 }
 
 /** rows → Map<key, rows[]>, one pass. */

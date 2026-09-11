@@ -4,15 +4,16 @@ import { Text } from "./ui/Text"
 
 // The focus view's centre: the block is the track. Everything here is derived
 // from `current` and `now` — nothing is stored, so a timer started on another
-// device draws the same bar.
+// device draws the same bar. Type follows the template: mono for every figure,
+// Fraunces for the one title.
 export function Scrubber({ current, next, now }) {
 	return (
 		<View className="flex-1 justify-center gap-lg px-lg">
 			<View className="flex-row justify-between">
-				<Text variant="label" className="text-on-surface-variant">
+				<Text variant="mono" className="text-on-surface-variant">
 					{clock(now)}
 				</Text>
-				<Text variant="label" className="text-on-surface-variant">
+				<Text variant="mono" className="text-on-surface-variant">
 					{dateLabel(now)}
 				</Text>
 			</View>
@@ -20,13 +21,12 @@ export function Scrubber({ current, next, now }) {
 			{current !== null ? <Countdown current={current} now={now} /> : null}
 
 			{next !== null ? (
-				<View className="flex-row gap-md border-t border-outline-variant pt-md">
-					<Text variant="label" className="text-on-surface-variant">
-						UP NEXT
+				<View className="flex-row items-baseline gap-md border-t border-outline-variant pt-md">
+					<Text variant="eyebrow">up next</Text>
+					<Text variant="mono" className="text-on-surface-variant">
+						{clock(next.ts_start)}
 					</Text>
-					<Text variant="label">
-						{clock(next.ts_start)} · {next.title}
-					</Text>
+					<Text variant="line">{next.title}</Text>
 				</View>
 			) : null}
 		</View>
@@ -41,7 +41,7 @@ function Countdown({ current, now }) {
 	return (
 		<View className="gap-sm">
 			<Text variant="heading">{current.title}</Text>
-			<Text className="font-mono text-display1">{countdown(remaining)}</Text>
+			<Text className="font-mono text-display1 tabular-nums">{countdown(remaining)}</Text>
 
 			<View className="h-2xs rounded-xl bg-outline-variant">
 				{/* The fill's width is the elapsed fraction — the one computed layout value here. */}
@@ -54,10 +54,10 @@ function Countdown({ current, now }) {
 			</View>
 
 			<View className="flex-row justify-between">
-				<Text variant="label" className="text-on-surface-variant">
+				<Text variant="mono" className="text-on-surface-variant">
 					{clock(current.ts_start)}
 				</Text>
-				<Text variant="label" className="font-mono text-on-surface-variant">
+				<Text variant="mono" className="text-on-surface-variant">
 					−{countdown(remaining)}
 				</Text>
 			</View>

@@ -1,14 +1,13 @@
 import { MIN_PAIRS } from "@dotbook/core/analysis"
-import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { ScreenHeader } from "../components/ScreenHeader"
 import { Sparkline } from "../components/Sparkline"
 import { StatRow } from "../components/StatRow"
 import { Badge } from "../components/ui/Badge"
-import { Icon } from "../components/ui/Icon"
+import { Panel } from "../components/ui/Panel"
 import { Text } from "../components/ui/Text"
 import { comparisonRows, correlationRows, days, seriesFor, windowRows } from "../db/analysis"
 import { useLiveQuery } from "../db/use-live-query"
@@ -21,7 +20,6 @@ const WINDOWS = [30, 90]
 // sample size beside them. V0.1 defers causal analysis on purpose.
 export default function Trends() {
 	const db = useSQLiteContext()
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const [window, setWindow] = useState(WINDOWS[0])
 
@@ -33,58 +31,45 @@ export default function Trends() {
 	const pairs = correlationRows(series)
 	const comparisons = comparisonRows(series)
 
-	function back() {
-		router.back()
-	}
-
 	return (
 		<View className="flex-1 bg-background" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-			<View className="flex-row items-center gap-sm bg-surface px-md py-sm">
-				<Pressable onPress={back} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Back">
-					<Icon as={ChevronLeft} className="text-on-surface-variant" />
-				</Pressable>
-				<Text variant="subheading">Trends</Text>
-				<View className="ml-auto flex-row gap-xs">
+			<ScreenHeader title="Trends" lede="Moved together, not caused">
+				<View className="flex-row gap-xs pb-2xs">
 					{WINDOWS.map((option) => (
 						<Badge
 							key={option}
-							variant={option === window ? "primary" : "plain"}
+							variant={option === window ? "primary" : "surface"}
 							onPress={() => setWindow(option)}
 							accessibilityLabel={`Last ${option} days`}
 						>
-							{option}
+							{option}d
 						</Badge>
 					))}
 				</View>
-			</View>
+			</ScreenHeader>
 
-			<ScrollView contentContainerClassName="gap-md py-sm">
-				<View>
-					{series.map((one) => (
-						<Sparkline key={one.name} series={one} />
-					))}
-				</View>
+			<ScrollView contentContainerClassName="gap-md p-md">
+				{series.length > 0 ? (
+					<Panel eyebrow={`Last ${window} days`}>
+						{series.map((one) => (
+							<Sparkline key={one.name} series={one} />
+						))}
+					</Panel>
+				) : null}
 
-				<View>
-					<Text variant="subheading" className="px-md">
-						Correlations
-					</Text>
-					<Text variant="caption" className="px-md text-on-surface-variant">
-						moved together, not caused
-					</Text>
+				<Panel eyebrow="Correlations">
 					{pairs.length === 0 ? (
-						<Text className="px-md py-2xs text-on-surface-variant">needs {MIN_PAIRS} overlapping days</Text>
+						<Text variant="line" className="text-on-surface-variant">
+							needs {MIN_PAIRS} overlapping days
+						</Text>
 					) : null}
 					{pairs.map((pair) => (
 						<StatRow key={`${pair.a}|${pair.b}`} label={`${pair.a} ↔ ${pair.b}`} value={correlationLabel(pair)} />
 					))}
-				</View>
+				</Panel>
 
 				{comparisons.length > 0 ? (
-					<View>
-						<Text variant="subheading" className="px-md">
-							With vs without
-						</Text>
+					<Panel eyebrow="With vs without">
 						{comparisons.map((row) => (
 							<StatRow
 								key={`${row.habit}|${row.measure}`}
@@ -92,7 +77,7 @@ export default function Trends() {
 								value={`${row.nWith} vs ${row.nWithout} days`}
 							/>
 						))}
-					</View>
+					</Panel>
 				) : null}
 			</ScrollView>
 		</View>

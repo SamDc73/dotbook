@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import * as Device from "expo-device"
+import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { addDatabaseChangeListener, SQLiteProvider, useSQLiteContext } from "expo-sqlite"
 import { Suspense, useEffect } from "react"
@@ -15,6 +16,7 @@ import { setupNotifications } from "../notifications/setup"
 import { registerResponseTask } from "../notifications/task"
 import { useCollectScreenTime } from "../screenTime/collect"
 import { useSync } from "../sync/use-sync"
+import { FONTS } from "../theme/fonts"
 import { MaterialYou } from "../theme/MaterialYou"
 import "../global.css"
 
@@ -28,6 +30,9 @@ const queryClient = new QueryClient({
 const LOADING = <ActivityIndicator className="flex-1 bg-background text-primary" />
 
 export default function RootLayout() {
+	const [fontsLoaded] = useFonts(FONTS)
+	if (!fontsLoaded) return LOADING
+
 	// Opening the database can fail (on web: another tab holds it, see
 	// DatabaseGate.web.jsx). The boundary shows the message and a retry, which
 	// remounts the provider and opens again.

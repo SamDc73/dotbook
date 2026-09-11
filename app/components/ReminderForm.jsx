@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
 import { Badge } from "./ui/Badge"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
-import { Text as Label } from "./ui/Text"
+import { Text } from "./ui/Text"
 
 const STYLES = ["notify", "alarm"]
 
@@ -22,7 +22,7 @@ export function ReminderForm({ onSubmit, onCancel }) {
 	}
 
 	return (
-		<View className="gap-sm rounded-md bg-surface-container-low p-md">
+		<View className="gap-sm rounded-panel border border-outline-variant bg-surface p-md">
 			<Field label="Time" value={at} onChangeText={setAt} placeholder="09:00" autoFocus />
 			<Field
 				label="Second nudge after (minutes, optional)"
@@ -40,10 +40,10 @@ export function ReminderForm({ onSubmit, onCancel }) {
 			</View>
 			<View className="flex-row justify-end gap-sm">
 				<Button variant="text" onPress={onCancel}>
-					<Label>Cancel</Label>
+					<Text>Cancel</Text>
 				</Button>
 				<Button onPress={submit} disabled={!complete}>
-					<Label>Save</Label>
+					<Text>Save</Text>
 				</Button>
 			</View>
 		</View>
@@ -53,7 +53,7 @@ export function ReminderForm({ onSubmit, onCancel }) {
 function Field({ label, ...input }) {
 	return (
 		<View className="gap-2xs">
-			<Text className="text-caption text-on-surface-variant">{label}</Text>
+			<Text variant="eyebrow">{label}</Text>
 			<Input {...input} />
 		</View>
 	)

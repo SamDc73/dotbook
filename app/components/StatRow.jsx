@@ -5,11 +5,11 @@ import { Text } from "./ui/Text"
 // compared on the left, the figure on the right.
 export function StatRow({ label, value }) {
 	return (
-		<View className="flex-row items-baseline justify-between gap-sm px-md py-2xs">
-			<Text className="flex-1">{label}</Text>
-			<Text variant="label" className="text-on-surface-variant">
-				{value}
+		<View className="flex-row items-baseline justify-between gap-sm border-t border-outline-variant py-xs">
+			<Text variant="line" className="flex-1">
+				{label}
 			</Text>
+			<Text variant="data">{value}</Text>
 		</View>
 	)
 }
