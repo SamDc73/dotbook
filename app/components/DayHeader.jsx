@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { ChevronLeft, ChevronRight, Clock, Layers, List, ListChecks } from "lucide-react-native"
+import { ChevronLeft, ChevronRight, CircleCheck, Clock, Layers, List, ListChecks } from "lucide-react-native"
 import { styled } from "nativewind"
 import { Pressable, Text, View } from "react-native"
 import { dayLabel } from "../lib/day"
@@ -12,6 +12,7 @@ const ChronologicalIcon = styled(Clock, ICON)
 const TypingIcon = styled(List, ICON)
 const TemplatesIcon = styled(Layers, ICON)
 const TodosIcon = styled(ListChecks, ICON)
+const HabitsIcon = styled(CircleCheck, ICON)
 
 export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	const OrderIcon = order === "chronological" ? ChronologicalIcon : TypingIcon
@@ -28,6 +29,9 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	}
 	function openTodos() {
 		router.push("/todos")
+	}
+	function openHabits() {
+		router.push("/habits")
 	}
 
 	return (
@@ -63,6 +67,13 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 			</Pressable>
 			<Pressable onPress={openTodos} className="p-xs rounded-md active:bg-surface-container" accessibilityLabel="Todos">
 				<TodosIcon className="text-on-surface-variant" />
+			</Pressable>
+			<Pressable
+				onPress={openHabits}
+				className="p-xs rounded-md active:bg-surface-container"
+				accessibilityLabel="Habits"
+			>
+				<HabitsIcon className="text-on-surface-variant" />
 			</Pressable>
 		</View>
 	)

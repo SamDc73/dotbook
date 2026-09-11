@@ -249,6 +249,77 @@ export const MIGRATIONS = [
 			)`,
 		],
 	},
+	{
+		// Browser & app time. See V0.1 → feature 7.
+		version: 8,
+		statements: [
+			// One row per (day, source, device, key). `key` is a hostname for
+			// ext:firefox and a package name for android:usagestats. The server ADDS
+			// seconds as batches arrive; a row is never replaced wholesale.
+			//
+			// The double-count rule: per-site rows from the extension are a breakdown
+			// of the browser's own app time. Never sum ext:firefox rows with the
+			// browser's android:usagestats row — that counts every minute twice.
+			`CREATE TABLE time_rollups (
+				day     TEXT    NOT NULL,
+				source  TEXT    NOT NULL,
+				device  TEXT    NOT NULL,
+				key     TEXT    NOT NULL,
+				seconds INTEGER NOT NULL,
+				PRIMARY KEY (day, source, device, key)
+			)`,
+		],
+	},
+	{
+		// Phase 9 — habits + LLM classification. See V0.1 → feature 6.
+		version: 9,
+		statements: [
+			// kind: do | avoid. "no porn" is an avoid habit; "meditate" is a do habit.
+			`CREATE TABLE habits (
+				id         TEXT PRIMARY KEY,
+				name       TEXT    NOT NULL,
+				kind       TEXT    NOT NULL,
+				created_at INTEGER NOT NULL,
+				deleted_at INTEGER
+			)`,
+			// A tick is one verdict about one habit on one day: value kept | broken,
+			// by manual | llm. A person's tick always wins over the model's — see
+			// core/habits effectiveTick. Every llm tick keeps the model, prompt
+			// version and reasoning so it can be audited and re-run. Soft delete
+			// only: a superseded proposal stays on record.
+			`CREATE TABLE habit_ticks (
+				id             TEXT PRIMARY KEY,
+				habit_id       TEXT    NOT NULL REFERENCES habits (id),
+				day            TEXT    NOT NULL,
+				value          TEXT    NOT NULL,
+				by             TEXT    NOT NULL,
+				model          TEXT,
+				prompt_version TEXT,
+				reasoning      TEXT,
+				created_at     INTEGER NOT NULL,
+				deleted_at     INTEGER
+			)`,
+			"CREATE INDEX habit_ticks_by_day ON habit_ticks (habit_id, day)",
+		],
+	},
+	{
+		version: 10,
+		statements: [
+			// One row per kept voice recording, pointing at the line it became.
+			// Local only — audio does not sync in V0.1; the transcript is the
+			// line's text. `engine` names the recognizer so a better one later
+			// can re-run over old recordings: transcripts are derived data.
+			`CREATE TABLE voice_notes (
+				id          TEXT PRIMARY KEY,
+				entry_id    TEXT    NOT NULL REFERENCES entries (id),
+				path        TEXT    NOT NULL,
+				duration_ms INTEGER,
+				engine      TEXT    NOT NULL,
+				created_at  INTEGER NOT NULL
+			)`,
+			"CREATE INDEX voice_notes_by_entry ON voice_notes (entry_id)",
+		],
+	},
 ]
 
 /** Migrations newer than the database's current `user_version`, oldest first. */
