@@ -394,8 +394,9 @@ A suggestion is always visible before it commits — never applied silently.
 packages/core/       shared logic — db schema + migrations, parse, templates,
                      recurrence, sync (CRDT), habits, analysis, import (RingConn)
 app/                 Expo universal — Android and web from one codebase
-app/app/             the routes: index (Today), focus, templates, todos, habits,
-                     recurring, trends, settings
+app/app/             the routes: (tabs)/ holds index (Today), todos, habits,
+                     templates, recurring, trends, settings, more; focus is a
+                     chromeless stack screen. SectionBar is the rail/bar
 app/db/              one module per table family; sync.js holds insertRow/updateRow
 app/notifications/   reminders: setup, reconcile, responses, headless task, web path
 app/sync/            the sync client and its triggers
