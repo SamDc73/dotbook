@@ -10,7 +10,7 @@
 export const SYNCED = {
 	entries: {
 		keys: ["id"],
-		columns: ["day", "seq", "ts_start", "ts_end", "text", "kind", "source", "created_at", "deleted_at"],
+		columns: ["day", "seq", "ts_start", "ts_end", "text", "kind", "source", "created_at", "deleted_at", "stamped_at"],
 	},
 	templates: {
 		keys: ["id"],

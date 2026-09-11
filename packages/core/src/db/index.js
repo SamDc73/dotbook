@@ -320,6 +320,15 @@ export const MIGRATIONS = [
 			"CREATE INDEX voice_notes_by_entry ON voice_notes (entry_id)",
 		],
 	},
+	{
+		version: 11,
+		statements: [
+			// When the app wrote the line's time itself (a line typed without one is
+			// stamped with "now"), this is the moment it did. Null when the person
+			// typed the time. Stored, not shown; cleared the moment the time is edited.
+			"ALTER TABLE entries ADD COLUMN stamped_at INTEGER",
+		],
+	},
 ]
 
 /** Migrations newer than the database's current `user_version`, oldest first. */

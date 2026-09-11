@@ -60,7 +60,8 @@ export default function Today() {
 			return
 		}
 		if (text === "") return
-		const id = await addEntry(db, { day, text: stampedNow(text, day), source: voice ? "voice" : "manual" })
+		const stamped = stampedNow(text, day)
+		const id = await addEntry(db, { day, ...stamped, source: voice ? "voice" : "manual" })
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 	}
 
@@ -120,11 +121,13 @@ function keyOf(entry) {
 
 // A line typed today without a time is stamped with the current one — the time
 // is the bullet, so every line gets one. It is written into the text itself,
-// exactly as if it had been typed, so the row stays a plain line. Lines for
-// other days and `/` commands are left as they are: "now" means nothing there.
+// exactly as if it had been typed, so the row stays a plain line; `stampedAt`
+// remembers that the app did it (kept, not shown). Lines for other days and
+// `/` commands are left as they are: "now" means nothing there.
 function stampedNow(text, day) {
-	if (text.startsWith("/") || day !== today()) return text
 	const now = Date.now()
-	if (parseLineTime(text, day, now).timeText !== "") return text
-	return `${clock(now)} ${text}`
+	if (text.startsWith("/") || day !== today() || parseLineTime(text, day, now).timeText !== "") {
+		return { text, stampedAt: null }
+	}
+	return { text: `${clock(now)} ${text}`, stampedAt: now }
 }

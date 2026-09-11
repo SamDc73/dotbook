@@ -53,7 +53,9 @@ function kindFor(parsed, now) {
 
 // `day` is the day being viewed; a natural prefix (`ytd 9pm …`) may land the line elsewhere.
 // `source` says where the line came from — `manual` when typed, `voice` when transcribed.
-export async function addEntry(db, { day, text, source = "manual" }) {
+// `stampedAt`: the moment the app wrote the time into `text` itself because the
+// line was typed without one. Null when the person typed it. Kept, not shown.
+export async function addEntry(db, { day, text, source = "manual", stampedAt = null }) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
 	const id = uuidv7()
@@ -69,6 +71,7 @@ export async function addEntry(db, { day, text, source = "manual" }) {
 		source,
 		created_at: now,
 		deleted_at: null,
+		stamped_at: stampedAt,
 	})
 	await annotate(db, id, parsed)
 	return id
@@ -77,12 +80,13 @@ export async function addEntry(db, { day, text, source = "manual" }) {
 export async function updateEntryText(db, id, text, day) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
-	await updateRow(
-		db,
-		"entries",
-		{ id },
-		{ text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: kindFor(parsed, now) }
-	)
+	const changes = { text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: kindFor(parsed, now) }
+	// A stamped time the person has now edited is their time: the stamp is over.
+	const before = await db.sql`SELECT text, stamped_at FROM entries WHERE id = ${id}`.first()
+	if (before?.stamped_at !== null && parseLineTime(before.text, day, now).timeText !== parsed.timeText) {
+		changes.stamped_at = null
+	}
+	await updateRow(db, "entries", { id }, changes)
 	await annotate(db, id, parsed)
 }
 
