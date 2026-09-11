@@ -1,4 +1,4 @@
-import { extractItems, parseLineTime } from "@dotbook/core/parse"
+import { extractItems, localDay, parseLineTime } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { recordUse } from "./templates"
 
@@ -36,21 +36,41 @@ function parseUse(row) {
 	return { ...row, snapshot: JSON.parse(row.snapshot), deviation: row.deviation && JSON.parse(row.deviation) }
 }
 
+// Plan vs log needs no toggle: a line whose time has not happened yet is a plan.
+// A timed line is a plan when it starts in the future, an untimed one when its
+// day is after today. Editing the text derives the kind again; `confirmPlan`
+// turns a past plan into a log. One rule, easy to flip if it proves wrong.
+// (Reminders at a plan's mark: see app/notifications.)
+function kindFor(parsed, now) {
+	if (parsed.tsStart !== null) {
+		return parsed.tsStart > now ? "plan" : "log"
+	}
+	return parsed.day > localDay(now) ? "plan" : "log"
+}
+
 // `day` is the day being viewed; a natural prefix (`ytd 9pm …`) may land the line elsewhere.
 export async function addEntry(db, { day, text }) {
-	const parsed = parseLineTime(text, day)
+	const now = Date.now()
+	const parsed = parseLineTime(text, day, now)
 	const id = uuidv7()
 	const { next } = await db.sql`SELECT coalesce(max(seq), 0) + 1 AS next FROM entries WHERE day = ${parsed.day}`.first()
-	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, created_at)
-		VALUES (${id}, ${parsed.day}, ${next}, ${parsed.tsStart}, ${parsed.tsEnd}, ${text}, ${Date.now()})`
+	await db.sql`INSERT INTO entries (id, day, seq, ts_start, ts_end, text, kind, created_at)
+		VALUES (${id}, ${parsed.day}, ${next}, ${parsed.tsStart}, ${parsed.tsEnd}, ${text}, ${kindFor(parsed, now)}, ${now})`
 	await annotate(db, id, parsed)
+	return id
 }
 
 export async function updateEntryText(db, id, text, day) {
-	const parsed = parseLineTime(text, day)
-	await db.sql`UPDATE entries SET text = ${text}, day = ${parsed.day}, ts_start = ${parsed.tsStart}, ts_end = ${parsed.tsEnd}
-		WHERE id = ${id}`
+	const now = Date.now()
+	const parsed = parseLineTime(text, day, now)
+	await db.sql`UPDATE entries SET text = ${text}, day = ${parsed.day}, ts_start = ${parsed.tsStart},
+		ts_end = ${parsed.tsEnd}, kind = ${kindFor(parsed, now)} WHERE id = ${id}`
 	await annotate(db, id, parsed)
+}
+
+// "Did it?" — a plan line becomes a log line when you confirm what happened.
+export function confirmPlan(db, id) {
+	return db.sql`UPDATE entries SET kind = 'log' WHERE id = ${id}`
 }
 
 // Everything derived from a line: quantities, durations, tags (a cache, so

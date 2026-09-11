@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Composer } from "../components/Composer"
 import { DayHeader } from "../components/DayHeader"
 import { EntryLine } from "../components/EntryLine"
-import { addEntry, deleteEntry, entriesForDay, updateEntryText } from "../db/entries"
+import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../db/entries"
+import { abandonTimer, startTimer, stopTimer } from "../db/timers"
 import { useLiveQuery } from "../db/use-live-query"
 import { shiftDay, today } from "../lib/day"
 
@@ -47,12 +48,25 @@ export default function Today() {
 	}
 
 	function remove(entry) {
-		deleteEntry(db, entry.id)
+		if (entry.kind === "timer") abandonTimer(db, entry)
+		else deleteEntry(db, entry.id)
 		if (editing?.id === entry.id) setEditing(null)
 	}
 
+	function timer(minutes, text) {
+		startTimer(db, { minutes, text })
+	}
+
+	function confirm(entry) {
+		confirmPlan(db, entry.id)
+	}
+
+	function stop(entry) {
+		stopTimer(db, entry)
+	}
+
 	function renderEntry({ item }) {
-		return <EntryLine entry={item} onPress={setEditing} onLongPress={remove} />
+		return <EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
 	}
 
 	return (
@@ -71,9 +85,11 @@ export default function Today() {
 			/>
 			<Composer
 				key={editing?.id ?? "new"}
+				day={day}
 				defaultText={editing?.text ?? ""}
 				editing={editing !== null}
 				onSubmit={submit}
+				onTimer={timer}
 			/>
 			<StatusBar style="auto" />
 		</KeyboardAvoidingView>

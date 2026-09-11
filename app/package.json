@@ -1,12 +1,14 @@
 {
 	"name": "@dotbook/app",
 	"version": "1.0.0",
-	"main": "expo-router/entry",
+	"main": "index.js",
 	"dependencies": {
+		"@expensify/react-native-live-markdown": "^0.1.339",
 		"@dotbook/core": "workspace:*",
 		"@pchmn/expo-material3-theme": "^1.4.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"expensify-common": "^2.0.204",
 		"expo": "~57.0.20",
 		"expo-audio": "~57.0.4",
 		"expo-constants": "~57.0.17",
@@ -17,6 +19,7 @@
 		"expo-speech-recognition": "^57.0.0",
 		"expo-sqlite": "~57.0.2",
 		"expo-status-bar": "~57.0.1",
+		"expo-task-manager": "~57.0.16",
 		"lucide-react-native": "^1.41.0",
 		"nativewind": "5.0.0-preview.4",
 		"react": "19.2.3",
