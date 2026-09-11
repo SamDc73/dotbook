@@ -1,22 +1,32 @@
 import { useRouter } from "expo-router"
-import { ChevronLeft, ChevronRight, CircleCheck, Clock, Layers, List, ListChecks } from "lucide-react-native"
-import { styled } from "nativewind"
+import {
+	ChevronLeft,
+	ChevronRight,
+	CircleCheck,
+	Clock,
+	Crosshair,
+	Layers,
+	List,
+	ListChecks,
+	Settings,
+} from "lucide-react-native"
 import { Pressable, Text, View } from "react-native"
 import { dayLabel } from "../lib/day"
+import { Icon } from "./ui/Icon"
 
-// Lucide icons take their colour as a prop; this lets a token class drive it instead.
-const ICON = { className: { target: "style", nativeStyleMapping: { color: "color" } } }
-const PrevIcon = styled(ChevronLeft, ICON)
-const NextIcon = styled(ChevronRight, ICON)
-const ChronologicalIcon = styled(Clock, ICON)
-const TypingIcon = styled(List, ICON)
-const TemplatesIcon = styled(Layers, ICON)
-const TodosIcon = styled(ListChecks, ICON)
-const HabitsIcon = styled(CircleCheck, ICON)
+// The day being viewed, and one icon per place the app has. The order toggle
+// is the only one that changes this screen; the rest are routes.
+const SECTIONS = [
+	{ route: "/focus", label: "Focus", glyph: Crosshair },
+	{ route: "/templates", label: "Templates", glyph: Layers },
+	{ route: "/todos", label: "Todos", glyph: ListChecks },
+	{ route: "/habits", label: "Habits", glyph: CircleCheck },
+	{ route: "/settings", label: "Settings", glyph: Settings },
+]
 
 export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
-	const OrderIcon = order === "chronological" ? ChronologicalIcon : TypingIcon
 	const router = useRouter()
+	const orderGlyph = order === "chronological" ? Clock : List
 
 	function previousDay() {
 		onShiftDay(-1)
@@ -24,57 +34,29 @@ export function DayHeader({ day, order, onShiftDay, onToggleOrder }) {
 	function nextDay() {
 		onShiftDay(1)
 	}
-	function openTemplates() {
-		router.push("/templates")
-	}
-	function openTodos() {
-		router.push("/todos")
-	}
-	function openHabits() {
-		router.push("/habits")
-	}
 
 	return (
-		<View className="flex-row items-center gap-sm px-md py-sm bg-surface">
-			<Pressable
-				onPress={previousDay}
-				className="p-xs rounded-md active:bg-surface-container"
-				accessibilityLabel="Previous day"
-			>
-				<PrevIcon className="text-on-surface-variant" />
-			</Pressable>
+		<View className="flex-row items-center gap-2xs px-sm py-sm bg-surface">
+			<HeaderButton label="Previous day" glyph={ChevronLeft} onPress={previousDay} />
 			<Text className="flex-1 text-center text-subheading text-on-surface">{dayLabel(day)}</Text>
-			<Pressable
-				onPress={nextDay}
-				className="p-xs rounded-md active:bg-surface-container"
-				accessibilityLabel="Next day"
-			>
-				<NextIcon className="text-on-surface-variant" />
-			</Pressable>
-			<Pressable
-				onPress={onToggleOrder}
-				className="p-xs rounded-md active:bg-surface-container"
-				accessibilityLabel={`Order: ${order}`}
-			>
-				<OrderIcon className="text-primary" />
-			</Pressable>
-			<Pressable
-				onPress={openTemplates}
-				className="p-xs rounded-md active:bg-surface-container"
-				accessibilityLabel="Templates"
-			>
-				<TemplatesIcon className="text-on-surface-variant" />
-			</Pressable>
-			<Pressable onPress={openTodos} className="p-xs rounded-md active:bg-surface-container" accessibilityLabel="Todos">
-				<TodosIcon className="text-on-surface-variant" />
-			</Pressable>
-			<Pressable
-				onPress={openHabits}
-				className="p-xs rounded-md active:bg-surface-container"
-				accessibilityLabel="Habits"
-			>
-				<HabitsIcon className="text-on-surface-variant" />
-			</Pressable>
+			<HeaderButton label="Next day" glyph={ChevronRight} onPress={nextDay} />
+			<HeaderButton label={`Order: ${order}`} glyph={orderGlyph} onPress={onToggleOrder} className="text-primary" />
+			{SECTIONS.map((section) => (
+				<HeaderButton
+					key={section.route}
+					label={section.label}
+					glyph={section.glyph}
+					onPress={() => router.push(section.route)}
+				/>
+			))}
 		</View>
+	)
+}
+
+function HeaderButton({ label, glyph, onPress, className = "text-on-surface-variant" }) {
+	return (
+		<Pressable onPress={onPress} className="p-xs rounded-md active:bg-surface-container" accessibilityLabel={label}>
+			<Icon as={glyph} className={className} />
+		</Pressable>
 	)
 }
