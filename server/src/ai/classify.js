@@ -34,7 +34,6 @@ export async function classifyDay(db, day, groupId, classifier) {
 	const answer = await classifier.complete(CLASSIFY_SYSTEM, classifyPrompt(habits, lines))
 	const verdicts = parseVerdicts(answer, habits)
 	if (verdicts === null) {
-		// biome-ignore lint/suspicious/noConsole: the server's log is its only voice
 		console.error(`classify ${day}: unusable answer from ${classifier.model}: ${String(answer).slice(0, 200)}`)
 		return 0
 	}
@@ -109,7 +108,6 @@ export async function runPending(db, groupId, classifier) {
 				await classifyDay(db, day, groupId, classifier)
 				done++
 			} catch (error) {
-				// biome-ignore lint/suspicious/noConsole: the server's log is its only voice
 				console.error(`classify ${day} failed:`, error)
 			}
 		}

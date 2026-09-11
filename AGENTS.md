@@ -36,7 +36,11 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 | Voice | `expo-speech-recognition` (on-device, English) |
 | Composer | `@expensify/react-native-live-markdown` (custom worklet parser) |
 
-### Two setup traps — do not undo these
+### Setup traps — do not undo these
+
+Each of these was found by running the app in a real browser (Playwright,
+Firefox + Chromium) after `expo export` had passed. A green export proves
+nothing about the web at runtime; the browser check does.
 
 1. **NativeWind 5 + Tailwind 4 needs `@tailwindcss/postcss`.** Without
    `postcss.config.mjs`, `@theme` passes through uncompiled and **no utility
@@ -44,6 +48,22 @@ See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately defe
 2. **NativeWind 5 has no `jsx-runtime`.** Do not set
    `jsxImportSource: 'nativewind'` in `babel.config.js` — that is v4 syntax and
    the bundle fails to resolve. The `nativewind/babel` preset handles it.
+3. **The NativeWind preset must not run on react-native-web itself**
+   (`babel.config.js` `overrides` with a function `exclude`). It rewrites RNW's
+   own internal FlatList import into its CSS wrapper, which requires
+   `react-native` back while RNW is still initialising → `FlatList` is
+   undefined and the web app never starts. A RegExp `exclude` breaks Expo's
+   cache-key computation; keep the function.
+4. **`@import "tailwindcss" important;` in `global.css`.** Tailwind 4 puts
+   utilities in `@layer utilities`; react-native-web's per-element classes are
+   unlayered and win, so without `important` the web renders unstyled. Native
+   ignores the flag.
+5. **No synchronous SQLite on web.** expo-sqlite's sync API needs
+   `SharedArrayBuffer`, which needs a cross-origin-isolated document; Expo's dev
+   server does not isolate the HTML and neither does every host. Core's sync
+   adapter is async for this reason — keep it that way.
+6. **live-markdown's web input ignores `className`.** It is styled through the
+   token hook on web only (`Composer.jsx`); do not try to fix it with classes.
 
 NativeWind 4 + Tailwind 3.4 is the stable fallback if the preview causes trouble;
 it was verified working here before switching to 4 on request.
@@ -72,6 +92,9 @@ Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM
 - Test: `cd packages/core && bun test` and `cd server && bun test` (the app has no test runner;
   its pure sync round is tested against the in-process server)
 - Extension: `bunx web-ext lint --source-dir extension`
+- **Web, in real browsers** (required before calling web work done): `cd app && bun run web` in one
+  terminal, `cd app && bun run e2e` in another — every route in headless Firefox + Chromium with zero
+  console errors/warnings, then the Today screen end to end. See `app/e2e/README.md`
 
 ## Critical Rules - DO NOT VIOLATE
 

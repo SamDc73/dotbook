@@ -206,6 +206,12 @@
 			"enabled": true
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["app/e2e/**", "server/src/**"],
+			"linter": { "rules": { "suspicious": { "noConsole": "off" } } }
+		}
+	],
 	"files": {
 		"ignoreUnknown": false,
 		"includes": ["**", "!!**/dist", "!!**/coverage", "!!**/node_modules", "!!**/build", "!!copied_repos", "!!**/*.html"]
