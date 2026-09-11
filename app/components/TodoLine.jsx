@@ -6,6 +6,7 @@ import SquareCheck from "lucide-react-native/icons/square-check"
 import SquareDashed from "lucide-react-native/icons/square-dashed"
 import { memo } from "react"
 import { Pressable } from "react-native"
+import { gutter } from "../lib/gutter"
 import { TimePill } from "./TimePill"
 import { Badge } from "./ui/Badge"
 import { Icon } from "./ui/Icon"
@@ -32,7 +33,10 @@ export const TodoLine = memo(function TodoLine({ todo, onClose }) {
 	}
 
 	return (
-		<Pressable onLongPress={trash} className="flex-row items-baseline gap-sm py-xs active:bg-surface-container">
+		<Pressable
+			onLongPress={trash}
+			className={`${gutter(null)} flex-row items-baseline gap-sm py-xs active:bg-surface-container`}
+		>
 			<Pressable onPress={done} accessibilityLabel={`Done: ${todo.text}`} className="self-center">
 				<Icon as={Square} className="text-on-surface-variant" />
 			</Pressable>
@@ -58,7 +62,7 @@ export const DoneLine = memo(function DoneLine({ entry, hour, endHour }) {
 	const struck = role !== "started"
 	return (
 		<Pressable
-			className="flex-row items-baseline gap-sm py-xs"
+			className={`${gutter(hour)} flex-row items-baseline gap-sm py-xs`}
 			accessibilityLabel={`${role === "finished" ? "done" : role}: ${text}`}
 			accessibilityRole="text"
 		>

@@ -6,7 +6,9 @@ import { memo, useState } from "react"
 import { Pressable, View } from "react-native"
 import { entryReminder, toggleEntryReminder } from "../db/reminders"
 import { useLiveQuery } from "../db/use-live-query"
+import { gutter } from "../lib/gutter"
 import { reconcile } from "../notifications/reminders"
+import { InlineEdit } from "./InlineEdit"
 import { TemplateExpansion } from "./TemplateExpansion"
 import { TimePill } from "./TimePill"
 import { TimerLine } from "./TimerLine"
@@ -21,11 +23,24 @@ import { Text } from "./ui/Text"
 // where the time would be, in the tertiary colour. A templated line carries a
 // version chip; tapping it shows what the line contained. A plan line is dimmer;
 // once its time has passed it asks "did it?", and while its mark is still ahead
-// a bell adds or removes a reminder at that mark.
+// a bell adds or removes a reminder at that mark. Each row draws its own
+// segment of the gutter in its hour's tint.
+//
+// Tapping a line edits it in place: the row becomes the same input the composer
+// uses, holding the raw text, on the primary wash. Enter commits, Escape
+// cancels, leaving the row commits if something changed.
 //
 // Memoised: the log is a list and a timer row redraws every second — only the
 // row whose entry changed should render again.
-export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, onConfirm, onStop }) {
+export const EntryLine = memo(function EntryLine({
+	entry,
+	editing = false,
+	onEdit,
+	onEdited,
+	onLongPress,
+	onConfirm,
+	onStop,
+}) {
 	const db = useSQLiteContext()
 	const { body } = parseLineTime(entry.text, entry.day)
 	const hour = hourOf(entry.ts_start)
@@ -50,9 +65,16 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 	if (entry.source === "todo" || entry.todo_role) {
 		return <DoneLine entry={entry} hour={hour} endHour={endHour} />
 	}
+	if (editing) {
+		return (
+			<View className={gutter(hour)}>
+				<InlineEdit entry={entry} onDone={onEdited} />
+			</View>
+		)
+	}
 
 	function press() {
-		onPress(entry)
+		onEdit(entry)
 	}
 	function longPress() {
 		onLongPress(entry)
@@ -69,7 +91,7 @@ export const EntryLine = memo(function EntryLine({ entry, onPress, onLongPress, 
 	}
 
 	return (
-		<View>
+		<View className={gutter(hour)}>
 			<Pressable
 				onPress={press}
 				onLongPress={longPress}

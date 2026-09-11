@@ -1,113 +1,96 @@
-import { MarkdownTextInput } from "@expensify/react-native-live-markdown"
 import { parseLineTime } from "@dotbook/core/parse"
 import { useQuery } from "@tanstack/react-query"
 import { useSQLiteContext } from "expo-sqlite"
-import { styled } from "nativewind"
 import { useEffect, useState } from "react"
-import { Platform, View } from "react-native"
+import { View } from "react-native"
 import { runCommand } from "../db/commands"
 import { suggestions } from "../db/timers"
 import { clock } from "../lib/format"
-import { useTokenColour } from "../lib/use-token-colour"
+import { gutter } from "../lib/gutter"
+import { matchCommands } from "../lib/menu"
+import { LineInput } from "./LineInput"
 import { Seam } from "./LogList"
 import { MicButton } from "./MicButton"
 import { SlashMenu, TimerSuggestions } from "./SlashMenu"
 import { Text } from "./ui/Text"
 
 // The next line of the log — not a box beneath it. This is the log's last row:
-// same grid as a line, a dashed seam above it when there are lines, none below.
-// Where the pill will be sits a ghost pill — a dashed hairline around the
-// current minute, muted — until a time is typed with a body, at which point the
-// pill forms inside the input itself and the ghost steps aside. Enter commits
-// the line above and the row is empty again, focus kept. Mount it with a `key`
-// per entry being edited so `defaultText` is picked up fresh.
-//
-// The composer styles text; it does not host views (AGENTS.md). live-markdown's
-// parser tags character ranges with a closed set of types. The time prefix is
-// tagged `mention-here` — the one type that takes both a colour and a field —
-// so it reads as the pill it is about to become. The forming rule: it lifts
-// only once the time is complete AND a word has started after it, so typing
-// `7:20 -> 7:50` is never cut in half at `7:20`.
-const Input = styled(MarkdownTextInput, { className: "style" })
-
-// Runs on the UI thread as you type, so it cannot call into @dotbook/core. The
-// time regex is the strict prefix from packages/core/src/parse/time.js, inlined,
-// followed by whitespace and the first character of the body — which must be
-// one that cannot continue the time (not a digit, not a range arrow), so
-// `8:30 -` and `8:30 -> 1` stay plain until the range is whole and a word starts.
-function parser(text) {
-	"worklet"
-	const ranges = []
-	const time =
-		/^\s*\d{1,2}:\d{2}(?:\s?[ap]\.?m\.?)?(?:\s*(?:->|→|-|–|—)\s*\d{1,2}:\d{2}(?:\s?[ap]\.?m\.?)?)?(?=\s+[^\s\d\-–—>→])/i.exec(
-			text
-		)
-	if (time) ranges.push({ type: "mention-here", start: 0, length: time[0].length })
-	const command = /^\/\w+/.exec(text)
-	if (command) ranges.push({ type: "code", start: 0, length: command[0].length })
-	return ranges
-}
-
+// the same gutter and grid as a line, a dashed seam above it when there are
+// lines, none below. Where the pill will be sits a ghost pill — a dashed
+// hairline around the current minute, muted — until a time is typed with a
+// body, at which point the pill forms inside the input itself and the ghost
+// steps aside. Enter commits the line above and the row is empty again, focus
+// kept. The `/` menu and the timer's suggestions open UNDER this row, never
+// over the log. Editing an existing line happens in that line's own row
+// (EntryLine), not here.
 const NO_SUGGESTIONS = []
 const MINUTE_MS = 60 * 1000
 
-export function Composer({ day, defaultText = "", editing = false, seam = false, onSubmit }) {
+export function Composer({ day, seam = false, onSubmit }) {
 	const db = useSQLiteContext()
-	const [text, setText] = useState(defaultText)
+	const [text, setText] = useState("")
 	// The recording behind the current text, when it came from the microphone.
 	// Submitted with the line so it is marked `source: voice` and the audio is kept.
 	const [voice, setVoice] = useState(null)
+	// Which row of the open list ↑ ↓ have reached; reset whenever the text changes.
+	const [highlight, setHighlight] = useState(0)
 	const now = useMinute()
 
 	// `/` only at column 0; a space closes the menu, so mid-line `/` is just a slash.
 	const menuOpen = text.startsWith("/") && !text.includes(" ")
-	const timerOpen = text.startsWith("/timer")
+	const matches = menuOpen ? matchCommands(text.slice(1)) : NO_SUGGESTIONS
+	// `/timer ` with no number yet: the durations are the list. A typed number ignores them.
+	const timerListOpen = /^\/timer\s*$/.test(text)
 
 	// The durations to offer, read when `/timer` is open and re-read when the
 	// database changes (LiveQueries) — the next plan block may have moved.
 	const { data: offered = NO_SUGGESTIONS } = useQuery({
 		queryKey: ["timer-suggestions", day],
 		queryFn: () => suggestions(db, day, Date.now()),
-		enabled: timerOpen,
+		enabled: text.startsWith("/timer"),
 	})
 
-	// The pill inside the input takes the typed hour's tokens; no time typed
-	// yet means the ghost stays, and the line is stamped with `now` on Enter.
-	const typed = parseLineTime(text, day, now)
-	const hour = String(new Date(typed.tsStart ?? now).getHours()).padStart(2, "0")
-	const markdownStyle = {
-		mentionHere: {
-			color: useTokenColour(`--color-hour-${hour}-on-pill`),
-			backgroundColor: useTokenColour(`--color-hour-${hour}-pill`),
-		},
-		code: { color: useTokenColour("--color-primary"), backgroundColor: useTokenColour("--color-primary-container") },
-	}
-	// On the web live-markdown's input is its own DOM element: className does not
-	// reach it, so the few values it needs come through the same live-token hook.
-	const onSurface = useTokenColour("--color-on-surface")
-	const placeholderColour = useTokenColour("--color-outline")
-	const lineSize = useTokenColour("--text-line")
-	const bodyFace = useTokenColour("--font-body")
-	const webStyle =
-		Platform.OS === "web"
-			? { flex: 1, borderWidth: 0, outlineStyle: "none", color: onSurface, fontSize: lineSize, fontFamily: bodyFace }
-			: undefined
-	const ghost = !editing && !text.startsWith("/") && typed.timeText === ""
+	const list = listFor(menuOpen, matches, timerListOpen, offered)
+	const index = list === null ? 0 : Math.min(highlight, list.length - 1)
+	const ghost = !text.startsWith("/") && parseLineTime(text, day, now).timeText === ""
 
 	function pickCommand(command) {
 		setText(`/${command.name} `)
+		setHighlight(0)
 	}
 
 	function pickMinutes(minutes) {
 		setText(`/timer ${minutes}`)
 	}
 
+	function pick(item) {
+		if (menuOpen) pickCommand(item)
+		else pickMinutes(item.minutes)
+	}
+
+	// Keys only the web delivers (`ArrowUp`, `ArrowDown`, `Tab`, `Escape`); on
+	// native the list is tap-only. Arrows and Tab must not move the caret or focus.
 	function keyPress(event) {
-		if (menuOpen && event.nativeEvent.key === "Escape") setText("")
+		const key = event.nativeEvent.key
+		if (key === "Escape" && (menuOpen || timerListOpen)) {
+			setText("")
+			return
+		}
+		if (list === null) return
+		if (key === "ArrowDown" || key === "ArrowUp") {
+			event.preventDefault?.()
+			const step = key === "ArrowDown" ? 1 : list.length - 1
+			setHighlight((current) => (Math.min(current, list.length - 1) + step) % list.length)
+		}
+		if (key === "Tab") {
+			event.preventDefault?.()
+			pick(list[index])
+		}
 	}
 
 	function change(next) {
 		setText(next)
+		setHighlight(0)
 		// Clearing the line drops the recording with it: what is submitted must be what was heard.
 		if (next === "") setVoice(null)
 	}
@@ -120,8 +103,13 @@ export function Composer({ day, defaultText = "", editing = false, seam = false,
 	}
 
 	async function submit() {
+		// Enter on an open list picks its highlighted row instead of committing.
+		if (list !== null && list.length > 0) {
+			pick(list[index])
+			return
+		}
 		const line = text.trim()
-		// `/timer` with nothing after it: close the menu, keep the chips, wait for a number.
+		// `/timer` with nothing after it and nothing to offer: wait for a number.
 		if (line === "/timer") {
 			setText("/timer ")
 			return
@@ -136,10 +124,8 @@ export function Composer({ day, defaultText = "", editing = false, seam = false,
 	}
 
 	return (
-		<View className={editing ? "bg-primary-wash" : undefined}>
+		<View className={gutter(null)}>
 			{seam ? <Seam /> : null}
-			{menuOpen ? <SlashMenu query={text.slice(1)} onPick={pickCommand} /> : null}
-			{timerOpen ? <TimerSuggestions suggestions={offered} onPick={pickMinutes} /> : null}
 			<View className="flex-row items-center gap-sm py-xs">
 				{/* The time this line will get if none is typed — a ghost, not yet a pill. */}
 				{ghost ? (
@@ -149,24 +135,29 @@ export function Composer({ day, defaultText = "", editing = false, seam = false,
 						</Text>
 					</View>
 				) : null}
-				<Input
-					className="flex-1 font-body text-line text-on-surface"
-					style={webStyle}
+				<LineInput
 					value={text}
+					day={day}
+					now={now}
 					onChangeText={change}
 					onKeyPress={keyPress}
 					onSubmitEditing={submit}
-					submitBehavior="submit"
-					parser={parser}
-					markdownStyle={markdownStyle}
 					placeholder="7:36 woke up"
-					placeholderTextColor={placeholderColour}
 					autoFocus
 				/>
 				<MicButton onTranscript={setText} onDone={heard} />
 			</View>
+			{menuOpen ? <SlashMenu matches={matches} highlight={index} onPick={pickCommand} /> : null}
+			{timerListOpen ? <TimerSuggestions suggestions={offered} highlight={index} onPick={pickMinutes} /> : null}
 		</View>
 	)
+}
+
+// The rows the arrow keys walk: the command matches, or the timer's durations.
+function listFor(menuOpen, matches, timerListOpen, offered) {
+	if (menuOpen) return matches
+	if (timerListOpen && offered.length > 0) return offered
+	return null
 }
 
 // The current minute, so the ghost clock is never stale by more than one.

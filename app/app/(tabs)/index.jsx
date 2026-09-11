@@ -14,7 +14,7 @@ import { EntryLine } from "../../components/EntryLine"
 import { LogList } from "../../components/LogList"
 import { TodoLine } from "../../components/TodoLine"
 import { Icon } from "../../components/ui/Icon"
-import { addEntry, confirmPlan, deleteEntry, entriesForDay, updateEntryText } from "../../db/entries"
+import { addEntry, confirmPlan, deleteEntry, entriesForDay } from "../../db/entries"
 import { materializeDay } from "../../db/recurrences"
 import { abandonTimer, stopTimer } from "../../db/timers"
 import { closeTodo, mergeTodosIntoLog, todosForDay } from "../../db/todos"
@@ -32,7 +32,8 @@ export default function Today() {
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	const [day, setDay] = useState(today)
-	const [editing, setEditing] = useState(null) // the entry loaded into the composer
+	// The one line being edited in place, by id — its row holds the input.
+	const [editingId, setEditingId] = useState(null)
 	const list = useRef(null)
 
 	const { data: order = "typing" } = useQuery({
@@ -69,11 +70,6 @@ export default function Today() {
 	// `voice` is set when the line was transcribed: the row is marked `source: voice`
 	// and the recording, when the platform could keep one, is saved against it.
 	async function submit(text, voice) {
-		if (editing) {
-			if (text !== "") updateEntryText(db, editing.id, text, editing.day)
-			setEditing(null)
-			return
-		}
 		if (text === "") return
 		const stamped = stampedNow(text, day)
 		const id = await addEntry(db, { day, ...stamped, source: voice ? "voice" : "manual" })
@@ -88,19 +84,31 @@ export default function Today() {
 		(entry) => {
 			if (entry.kind === "timer") abandonTimer(db, entry)
 			else deleteEntry(db, entry.id)
-			setEditing((current) => (current?.id === entry.id ? null : current))
+			setEditingId((current) => (current === entry.id ? null : current))
 		},
 		[db]
 	)
+	const edit = useCallback((entry) => setEditingId(entry.id), [])
+	const edited = useCallback(() => setEditingId(null), [])
 	const confirm = useCallback((entry) => confirmPlan(db, entry.id), [db])
 	const stop = useCallback((entry) => stopTimer(db, entry), [db])
 	const closeOne = useCallback((todo, status) => closeTodo(db, todo, status, today()), [db])
 	const renderItem = useCallback(
 		({ item }) => {
 			if (item.kind === "todo") return <TodoLine todo={item} onClose={closeOne} />
-			return <EntryLine entry={item} onPress={setEditing} onLongPress={remove} onConfirm={confirm} onStop={stop} />
+			return (
+				<EntryLine
+					entry={item}
+					editing={item.id === editingId}
+					onEdit={edit}
+					onEdited={edited}
+					onLongPress={remove}
+					onConfirm={confirm}
+					onStop={stop}
+				/>
+			)
 		},
-		[remove, confirm, stop, closeOne]
+		[editingId, edit, edited, remove, confirm, stop, closeOne]
 	)
 
 	return (
@@ -126,16 +134,7 @@ export default function Today() {
 					renderItem={renderItem}
 					contentContainerClassName="py-sm"
 					keyboardShouldPersistTaps="handled"
-					ListFooterComponent={
-						<Composer
-							key={editing?.id ?? "new"}
-							day={day}
-							defaultText={editing?.text ?? ""}
-							editing={editing !== null}
-							seam={items.length > 0}
-							onSubmit={submit}
-						/>
-					}
+					ListFooterComponent={<Composer day={day} seam={items.length > 0} onSubmit={submit} />}
 				/>
 			</View>
 			<StatusBar style="auto" />

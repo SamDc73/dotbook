@@ -1,75 +1,79 @@
-import { fuzzyFind } from "@dotbook/core/parse"
-import { Pressable, ScrollView, View } from "react-native"
-import { COMMANDS } from "../db/commands"
-import { Badge } from "./ui/Badge"
+import { Pressable, View } from "react-native"
 import { Text } from "./ui/Text"
 
 // `/` at column 0 opens this list — the commands `app/db/commands.js` runs.
-// It is drawn as rows of the log directly above the composer's row, not as a
-// panel: the same seam, the command in mono where the pill would be, its hint
-// as the line. Our own ~50 lines — every editor that ships a command menu
-// drags in a document model.
-const NAMES = COMMANDS.map((command) => command.name)
-
-export function SlashMenu({ query, onPick }) {
-	const { ranked } = fuzzyFind(query, NAMES)
-	const matches = ranked.map((index) => COMMANDS[index])
-
+// It is drawn directly under the composer's row, aligned to its text: no
+// panel, no border, one line per command — the name in mono, the hint muted —
+// and the highlighted one on the primary wash. ↑ ↓ move the highlight, Enter
+// or Tab picks, Esc closes, a space closes (the keys are the composer's; on
+// native the list is tap-only). Our own ~60 lines — every editor that ships a
+// command menu drags in a document model.
+export function SlashMenu({ matches, highlight, onPick }) {
+	if (matches.length === 0) {
+		return (
+			<Text variant="label" className="py-xs text-on-surface-variant">
+				no command
+			</Text>
+		)
+	}
 	return (
-		<View>
-			{matches.map((command) => (
-				<Command key={command.name} command={command} onPick={onPick} />
+		<View className="pb-xs">
+			{matches.map((command, index) => (
+				<Row
+					key={command.name}
+					selected={index === highlight}
+					lead={`/${command.name}`}
+					hint={command.hint}
+					onPick={() => onPick(command)}
+				/>
 			))}
-			{matches.length === 0 ? (
-				<Text variant="label" className="py-xs text-on-surface-variant">
-					no command
-				</Text>
-			) : null}
 		</View>
 	)
 }
 
-function Command({ command, onPick }) {
-	function pick() {
-		onPick(command)
-	}
+// Durations offered once `/timer ` is typed, the same list under the same
+// row. Picking one writes the number into the line — always visible before it
+// commits, never applied silently; typing a number ignores the list.
+export function TimerSuggestions({ suggestions, highlight, onPick }) {
+	if (suggestions.length === 0) return null
 	return (
-		<Pressable
-			onPress={pick}
-			className="flex-row items-baseline gap-sm border-b border-dashed border-outline-variant py-xs active:bg-primary-wash"
-		>
-			<Text variant="mono" className="text-primary">
-				/{command.name}
-			</Text>
-			<Text variant="line" className="text-on-surface-variant">
-				{command.hint}
-			</Text>
-		</Pressable>
+		<View className="pb-xs">
+			{suggestions.map((suggestion, index) => {
+				const [lead, hint] = suggestion.label.split(" — ")
+				return (
+					<Row
+						key={suggestion.label}
+						selected={index === highlight}
+						lead={lead}
+						hint={hint}
+						onPick={() => onPick(suggestion.minutes)}
+					/>
+				)
+			})}
+		</View>
 	)
 }
 
-// Durations offered for `/timer`, as chips on a row of their own. Tapping one
-// writes the number into the line — always visible before it commits, never
-// applied silently.
-export function TimerSuggestions({ suggestions, onPick }) {
-	if (suggestions.length === 0) return null
+function Row({ selected, lead, hint, onPick }) {
 	return (
-		<ScrollView
-			horizontal
-			keyboardShouldPersistTaps="handled"
-			className="border-b border-dashed border-outline-variant"
-			contentContainerClassName="gap-xs py-xs"
+		<Pressable
+			onPress={onPick}
+			role="menuitem"
+			aria-selected={selected}
+			className={
+				selected
+					? "flex-row items-baseline gap-sm rounded-sm bg-primary-wash px-xs py-2xs"
+					: "flex-row items-baseline gap-sm rounded-sm px-xs py-2xs"
+			}
 		>
-			{suggestions.map((suggestion) => (
-				<Badge
-					key={suggestion.label}
-					variant="primary"
-					className="rounded-lg px-sm py-2xs"
-					onPress={() => onPick(suggestion.minutes)}
-				>
-					{suggestion.label}
-				</Badge>
-			))}
-		</ScrollView>
+			<Text variant="mono" className="text-primary">
+				{lead}
+			</Text>
+			{hint ? (
+				<Text variant="line" className="flex-1 text-on-surface-variant">
+					{hint}
+				</Text>
+			) : null}
+		</Pressable>
 	)
 }
