@@ -1,0 +1,61 @@
+# `docker compose up -d` and nothing else. Secrets and the domain come from
+# `.env` in this directory (see docs/self-host.md).
+
+services:
+  server:
+    build:
+      context: .
+      target: server
+    env_file: .env
+    environment:
+      DB_PATH: /data/dotbook.sqlite
+    volumes:
+      - data:/data
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      target: web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+      - ntfy
+    restart: unless-stopped
+
+  ntfy:
+    image: binwiederhier/ntfy
+    command: serve
+    environment:
+      NTFY_BASE_URL: https://ntfy.${DOMAIN}
+      NTFY_LISTEN_HTTP: ":80"
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
+      # Web Push (browser closed). Generate once with `ntfy webpush keys`;
+      # leave unset until then and ntfy still serves Android via UnifiedPush.
+      NTFY_WEB_PUSH_PUBLIC_KEY: ${NTFY_WEB_PUSH_PUBLIC_KEY:-}
+      NTFY_WEB_PUSH_PRIVATE_KEY: ${NTFY_WEB_PUSH_PRIVATE_KEY:-}
+      NTFY_WEB_PUSH_FILE: /var/cache/ntfy/webpush.db
+      NTFY_WEB_PUSH_EMAIL_ADDRESS: ${NTFY_WEB_PUSH_EMAIL_ADDRESS:-}
+    volumes:
+      - ntfy:/var/cache/ntfy
+    restart: unless-stopped
+
+volumes:
+  data:          # the one SQLite file — back this up
+  caddy_data:    # certificates
+  caddy_config:
+  ntfy:

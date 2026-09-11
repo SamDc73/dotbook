@@ -1,0 +1,31 @@
+# One host: the web app at the root, the API under /api, ntfy on a subdomain.
+# Caddy provisions TLS by itself. That is not decoration: Notifications and Web
+# Push only exist in a secure context (V0.1 feature 11), so HTTPS is required.
+# On a LAN or Tailscale name with no public DNS, add `tls internal` to both
+# site blocks (see docs/self-host.md).
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy server:3000
+	}
+
+	handle {
+		root * /srv/www
+		# expo-sqlite on web keeps SQLite in a Worker whose synchronous path
+		# needs SharedArrayBuffer, which browsers allow only under these two
+		# headers — the same ones app/metro.config.js sets for the dev server.
+		header Cross-Origin-Embedder-Policy credentialless
+		header Cross-Origin-Opener-Policy same-origin
+		# `web.output: "single"` — every route is index.html.
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# ntfy gets its own subdomain rather than a path: its web app, its Web Push
+# service worker, and UnifiedPush clients all assume they live at a root.
+ntfy.{$DOMAIN} {
+	reverse_proxy ntfy:80
+}
