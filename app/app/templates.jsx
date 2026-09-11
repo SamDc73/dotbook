@@ -1,20 +1,25 @@
 import { nextLabel } from "@dotbook/core/templates"
 import { useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
-import { ChevronLeft, Plus } from "lucide-react-native"
+import { Bell, ChevronLeft, Plus, X } from "lucide-react-native"
 import { styled } from "nativewind"
 import { useCallback, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PromotionCard } from "../components/PromotionCard"
+import { ReminderForm } from "../components/ReminderForm"
 import { TemplateForm } from "../components/TemplateForm"
+import { addReminder, remindersFor, removeReminder } from "../db/reminders"
 import { addVersion, createTemplate, decline, overview, promote } from "../db/templates"
 import { useLiveQuery } from "../db/use-live-query"
 import { today } from "../lib/day"
+import { ensurePermission, reconcile } from "../notifications/reminders"
 
 const ICON = { className: { target: "style", nativeStyleMapping: { color: "color" } } }
 const BackIcon = styled(ChevronLeft, ICON)
 const AddIcon = styled(Plus, ICON)
+const BellIcon = styled(Bell, ICON)
+const RemoveIcon = styled(X, ICON)
 
 // Templates and their versions, plus the promotion prompts — computed live from
 // the uses, so there is no stored "pending question" to go stale.
@@ -24,15 +29,22 @@ export default function Templates() {
 	const insets = useSafeAreaInsets()
 	const [selectedId, setSelectedId] = useState(null) // a template's versions, or the list
 	const [adding, setAdding] = useState(false) // the form is open
+	const [remindingId, setRemindingId] = useState(null) // the reminder form is open for this template
 
 	const query = useCallback(() => overview(db, today()), [db])
 	const all = useLiveQuery(db, query)
 	const selected = all.find((template) => template.id === selectedId) ?? null
 	const prompted = all.filter((template) => template.candidate !== null)
+	const remindersQuery = useCallback(
+		() => (selectedId ? remindersFor(db, selectedId) : Promise.resolve([])),
+		[db, selectedId]
+	)
+	const reminders = useLiveQuery(db, remindersQuery)
 
 	function back() {
-		if (adding) {
+		if (adding || remindingId) {
 			setAdding(false)
+			setRemindingId(null)
 			return
 		}
 		if (selected) {
@@ -53,6 +65,18 @@ export default function Templates() {
 			await createTemplate(db, fields)
 		}
 		setAdding(false)
+	}
+
+	async function saveReminder(fields) {
+		await ensurePermission()
+		await addReminder(db, { templateId: selected.id, ...fields })
+		await reconcile(db)
+		setRemindingId(null)
+	}
+
+	async function dropReminder(reminder) {
+		await removeReminder(db, reminder.id)
+		await reconcile(db)
 	}
 
 	return (
@@ -96,6 +120,24 @@ export default function Templates() {
 				{selected?.versions.map((version) => (
 					<VersionCard key={version.id} version={version} current={version.id === selected.current?.id} />
 				))}
+				{selected !== null && !adding ? (
+					<View className="gap-xs pt-sm">
+						<View className="flex-row items-center gap-sm">
+							<Text className="flex-1 text-label text-on-surface-variant">Reminders</Text>
+							<Pressable
+								onPress={() => setRemindingId(selected.id)}
+								className="rounded-md p-xs active:bg-surface-container"
+								accessibilityLabel="Add reminder"
+							>
+								<BellIcon className="text-primary" />
+							</Pressable>
+						</View>
+						{reminders.map((reminder) => (
+							<ReminderRow key={reminder.id} reminder={reminder} onRemove={dropReminder} />
+						))}
+						{remindingId === selected.id ? <ReminderForm onSubmit={saveReminder} onCancel={back} /> : null}
+					</View>
+				) : null}
 			</ScrollView>
 		</KeyboardAvoidingView>
 	)
@@ -132,6 +174,23 @@ function VersionCard({ version, current }) {
 					{item}
 				</Text>
 			))}
+		</View>
+	)
+}
+
+// `09:00 · notify · T2 +30m`
+function ReminderRow({ reminder, onRemove }) {
+	const parts = [reminder.at, reminder.style]
+	if (reminder.escalation_min !== null) parts.push(`T2 +${reminder.escalation_min}m`)
+	function remove() {
+		onRemove(reminder)
+	}
+	return (
+		<View className="flex-row items-center gap-sm rounded-md bg-surface-container-low px-sm py-xs">
+			<Text className="flex-1 text-body text-on-surface">{parts.join(" · ")}</Text>
+			<Pressable onPress={remove} className="rounded-md p-2xs active:bg-surface-container" accessibilityLabel="Remove">
+				<RemoveIcon className="text-on-surface-variant" />
+			</Pressable>
 		</View>
 	)
 }
