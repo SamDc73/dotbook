@@ -3,6 +3,7 @@ import { SQLiteProvider } from "expo-sqlite"
 import { Suspense } from "react"
 import { ActivityIndicator } from "react-native"
 import { migrate } from "../db/migrate"
+import { MaterialYou } from "../theme/MaterialYou"
 import "../global.css"
 
 export default function RootLayout() {
@@ -14,7 +15,9 @@ export default function RootLayout() {
 				onInit={migrate}
 				useSuspense
 			>
-				<Stack screenOptions={{ headerShown: false }} />
+				<MaterialYou>
+					<Stack screenOptions={{ headerShown: false }} />
+				</MaterialYou>
 			</SQLiteProvider>
 		</Suspense>
 	)
