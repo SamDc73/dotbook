@@ -1,4 +1,4 @@
-import { extractItems, localDay, parseLineTime } from "@dotbook/core/parse"
+import { extractItems, lineKind, localDay, parseLineTime } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { clock } from "../lib/format"
 import { insertRow, updateRow } from "./sync"
@@ -47,17 +47,11 @@ function parseUse(row) {
 	return { ...row, snapshot: JSON.parse(row.snapshot), deviation: row.deviation && JSON.parse(row.deviation) }
 }
 
-// Plan vs log needs no toggle: a line whose time has not happened yet is a plan.
-// A timed line is a plan when it starts in the future, an untimed one when its
-// day is after today. Editing the text derives the kind again; `confirmPlan`
-// turns a past plan into a log. One rule, easy to flip if it proves wrong.
+// Plan vs log needs no toggle: `lineKind` (@dotbook/core/parse) — a line whose
+// time has not happened yet is a plan. It lives in core because the server's MCP
+// endpoint writes lines too. Editing the text derives the kind again;
+// `confirmPlan` turns a past plan into a log.
 // (Reminders at a plan's mark: see app/notifications.)
-function kindFor(parsed, now) {
-	if (parsed.tsStart !== null) {
-		return parsed.tsStart > now ? "plan" : "log"
-	}
-	return parsed.day > localDay(now) ? "plan" : "log"
-}
 
 // `day` is the day being viewed; a natural prefix (`ytd 9pm …`) may land the line elsewhere.
 // `source` says where the line came from — `manual` when typed, `voice` when transcribed.
@@ -76,7 +70,7 @@ export async function addEntry(db, { day, text, source = "manual", stampedAt = n
 		ts_start: parsed.tsStart,
 		ts_end: parsed.tsEnd,
 		text,
-		kind: kind ?? kindFor(parsed, now),
+		kind: kind ?? lineKind(parsed, now),
 		source,
 		created_at: now,
 		deleted_at: null,
@@ -89,7 +83,7 @@ export async function addEntry(db, { day, text, source = "manual", stampedAt = n
 export async function updateEntryText(db, id, text, day) {
 	const now = Date.now()
 	const parsed = parseLineTime(text, day, now)
-	const changes = { text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: kindFor(parsed, now) }
+	const changes = { text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: lineKind(parsed, now) }
 	// A stamped time the person has now edited is their time: the stamp is over.
 	const before = await db.sql`SELECT text, stamped_at FROM entries WHERE id = ${id}`.first()
 	if (before?.stamped_at !== null && parseLineTime(before.text, day, now).timeText !== parsed.timeText) {
