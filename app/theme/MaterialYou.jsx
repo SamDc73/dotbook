@@ -10,7 +10,7 @@ import { useColorScheme } from "react-native"
 // feed the variable system so `bg-primary` keeps resolving; it styles nothing.
 
 // Exactly the Material 3 roles tokens.css defines. `success`, `warning` and
-// `info` are the design system additions the system does not generate, so they stay static.
+// `info` are our additions the system does not generate, so they stay static.
 const ROLES = [
 	"primary",
 	"onPrimary",

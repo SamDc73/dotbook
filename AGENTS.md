@@ -87,7 +87,6 @@ Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM
 | **HeroUI Native** | No web support — its own docs say so. Would require HeroUI React alongside it: two component libraries kept at parity, for an app whose point is that Android and web behave identically. Revisit only if web parity is ever dropped. |
 | **React Native Paper** | The closest call. Polished MD3 components and the best-documented Material You path. Rejected because it carries its own theme object (duplicating `tokens.css`) and its web output looks like an Android app in a browser — bad for a text-heavy log used on a laptop. |
 | **Tamagui** | Excellent tech, wrong fit for the goal. Another styling DSL, more config, and Material You is entirely manual. More thinking, not less. |
-| **the design system components** | Next.js + real CSS. Cannot run on React Native. Its *tokens* were taken; its components were not. |
 
 ## Commands
 
@@ -238,8 +237,8 @@ How it fits together:
 - At runtime a provider converts the system theme to `vars()` and wraps the app
   with `VariableContextProvider` (both exported by NativeWind 5), overriding the
   same variable names
-- `success` / `warning` / `info` stay static — they are the design system additions and M3
-  does not generate them
+- `success` / `warning` / `info` stay static — they are our additions to the M3
+  roles, which the system does not generate
 
 **Never read a colour into JavaScript.** No `theme.colors.primary`, no passing
 hex values as props, no `StyleSheet.create` with a colour in it. Use the utility
@@ -264,12 +263,9 @@ defaults, and leaving those in place silently breaks both theming and Material Y
 preview, fall back to NativeWind 4 + Tailwind 3.4 (verified working here) rather
 than abandoning the token system.
 
-The golden-ratio spacing and type scale come from the design system
-(a local reference clone of the design system); its colours do not. the design system builds its scale
-with nested `calc(var(--…))` chains, which React Native cannot evaluate — ours
-are those chains pre-computed to static values so phone and web agree exactly.
-Its *components* are Next.js + real CSS and cannot run on React Native:
-reference only, never import.
+The golden-ratio spacing and type scale are pre-computed to static values. The
+usual way to write such a scale is a nested `calc(var(--…))` chain, which React
+Native cannot evaluate; static values also keep phone and web exactly equal.
 
 ### The composer, and what it is not
 
