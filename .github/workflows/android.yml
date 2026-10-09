@@ -25,7 +25,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
       - run: bun install --frozen-lockfile
       # The tag is the version name; the run number is the version code, which must only grow.
       - name: Version

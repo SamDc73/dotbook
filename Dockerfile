@@ -5,7 +5,7 @@
 #            Caddy's job, so the server stays a dumb relay.
 
 # ---- build: install the workspace and export the web app -------------------
-FROM oven/bun:1 AS build
+FROM ghcr.io/oven-sh/bun:1 AS build
 WORKDIR /src
 ENV CI=1 EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1
 
@@ -32,6 +32,6 @@ EXPOSE 3000
 CMD ["bun", "src/index.js"]
 
 # ---- web: Caddy + the static export -----------------------------------------
-FROM caddy:2 AS web
+FROM public.ecr.aws/docker/library/caddy:2 AS web
 COPY --from=build /src/app/dist /srv/www
 COPY Caddyfile /etc/caddy/Caddyfile
