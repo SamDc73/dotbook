@@ -208,7 +208,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["app/e2e/**", "server/src/**"],
+			"includes": ["app/e2e/**", "server/src/**", "research/**"],
 			"linter": { "rules": { "suspicious": { "noConsole": "off" } } }
 		}
 	],
