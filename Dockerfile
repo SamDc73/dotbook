@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # Two images from one file, picked by `target:` in docker-compose.yml:
 #   server — the Bun API (sync relay). Serves nothing static.
 #   web    — Caddy with the exported web app baked in. Static files are
