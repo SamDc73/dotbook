@@ -1,8 +1,11 @@
-# `docker compose up -d` and nothing else. Secrets and the domain come from
-# `.env` in this directory (see docs/self-host.md).
+# `docker compose pull && docker compose up -d` and nothing else: the images
+# are built on GitHub (.github/workflows/docker.yml). `docker compose up -d
+# --build` builds them here instead. Settings come from `.env` in this
+# directory (see docs/self-host.md).
 
 services:
   server:
+    image: ghcr.io/samdc73/dotbook-server:latest
     build:
       context: .
       target: server
@@ -19,6 +22,7 @@ services:
     restart: unless-stopped
 
   caddy:
+    image: ghcr.io/samdc73/dotbook-web:latest
     build:
       context: .
       target: web

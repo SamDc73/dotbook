@@ -33,11 +33,13 @@ Edit `.env`:
 Then:
 
 ```sh
-docker compose up -d
+docker compose pull && docker compose up -d
 ```
 
-That builds two images from the one `Dockerfile` (the Bun API, and Caddy with
-the exported web app baked in), pulls ntfy, and starts all three. The web app
+That pulls the two images GitHub builds on every push (the Bun API, and Caddy
+with the exported web app baked in — `.github/workflows/docker.yml`), pulls
+ntfy, and starts all three. To build the two images on the box instead, for a
+fork or a change of your own, `docker compose up -d --build`. The web app
 is at `https://$DOMAIN`, the API under `https://$DOMAIN/api/v1/`, ntfy at
 `https://ntfy.$DOMAIN`. Check: `curl https://$DOMAIN/api/v1/health` → `{"ok":true}`.
 
@@ -131,7 +133,7 @@ same Caddy route as the rest of the API. Client setup and the tool list are in
 ## Updating
 
 ```sh
-git pull && docker compose up -d --build
+git pull && docker compose pull && docker compose up -d
 ```
 
 Schema migrations run on start, gated by the database's version; a downgrade
