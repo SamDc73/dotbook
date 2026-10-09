@@ -51,7 +51,7 @@
 		"android": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo run:android",
 		"ios": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo run:ios",
 		"web": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo start --web",
-		"e2e": "bun e2e/routes.mjs && ENGINE=firefox bun e2e/today.mjs && ENGINE=chromium bun e2e/today.mjs && ENGINE=firefox bun e2e/tabs.mjs && ENGINE=chromium bun e2e/tabs.mjs && ENGINE=firefox bun e2e/habits.mjs && ENGINE=chromium bun e2e/habits.mjs && ENGINE=firefox bun e2e/login.mjs && ENGINE=chromium bun e2e/login.mjs",
+		"e2e": "bun e2e/routes.mjs && ENGINE=firefox bun e2e/today.mjs && ENGINE=chromium bun e2e/today.mjs && ENGINE=firefox bun e2e/tabs.mjs && ENGINE=chromium bun e2e/tabs.mjs && ENGINE=firefox bun e2e/habits.mjs && ENGINE=chromium bun e2e/habits.mjs && ENGINE=firefox bun e2e/login.mjs && ENGINE=chromium bun e2e/login.mjs && ENGINE=firefox bun e2e/sync.mjs && ENGINE=chromium bun e2e/sync.mjs",
 		"export:web": "EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1 expo export --platform web"
 	},
 	"private": true,
