@@ -133,8 +133,11 @@ same Caddy route as the rest of the API. Client setup and the tool list are in
 ## Updating
 
 ```sh
-git pull && docker compose pull && docker compose up -d
+git pull && docker compose pull && docker compose up -d && docker image prune -f
 ```
+
+The prune drops the images just replaced: on a small box they are what runs
+the disk out.
 
 Schema migrations run on start, gated by the database's version; a downgrade
 is not supported — restore the backup instead.
