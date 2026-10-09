@@ -5,7 +5,14 @@
 #            Caddy's job, so the server stays a dumb relay.
 
 # ---- build: install the workspace and export the web app -------------------
-FROM ghcr.io/oven-sh/bun:1 AS build
+# Debian from AWS's mirror of the official images, with Bun installed from its
+# GitHub release: Bun's own image lives only on Docker Hub, which rate-limits
+# anonymous pulls from CI. Same version as the lockfile was made with.
+FROM public.ecr.aws/docker/library/debian:bookworm-slim AS build
+ARG BUN_VERSION=1.2.23
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash -s "bun-v${BUN_VERSION}"
 WORKDIR /src
 ENV CI=1 EXPO_NO_TELEMETRY=1 DO_NOT_TRACK=1
 
