@@ -4,9 +4,8 @@ import { Platform } from "react-native"
 import { SETTINGS, STATUS, settings } from "./client"
 
 // Logging in and out. A login is a device token from the server, kept in
-// kv-store beside the server's URL and the user's group; from then on every
-// sync carries it. The app never holds the password, and it works with none
-// of this set — the log is local; logging in is what turns sync on.
+// kv-store with the URL and group; the app never keeps the password. The log
+// works without any of it — logging in is what turns sync on.
 
 /**
  * Log in, or with `create` sign up — the same form, and the server says no

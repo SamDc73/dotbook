@@ -1,13 +1,11 @@
-// Accounts from the shell — the way in when sign-up is closed, and the only
-// way to mint an MCP token.
+// Users and tokens from the shell — the way in when sign-up is closed, and the
+// only way to mint an MCP token. In Docker: docker compose exec server bun src/cli.js …
 //
 //   bun src/cli.js user add sam                 asks for the password
 //   bun src/cli.js user list
 //   bun src/cli.js token add sam --scope mcp:write --label "claude code"
 //   bun src/cli.js token list sam
 //   bun src/cli.js token revoke <id>
-//
-// In Docker: `docker compose exec server bun src/cli.js …`.
 
 import { join } from "node:path"
 import { createInterface } from "node:readline/promises"

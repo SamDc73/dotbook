@@ -1,9 +1,6 @@
-// Who can talk to this server: users with a password, and the tokens they
-// hold. One table family in its own file (accounts.sqlite), apart from every
-// user's own data. Passwords are argon2id hashes (Bun's built-in); tokens are
-// random, shown once, and stored as SHA-256 — a copy of this file is not a
-// set of keys. A token has one scope: `device` syncs and ingests, `mcp:read`
-// and `mcp:write` are for AI tools.
+// Users with a password (argon2id, Bun's built-in) and the tokens they hold:
+// random, shown once, stored as SHA-256, one scope each (device, mcp:read,
+// mcp:write), revocable. Lives in accounts.sqlite, apart from users' data.
 
 import { createHash, randomBytes } from "node:crypto"
 import { password as passwords } from "bun"

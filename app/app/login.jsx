@@ -12,11 +12,9 @@ import { Text } from "../components/ui/Text"
 import { account, logIn } from "../sync/account"
 import { syncNow } from "../sync/client"
 
-// Log in: the server's address, a username and a password. The server answers
-// with a device token, which is all the app keeps. "Create account" is the
-// same form; the server says no when sign-up is closed. The app works without
-// any of this — the log is local — so this screen is reached from Settings,
-// never forced on anyone.
+// Server URL, username, password → a device token, the only thing the app
+// keeps. "Create account" is the same form; the server refuses when sign-up
+// is closed. Reached from Settings, never forced: the log works offline.
 export default function Login() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()

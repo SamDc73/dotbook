@@ -1,9 +1,6 @@
-// The HTTP surface. Built by a factory so tests can hand it in-memory
-// databases and a fake classifier.
-//
-// Who is asking is a token (db/accounts.js): a device token for sync, ingest
-// and classification, an MCP token for AI tools. Each user's data is their
-// own database, `databaseFor(user.id)`, and a user is their own sync group.
+// The HTTP surface, built by a factory so tests can pass in-memory databases.
+// A token names the caller (db/accounts.js): device tokens for sync and
+// ingest, MCP tokens for AI tools. A user is their own database and sync group.
 
 import { Timestamp } from "@actual-app/crdt"
 import { applyMessages, relay } from "@dotbook/core/sync"

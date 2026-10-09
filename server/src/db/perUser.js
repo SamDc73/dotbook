@@ -1,7 +1,5 @@
-// Every user has their own SQLite file: relay log, replica, classifier runs.
-// Core's schema stays exactly a device's (no user column anywhere), one
-// person's data is one file to back up or delete, and nothing one user does
-// can reach another's rows. Opened on first use, kept open.
+// One SQLite file per user: relay log, replica, classifier runs. Core's schema
+// stays a device's, and one person's data is one file to back up or delete.
 
 import { join } from "node:path"
 import { openDatabase } from "./adapter.js"

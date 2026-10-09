@@ -11,13 +11,9 @@ import { STATUS, syncNow } from "../sync/client"
 import { Button } from "./ui/Button"
 import { Text } from "./ui/Text"
 
-// Settings → Server. Logged out: one button to the login screen. Logged in:
-// who and where, a sync button with its status line, and log out. The app
-// works logged out; logging in is what turns sync on.
-//
-// The account and the status live in the query cache, not in effects: kv-store
-// is read once per key, a login or logout invalidates the account, and a
-// finished sync invalidates the status so the line refreshes.
+// Settings → Server: logged out, one button to /login; logged in, who and
+// where, sync with its status line, log out. Account and status live in the
+// query cache, invalidated by a login, a logout and a finished sync.
 const ACCOUNT_KEY = ["account"]
 const STATUS_KEY = ["sync", "status"]
 const EMPTY_ACCOUNT = { url: "", name: null }

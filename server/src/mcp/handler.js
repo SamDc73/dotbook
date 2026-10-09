@@ -1,13 +1,7 @@
-// The MCP endpoint: AI tools (Claude Code, Cursor, VS Code, Claude Desktop…)
-// read and write the log through `/api/v1/mcp`. Streamable HTTP from the
-// official SDK: both protocol eras (2025's `initialize` handshake and the
-// stateless 2026-07-28 one), a fresh server per request, nothing held between.
-//
-// Access is an MCP token (db/accounts.js, minted by the CLI): `mcp:read` gets
-// the read tools only — the write tools are not even listed — and `mcp:write`
-// gets every tool. A device token is refused here, and an MCP token cannot
-// sync: an AI tool's config never holds the key to the whole database, and a
-// token is revoked without touching a phone.
+// The MCP endpoint, /api/v1/mcp: AI tools read and write the log over the
+// official SDK's Streamable HTTP, both protocol eras, a fresh server per
+// request. An MCP token's scope picks the tools; a device token is refused,
+// and an MCP token cannot sync.
 
 import {
 	createMcpHandler,
