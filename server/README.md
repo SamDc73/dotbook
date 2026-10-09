@@ -16,9 +16,6 @@ bun run dev               # --watch, restarts on change
 Then open the app, Settings → Server → Log in, and create your account: the
 first sign-up is open, after that `SIGNUP` decides.
 
-`bun test` here and in `packages/core` exercise accounts, the relay and the MCP
-endpoint end to end through `app.request()` — no network, in-memory databases.
-
 ## Accounts
 
 A user has a name and a password (argon2id, hashed by Bun). What a device or a

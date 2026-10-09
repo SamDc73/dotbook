@@ -12,9 +12,7 @@ Android-first, offline-first, privacy-first, self-hostable. The Android app work
 forever with no server; the server unlocks sync, the web app, browser-time
 ingestion, and LLM habit classification.
 
-See `V0.1.md` for current scope and `FUTURE.md` for everything deliberately deferred.
-
-## Stack (decided — see `research/what_tools_to_use.txt` for the reasoning)
+## Stack (decided)
 
 | Layer | Choice |
 |---|---|
@@ -101,7 +99,7 @@ Deliberately not used: TypeScript, Flutter, Kotlin-native, Python, Postgres, FCM
   (then delete `app/android/` — it is generated, and gitignored)
 - Lint: `bun run lint` (Biome, `--write`)
 - Import-graph lint (cycles/duplicates — the only rules Biome lacks): `bun run lint:imports`
-- Test: `cd packages/core && bun test` and `cd server && bun test` (the app has no test runner;
+- Test (the tests are kept out of the public repository for now): `cd packages/core && bun test` and `cd server && bun test` (the app has no test runner;
   its pure sync round is tested against the in-process server)
 - Extension: `bunx web-ext lint --source-dir extension`
 - **Web, in real browsers** (required before calling web work done): `cd app && bun run web` in one
@@ -267,7 +265,7 @@ preview, fall back to NativeWind 4 + Tailwind 3.4 (verified working here) rather
 than abandoning the token system.
 
 The golden-ratio spacing and type scale come from the design system
-(`copied_repos/design-system-tailwind`); its colours do not. the design system builds its scale
+(a local reference clone of the design system); its colours do not. the design system builds its scale
 with nested `calc(var(--…))` chains, which React Native cannot evaluate — ours
 are those chains pre-computed to static values so phone and web agree exactly.
 Its *components* are Next.js + real CSS and cannot run on React Native:
@@ -417,7 +415,5 @@ server/src/db/       accounts (users, tokens), one database per user, migrations
 server/src/cli.js    users and tokens from the shell
 mcp.json             MCP client config template (read and write entries)
 extension/           Firefox extension (browser time)
-ringconn/            RingConn CSV samples (gitignored) + import mapping
 Dockerfile, docker-compose.yml, Caddyfile — self-hosting
-copied_repos/        reference code, not built or shipped
 ```

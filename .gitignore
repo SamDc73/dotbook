@@ -13,17 +13,19 @@ build/
 *.sqlite
 *.sqlite3
 
-# Personal exports — real health data, never commit
-ringconn/*.csv
-
 .DS_Store
-
-# Reference clone, not part of this repo
-copied_repos/uhabits/
-copied_repos/design-system-tailwind/
-copied_repos/mcp-typescript-sdk/
-copied_repos/mcp-spec/
 
 # Expo prebuild output (continuous native generation)
 app/android/
 app/ios/
+
+# Kept local, out of the public repository for now
+V0.1.md
+skills-lock.json
+.agents/
+copied_repos/
+ringconn/
+research/
+app/e2e/
+*.test.js
+server/src/mcp/testServer.js

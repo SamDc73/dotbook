@@ -168,8 +168,6 @@ auto-approve reads and ask before anything removes.
   `lineKind` (plan vs log), template resolution, `effectiveTick`, recurrence.
 - What the model is told about the data (`instructions`) lives with the other
   prompts in `server/src/ai/prompts.js`.
-- Tests: `cd server && bun test` drives the endpoint with the SDK's own client
-  in both eras, and checks every write on a phone replica after a sync.
 
 ## Not here
 
