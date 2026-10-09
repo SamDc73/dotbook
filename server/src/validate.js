@@ -65,6 +65,21 @@ function isRollup(rollup) {
 	)
 }
 
+// A login or a sign-up: the name and password as typed, and what device asks.
+export function validateCredentials(value, c) {
+	const { username, password, device } = value ?? {}
+	const shapeOk =
+		typeof username === "string" &&
+		username.length <= 32 &&
+		typeof password === "string" &&
+		password.length <= 256 &&
+		(device === undefined || (typeof device === "string" && device.length <= 64))
+	if (!shapeOk) {
+		return c.json({ error: "expected { username, password, device? }" }, 400)
+	}
+	return { username, password, device: device?.trim() || "device" }
+}
+
 export function validateClassify(value, c) {
 	const { day, all } = value ?? {}
 	const shapeOk = (day === undefined || DAY.test(day)) && (all === undefined || typeof all === "boolean")

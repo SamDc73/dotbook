@@ -6,9 +6,10 @@
 //   3. Apply them. If the tries now agree we are done; if not, lower `since`
 //      to the divergence point so the next round re-sends what the server lost.
 
-import { merkle, Timestamp } from "@actual-app/crdt"
+import { Timestamp } from "@actual-app/crdt"
 import { applyMessages } from "./apply.js"
 import { clockFor } from "./clock.js"
+import { divergence } from "./merkle.js"
 
 // Actual uses the same bound: two devices that keep diverging after this many
 // rounds have a bug, not a big backlog.
@@ -41,7 +42,7 @@ export async function buildSyncRequest(db, groupId) {
 export async function receiveSyncResponse(db, request, response) {
 	await applyMessages(db, response.messages)
 	const clock = await clockFor(db)
-	const divergedAt = merkle.diff(clock.merkle, response.merkle)
+	const divergedAt = divergence(clock.merkle, response.merkle)
 
 	let since = request.messages.at(-1)?.timestamp
 	if (divergedAt !== null) {

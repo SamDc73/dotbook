@@ -4,13 +4,13 @@ import { adapterFor } from "../db/sync"
 import { reconcile } from "../notifications/reminders"
 import { runRound } from "./round"
 
-// The sync client: settings from kv-store, one fetch as the transport, and the
-// bookkeeping a round leaves behind. Never throws — the UI reads the outcome
-// from kv-store, and a failed sync is a status line, not an error screen.
+// The sync client: settings from kv-store (written by a login, account.js),
+// one fetch as the transport, and the bookkeeping a round leaves behind. Never
+// throws — the UI reads the outcome from kv-store, and a failed sync is a
+// status line, not an error screen.
 
-export const SETTINGS = { url: "server-url", token: "server-token", group: "group-id" }
+export const SETTINGS = { url: "server-url", token: "server-token", group: "group-id", name: "user-name" }
 export const STATUS = { lastSync: "last-sync", lastError: "last-sync-error" }
-const DEFAULT_GROUP = "default"
 
 export async function settings() {
 	const [url, token, group] = await Promise.all([
@@ -18,7 +18,7 @@ export async function settings() {
 		Storage.getItemAsync(SETTINGS.token),
 		Storage.getItemAsync(SETTINGS.group),
 	])
-	return { url: (url ?? "").trim().replace(/\/+$/, ""), token: token ?? "", groupId: group?.trim() || DEFAULT_GROUP }
+	return { url: (url ?? "").trim().replace(/\/+$/, ""), token: token ?? "", groupId: group ?? "" }
 }
 
 // One sync at a time: a second call while one runs joins it. The flag also
@@ -40,7 +40,8 @@ export function syncNow(db) {
 
 async function run(db) {
 	const { url, token, groupId } = await settings()
-	if (url === "") {
+	// Not logged in: nothing to sync with, and that is fine.
+	if (url === "" || token === "" || groupId === "") {
 		return { skipped: true }
 	}
 

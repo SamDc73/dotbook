@@ -33,7 +33,7 @@ cd app && bun run web           # web, at localhost:8081
 cd app && bun run android       # dev client on a connected device (needs Android Studio / Java)
 
 # the server
-cp server/.env.example server/.env   # set DOTBOOK_TOKEN
+cp server/.env.example server/.env   # set CORS_ORIGINS and TZ
 cd server && bun run dev
 ```
 

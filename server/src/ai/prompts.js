@@ -26,3 +26,16 @@ export function classifyPrompt(habits, lines) {
 	const logList = lines.map((line) => `- ${line}`).join("\n")
 	return `Habits:\n${habitList}\n\nThe day's log, in the order it was written:\n${logList}`
 }
+
+// What an AI tool connected over MCP is told about this server when it
+// connects (`instructions`). Each tool's own description covers its arguments;
+// this is the model of the data those descriptions assume.
+export const MCP_INSTRUCTIONS = `Dotbook is one person's day-to-day log: what they did, took, ate and felt, what they plan, their todos and their habits.
+
+- A day is a list of lines. A line is plain text with an optional time first, the way the person types it: "7:36 am took nootstack", "8:30 -> 10:00 am deep work", "3:30 pm call with mum". Keep their words; do not rewrite their lines.
+- kind "log" happened, "plan" is intended, "timer" is a countdown. A line whose time is still ahead is a plan; confirm_plan turns a plan that happened into a log line.
+- Todos are not lines. A todo without a date is in the queue. Closing or starting a todo writes its own line into today's log — do not add another.
+- Habit verdicts: the person's tick always beats the classifier's proposal; a day with no verdict is unknown, not broken.
+- Templates are named stacks ("nootstack"); a line that names one is logged with that day's version of its contents.
+- Times are in the server's timezone; get_day says which, and which day is today. Start with get_day.
+- Everything written here syncs to the person's phone. Write only what they asked for. If you only see read tools, this connection is read-only.`

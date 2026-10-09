@@ -23,11 +23,12 @@ Edit `.env`:
 
 | Variable | Set it to |
 |---|---|
-| `DOTBOOK_TOKEN` | `openssl rand -hex 32` — the one secret every device sends |
 | `DOMAIN` | `life.example.com` — the name Caddy will serve (add this line; it is not in the example) |
 | `CORS_ORIGINS` | `https://life.example.com` — the web app's origin, no wildcard |
+| `TZ` | your zone, e.g. `Europe/Berlin` — "today" and server-written times use it (the container's default is UTC) |
+| `SIGNUP` | leave at `first`: the first person to open the app creates the account, then sign-up closes. `open` keeps it open for a household; `closed` means accounts come from the CLI |
 | `PORT` | leave at `3000` |
-| `DB_PATH` | leave it; compose overrides it to `/data/dotbook.sqlite` |
+| `DATA_DIR` | leave it; compose sets `/data` (the `data` volume) |
 
 Then:
 
@@ -39,6 +40,14 @@ That builds two images from the one `Dockerfile` (the Bun API, and Caddy with
 the exported web app baked in), pulls ntfy, and starts all three. The web app
 is at `https://$DOMAIN`, the API under `https://$DOMAIN/api/v1/`, ntfy at
 `https://ntfy.$DOMAIN`. Check: `curl https://$DOMAIN/api/v1/health` → `{"ok":true}`.
+
+Open `https://$DOMAIN`, Settings → Server → **Log in**, and **Create account**:
+the first sign-up is open. From then on sign-up is closed (see `SIGNUP`); more
+people come in through the CLI:
+
+```sh
+docker compose exec server bun src/cli.js user add alex
+```
 
 ### Private name, no public DNS (LAN, Tailscale)
 
@@ -63,20 +72,25 @@ phone and in Firefox), or use Tailscale's own certificates instead
 
 ## Where the data lives
 
-Everything is one SQLite file in the `data` volume: `/data/dotbook.sqlite`
-inside the `server` container (relay messages plus a replica of every device's
-tables). Certificates live in `caddy_data`, ntfy's cache in `ntfy`.
+Everything is SQLite in the `data` volume, inside the `server` container:
+`/data/accounts.sqlite` (users and tokens) and one `/data/users/<id>.sqlite`
+per user (their relay messages plus a replica of their devices' tables).
+Certificates live in `caddy_data`, ntfy's cache in `ntfy`.
 
-**Backup** = copy that one file. For a consistent copy while running:
+**Backup** = copy those files. For a consistent copy while running:
 
 ```sh
-docker compose exec server bun -e "import('bun:sqlite').then(({ Database }) => new Database('/data/dotbook.sqlite').run(\"VACUUM INTO '/data/backup.sqlite'\"))"
-docker compose cp server:/data/backup.sqlite ./dotbook-$(date +%F).sqlite
+docker compose exec server bun -e "
+  import { Database } from 'bun:sqlite'; import { readdirSync, mkdirSync } from 'node:fs'
+  mkdirSync('/data/backup/users', { recursive: true })
+  for (const f of ['accounts.sqlite', ...readdirSync('/data/users').map((u) => 'users/' + u)])
+    new Database('/data/' + f).run(\"VACUUM INTO '/data/backup/\" + f + \"'\")"
+docker compose cp server:/data/backup ./dotbook-$(date +%F)
 ```
 
-(`sqlite3 /data/dotbook.sqlite ".backup /data/backup.sqlite"` does the
-same if `sqlite3` is installed on the host.) Restore = stop, put the file back,
-start.
+(`sqlite3 <file> ".backup <copy>"` per file does the same if `sqlite3` is
+installed on the host.) Restore = stop, put the files back, start. One user's
+data is one file: back it up, hand it over, or delete it on its own.
 
 ## Push when the browser is closed (ntfy Web Push)
 
@@ -96,9 +110,23 @@ Google services involved.
 
 ## Pointing the phone at the server
 
-In the app: **Settings → Server** (arrives with phase 8), enter
-`https://$DOMAIN` and the `DOTBOOK_TOKEN`. Until then the phone runs
-fully offline; nothing is lost, sync just has not started.
+In the app: **Settings → Server → Log in**, enter `https://$DOMAIN`, your
+username and password. The phone keeps a token, never the password; **Log out**
+revokes it on the server. Until then the phone runs fully offline; nothing is
+lost, sync just has not started.
+
+## Connecting AI tools (MCP)
+
+Mint a token for your user — `mcp:write` for a tool that may log for you,
+`mcp:read` for one that may only look:
+
+```sh
+docker compose exec server bun src/cli.js token add sam --scope mcp:write --label "claude code"
+```
+
+It is printed once. The endpoint is `https://$DOMAIN/api/v1/mcp`, behind the
+same Caddy route as the rest of the API. Client setup and the tool list are in
+[`mcp.md`](mcp.md).
 
 ## Updating
 

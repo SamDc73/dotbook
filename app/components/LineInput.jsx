@@ -1,5 +1,5 @@
-import { MarkdownTextInput } from "@expensify/react-native-live-markdown"
 import { parseLineTime } from "@dotbook/core/parse"
+import { MarkdownTextInput } from "@expensify/react-native-live-markdown"
 import { styled } from "nativewind"
 import { useState } from "react"
 import { Platform } from "react-native"

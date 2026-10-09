@@ -372,6 +372,9 @@ A suggestion is always visible before it commits — never applied silently.
 - **All prompts live in `server/src/ai/prompts.js`** — centralized regardless of file size
 - LLM output is **always** a derived annotation, never the source of truth. Every classification stores the model, prompt version, and reasoning so it can be audited and re-run
 - **Classification must never block logging.** It runs deferred, server-side, and backfills
+- **MCP writes are a device's writes.** `server/src/db/*` mirrors `app/db/*` through `publish` /
+  `publishUpdate`, with every rule from `@dotbook/core` — a line written by an AI tool must be the
+  line the app would have written. A rule both need moves into core (as `lineKind` did)
 
 ### API (internal, for our own clients)
 
@@ -405,8 +408,14 @@ app/screenTime/      Android UsageStats collection
 app/voice/           speech recognition
 app/theme/tokens.css THE design tokens — colours, spacing, type, radius
 app/components/ui/   Text, Button, Icon (from react-native-reusables), cn()
-docs/                palette.html, self-host.md
-server/              Bun server — relay, ingest, LLM classification
+docs/                palette.html, self-host.md, mcp.md, brand/ (the Dot Slash logo — source
+                     SVGs for every app icon, favicon and the Wordmark component)
+server/              Bun server — relay, ingest, LLM classification, MCP
+server/src/mcp/      the MCP endpoint (/api/v1/mcp) — AI tools read and write; docs/mcp.md
+server/src/db/       accounts (users, tokens), one database per user, migrations,
+                     plus the server's half of app/db for MCP writes
+server/src/cli.js    users and tokens from the shell
+mcp.json             MCP client config template (read and write entries)
 extension/           Firefox extension (browser time)
 ringconn/            RingConn CSV samples (gitignored) + import mapping
 Dockerfile, docker-compose.yml, Caddyfile — self-hosting

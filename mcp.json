@@ -1,0 +1,18 @@
+{
+	"mcpServers": {
+		"dotbook": {
+			"type": "http",
+			"url": "${DOTBOOK_URL:-http://localhost:3000}/api/v1/mcp",
+			"headers": {
+				"Authorization": "Bearer ${DOTBOOK_MCP_WRITE_TOKEN}"
+			}
+		},
+		"dotbook-readonly": {
+			"type": "http",
+			"url": "${DOTBOOK_URL:-http://localhost:3000}/api/v1/mcp",
+			"headers": {
+				"Authorization": "Bearer ${DOTBOOK_MCP_READ_TOKEN}"
+			}
+		}
+	}
+}

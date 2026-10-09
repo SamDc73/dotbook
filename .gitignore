@@ -21,6 +21,8 @@ ringconn/*.csv
 # Reference clone, not part of this repo
 copied_repos/uhabits/
 copied_repos/design-system-tailwind/
+copied_repos/mcp-typescript-sdk/
+copied_repos/mcp-spec/
 
 # Expo prebuild output (continuous native generation)
 app/android/

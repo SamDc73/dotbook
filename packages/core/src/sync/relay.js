@@ -4,6 +4,7 @@
 // its own two tables therefore never need a migration.
 
 import { merkle, Timestamp } from "@actual-app/crdt"
+import { divergence } from "./merkle.js"
 
 /** Create the relay tables if missing. Fixed forever, hence no version gate. */
 export async function ensureRelayTables(db) {
@@ -48,7 +49,7 @@ export function relay(db, { groupId, clientId, merkle: clientMerkle, messages })
 			[groupId, JSON.stringify(trie)]
 		)
 
-		const divergedAt = merkle.diff(clientMerkle, trie)
+		const divergedAt = divergence(clientMerkle, trie)
 		if (divergedAt === null) {
 			return { messages: [], merkle: trie }
 		}

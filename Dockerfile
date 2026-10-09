@@ -26,7 +26,7 @@ RUN cd app && bunx expo export --platform web
 FROM build AS server
 WORKDIR /src/server
 ENV PORT=3000
-ENV DB_PATH=/data/dotbook.sqlite
+ENV DATA_DIR=/data
 VOLUME /data
 EXPOSE 3000
 CMD ["bun", "src/index.js"]
