@@ -1,0 +1,65 @@
+# A signed Android APK on every version tag, attached to a GitHub Release.
+# The signing key is in the repository's secrets; losing it means a new
+# release cannot install over an old one.
+name: Android release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_NO_TELEMETRY: 1
+      DO_NOT_TRACK: 1
+      CI: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - run: bun install --frozen-lockfile
+      # The tag is the version name; the run number is the version code, which must only grow.
+      - name: Version
+        working-directory: app
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = tag ] || version="0.0.${{ github.run_number }}"
+          jq --arg v "$version" --argjson c ${{ github.run_number }} \
+            '.expo.version = $v | .expo.android.versionCode = $c' app.json > app.json.new && mv app.json.new app.json
+      - run: bunx expo prebuild --platform android --no-install
+        working-directory: app
+      - run: ./gradlew assembleRelease --no-daemon
+        working-directory: app/android
+      # Gradle signs with the template's debug key; replace that with ours.
+      - name: Sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          tools="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          "$tools/apksigner" sign --ks release.keystore --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" --key-pass env:ANDROID_KEY_PASSWORD \
+            --out "dotbook-$GITHUB_REF_NAME.apk" app/android/app/build/outputs/apk/release/app-release.apk
+          "$tools/apksigner" verify --print-certs "dotbook-$GITHUB_REF_NAME.apk" | head -3
+          rm release.keystore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dotbook-apk
+          path: dotbook-*.apk
+      - if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dotbook-*.apk
+          generate_release_notes: true
