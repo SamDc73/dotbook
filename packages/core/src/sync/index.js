@@ -4,7 +4,8 @@
 // through a relay that stores them opaquely; each device materialises the
 // newest message per field into its tables. Append-only rows merge by set
 // union, so there is nothing to conflict; the small mutable surface is
-// per-field last-write-wins by hybrid logical clock.
+// per-field last-write-wins by hybrid logical clock — except a line's text,
+// where both versions of a clash are kept (conflicts.js).
 //
 // Every platform hands these functions the same four-method adapter — the one
 // abstraction in this package, because expo-sqlite and bun:sqlite differ. The
@@ -20,6 +21,7 @@
 // @property {<T>(fn: () => Promise<T>) => Promise<T>} transaction  runs async `fn` atomically and returns its result
 
 export { applyMessages, rebuildFromMessages } from "./apply.js"
+export { CONFLICT_SOURCE } from "./conflicts.js"
 export { messagesForInsert, messagesForUpdate } from "./messages.js"
 export { buildSyncRequest, receiveSyncResponse, sync } from "./protocol.js"
 export { ensureRelayTables, relay } from "./relay.js"

@@ -1,4 +1,5 @@
 import { localDay, parseLineTime } from "@dotbook/core/parse"
+import { CONFLICT_SOURCE } from "@dotbook/core/sync"
 import { useSQLiteContext } from "expo-sqlite"
 import Bell from "lucide-react-native/icons/bell"
 import BellRing from "lucide-react-native/icons/bell-ring"
@@ -125,6 +126,15 @@ export const EntryLine = memo(function EntryLine({
 					<Pressable onPress={bell} accessibilityLabel={hasReminder ? "Remove reminder" : "Remind me at this time"}>
 						<Icon as={hasReminder ? BellRing : Bell} className={hasReminder ? "text-primary" : "text-outline"} />
 					</Pressable>
+				) : null}
+				{/* The other side of a sync clash, kept as its own line (core sync/conflicts.js). */}
+				{entry.source === CONFLICT_SOURCE ? (
+					<Badge
+						variant="warning"
+						accessibilityLabel="The same line was changed on another device; this is the other version"
+					>
+						other version
+					</Badge>
 				) : null}
 				{entry.template_name !== null ? (
 					<Badge variant="primary" onPress={toggle}>

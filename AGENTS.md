@@ -374,6 +374,10 @@ A suggestion is always visible before it commits — never applied silently.
 - Soft delete only, because a hard delete has no message. A table without `deleted_at` cannot be
   deleted from on one device and stay consistent on another — add the column first
 - Column names in SQL come from `SYNCED`, never from the wire
+- Conflicts are last-write-wins per field, except a line's text: edited on two devices while apart, the
+  newer edit keeps the line and the older one is written back beside it as a `sync:conflict` line
+  (`packages/core/src/sync/conflicts.js`). Its id is derived from the losing edit, so two devices
+  keeping the same copy merge into one row
 - **Migrations are additive and numbered** in `packages/core/src/db/index.js`; a shipped migration is never edited.
   The server creates its own relay/bookkeeping tables with `CREATE TABLE IF NOT EXISTS`, outside that list
 

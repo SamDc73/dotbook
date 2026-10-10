@@ -14,7 +14,8 @@ import { sync } from "@dotbook/core/sync"
  * @param {string} groupId
  * @param {(body: object) => Promise<{ messages: object[], merkle: object }>} post
  * @returns {Promise<{ rounds: number, entryIds: string[], datasets: Set<string> }>}
- *   which `entries` rows and which datasets foreign messages touched
+ *   which `entries` rows and which datasets foreign messages touched, plus the
+ *   lines a clash kept
  */
 export async function runRound(adapter, groupId, post) {
 	const received = []
@@ -24,13 +25,16 @@ export async function runRound(adapter, groupId, post) {
 		return response
 	}
 
-	let rounds
+	let result
 	try {
-		rounds = await sync(adapter, groupId, capturing)
+		result = await sync(adapter, groupId, capturing)
 	} catch {
-		rounds = await sync(adapter, groupId, capturing)
+		result = await sync(adapter, groupId, capturing)
 	}
-	return { rounds, ...touched(received) }
+	// The lines a clash kept are written here, not received, but they need the
+	// same rebuild of the derived cache as a foreign line.
+	const { entryIds, datasets } = touched(received)
+	return { rounds: result.rounds, entryIds: [...new Set([...entryIds, ...result.kept])], datasets }
 }
 
 function touched(messages) {
