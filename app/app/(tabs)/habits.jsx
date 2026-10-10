@@ -8,10 +8,13 @@ import { ScreenHeader } from "../../components/ScreenHeader"
 import { Badge } from "../../components/ui/Badge"
 import { Input } from "../../components/ui/Input"
 import { Text } from "../../components/ui/Text"
-import { addHabit, cycleTick, grid, habits, removeHabit } from "../../db/habits"
+import { addHabit, cycleTick, grid, habits, removeHabit, restoreHabit } from "../../db/habits"
 import { useLiveQuery } from "../../db/use-live-query"
-import { shiftDay, today } from "../../lib/day"
+import { shiftDay } from "../../lib/day"
 import { weekday } from "../../lib/format"
+import { tap } from "../../lib/haptics"
+import { offerUndo } from "../../lib/undo"
+import { useToday } from "../../lib/use-today"
 
 // Four weeks of cells; older days scroll in from the right.
 const DAYS = 28
@@ -27,7 +30,7 @@ export default function Habits() {
 	const [kind, setKind] = useState("do")
 	const [why, setWhy] = useState(null) // a proposal's reasoning, shown on long-press
 
-	const day = today()
+	const day = useToday()
 	const days = useMemo(() => columns(day), [day])
 	const list = useLiveQuery(["habits"], () => habits(db))
 	const history = useLiveQuery(["habit-grid", days.at(-1).day, day], () => grid(db, days.at(-1).day, day))
@@ -46,9 +49,18 @@ export default function Habits() {
 		return byHabit
 	}, [history, list, days])
 
-	const tap = useCallback((habit, cell) => cycleTick(db, habit.id, cell.day, cell.tick), [db])
+	const press = useCallback(
+		async (habit, cell) => tap((await cycleTick(db, habit.id, cell.day, cell.tick)) ?? "undone"),
+		[db]
+	)
 	const hold = useCallback((habit, cell) => setWhy({ habit, cell }), [])
-	const remove = useCallback((habit) => removeHabit(db, habit.id), [db])
+	const remove = useCallback(
+		(habit) => {
+			removeHabit(db, habit.id)
+			offerUndo("Habit removed", () => restoreHabit(db, habit.id))
+		},
+		[db]
+	)
 
 	function toggleKind() {
 		setKind((current) => (current === "do" ? "avoid" : "do"))
@@ -90,7 +102,7 @@ export default function Habits() {
 										key={habit.id}
 										habit={habit}
 										cells={cellsByHabit.get(habit.id) ?? NONE}
-										onTap={tap}
+										onTap={press}
 										onHold={hold}
 									/>
 								))}

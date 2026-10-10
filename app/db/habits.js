@@ -20,6 +20,11 @@ export function removeHabit(db, id) {
 	return updateRow(db, "habits", { id }, { deleted_at: Date.now() })
 }
 
+// Undo for removeHabit; its ticks never left.
+export function restoreHabit(db, id) {
+	return updateRow(db, "habits", { id }, { deleted_at: null })
+}
+
 // Every live tick on `day`, oldest first, for habits that still exist.
 export function ticksOn(db, day) {
 	return db.sql`SELECT t.* FROM habit_ticks t JOIN habits h ON h.id = t.habit_id
@@ -58,12 +63,19 @@ export async function untick(db, habitId, day) {
 // A proposal (the classifier's tick) is accepted as it stands on the first tap
 // — yes stays yes — and the cycle continues from there. `current` is the
 // effective tick for that habit and day, or null. Older manual ticks for the
-// day are retired first, so one row per decision stays live.
+// day are retired first, so one row per decision stays live. Returns the value
+// the cell now holds, or null when it went back to unknown.
 export async function cycleTick(db, habitId, day, current) {
 	await untick(db, habitId, day)
-	if (current?.by === "llm") return tick(db, habitId, day, current.value)
-	if (!current) return tick(db, habitId, day, "kept")
-	if (current.value === "kept") return tick(db, habitId, day, "broken")
+	const next = nextTick(current)
+	if (next !== null) await tick(db, habitId, day, next)
+	return next
+}
+
+function nextTick(current) {
+	if (current?.by === "llm") return current.value
+	if (!current) return "kept"
+	if (current.value === "kept") return "broken"
 	return null
 }
 

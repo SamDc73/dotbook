@@ -142,3 +142,8 @@ export async function reannotate(db, entryIds) {
 export function deleteEntry(db, id) {
 	return updateRow(db, "entries", { id }, { deleted_at: Date.now() })
 }
+
+// Undo for deleteEntry: the same row, live again.
+export function restoreEntry(db, id) {
+	return updateRow(db, "entries", { id }, { deleted_at: null })
+}

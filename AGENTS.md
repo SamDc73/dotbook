@@ -378,6 +378,8 @@ A suggestion is always visible before it commits — never applied silently.
   newer edit keeps the line and the older one is written back beside it as a `sync:conflict` line
   (`packages/core/src/sync/conflicts.js`). Its id is derived from the losing edit, so two devices
   keeping the same copy merge into one row
+- A delete or a close is offered back for a few seconds (`app/lib/undo.js`); a restore is an ordinary
+  `updateRow` that clears `deleted_at`, so it syncs like any edit
 - **Migrations are additive and numbered** in `packages/core/src/db/index.js`; a shipped migration is never edited.
   The server creates its own relay/bookkeeping tables with `CREATE TABLE IF NOT EXISTS`, outside that list
 

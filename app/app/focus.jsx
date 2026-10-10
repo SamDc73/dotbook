@@ -12,6 +12,8 @@ import { activeCountdown, upNext } from "../db/blocks"
 import { addEntry } from "../db/entries"
 import { useLiveQuery } from "../db/use-live-query"
 import { today } from "../lib/day"
+import { tap } from "../lib/haptics"
+import { useToday } from "../lib/use-today"
 
 // The focus view: one block, one line. Reached by a button, never the default.
 // Nothing written earlier is ever shown here — that is the whole point.
@@ -32,7 +34,7 @@ export default function Focus() {
 	// re-run once a minute. A timer can end mid-minute: it is hidden the second
 	// it ends, and whatever block is underneath appears at the next whole minute.
 	const minute = Math.floor(now / 60000) * 60000
-	const day = today()
+	const day = useToday()
 	const [current = null] = useLiveQuery(["blocks", "current", minute], () => activeCountdown(db, minute))
 	const [next = null] = useLiveQuery(["blocks", "next", minute, day], () => upNext(db, minute, day))
 	const ended = current !== null && current.ts_end <= now
@@ -44,7 +46,9 @@ export default function Focus() {
 	function submit() {
 		const line = text.trim()
 		setText("")
-		if (line !== "") addEntry(db, { day: today(), text: line })
+		if (line === "") return
+		addEntry(db, { day: today(), text: line })
+		tap("logged")
 	}
 
 	return (

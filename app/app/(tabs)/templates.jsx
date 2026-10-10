@@ -14,11 +14,12 @@ import { Badge } from "../../components/ui/Badge"
 import { Icon } from "../../components/ui/Icon"
 import { Panel } from "../../components/ui/Panel"
 import { Text } from "../../components/ui/Text"
-import { addReminder, remindersFor, removeReminder } from "../../db/reminders"
+import { addReminder, remindersFor, removeReminder, restoreReminder } from "../../db/reminders"
 import { addVersion, createTemplate, decline, overview, promote } from "../../db/templates"
 import { useLiveQuery } from "../../db/use-live-query"
-import { today } from "../../lib/day"
 import { clockAt } from "../../lib/format"
+import { offerUndo } from "../../lib/undo"
+import { useToday } from "../../lib/use-today"
 import { ensurePermission, reconcile } from "../../notifications/reminders"
 
 // Templates and their versions, plus the promotion prompts — computed live from
@@ -30,7 +31,7 @@ export default function Templates() {
 	const [adding, setAdding] = useState(false) // the form is open
 	const [remindingId, setRemindingId] = useState(null) // the reminder form is open for this template
 
-	const day = today()
+	const day = useToday()
 	const all = useLiveQuery(["templates", "overview", day], () => overview(db, day))
 	const selected = all.find((template) => template.id === selectedId) ?? null
 	const prompted = all.filter((template) => template.candidate !== null)
@@ -75,6 +76,10 @@ export default function Templates() {
 	async function dropReminder(reminder) {
 		await removeReminder(db, reminder.id)
 		await reconcile(db)
+		offerUndo("Reminder removed", async () => {
+			await restoreReminder(db, reminder.id)
+			await reconcile(db)
+		})
 	}
 
 	return (

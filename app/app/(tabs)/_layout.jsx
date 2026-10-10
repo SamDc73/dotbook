@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router"
 import { View } from "react-native"
 import { SectionBar } from "../../components/SectionBar"
+import { UndoBar } from "../../components/UndoBar"
 import { useWide } from "../../lib/wide"
 
 // The sections are navigation, not a header row. One tab navigator; the bar is
@@ -38,11 +39,14 @@ const SCENE = { backgroundColor: "transparent" }
 
 // Every screen sits in a reading-width column on wide screens, and the page adds
 // sm to each screen's own md so the gutter is the next step, lg; on a phone it
-// is simply the full width.
+// is simply the full width. The undo bar sits at the foot of that column.
 function PageWidth({ children }) {
 	return (
 		<View className="flex-1 items-center bg-background">
-			<View className="w-full max-w-page flex-1 wide:px-sm">{children}</View>
+			<View className="w-full max-w-page flex-1 wide:px-sm">
+				{children}
+				<UndoBar />
+			</View>
 		</View>
 	)
 }

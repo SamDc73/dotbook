@@ -1,5 +1,6 @@
 import { parseLineTime } from "@dotbook/core/parse"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { useSQLiteContext } from "expo-sqlite"
 import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
@@ -14,14 +15,17 @@ import { EntryLine } from "../../components/EntryLine"
 import { LogList } from "../../components/LogList"
 import { TodoLine } from "../../components/TodoLine"
 import { Icon } from "../../components/ui/Icon"
-import { addEntry, confirmPlan, deleteEntry, entriesForDay } from "../../db/entries"
+import { addEntry, confirmPlan, deleteEntry, entriesForDay, restoreEntry } from "../../db/entries"
 import { materializeDay } from "../../db/recurrences"
-import { abandonTimer, stopTimer } from "../../db/timers"
-import { closeTodo, mergeTodosIntoLog, todosForDay } from "../../db/todos"
+import { abandonTimer, restoreTimer, stopTimer } from "../../db/timers"
+import { closeTodo, mergeTodosIntoLog, reopenTodo, todosForDay } from "../../db/todos"
 import { useLiveQuery } from "../../db/use-live-query"
 import { shiftDay, today } from "../../lib/day"
 import { clock } from "../../lib/format"
+import { tap } from "../../lib/haptics"
+import { offerUndo } from "../../lib/undo"
 import { useDayNav } from "../../lib/use-day-nav"
+import { useToday } from "../../lib/use-today"
 import { saveVoiceNote } from "../../voice/notes"
 
 const ORDER_KEY = "entry-order" // "typing" | "chronological"
@@ -31,10 +35,15 @@ export default function Today() {
 	const db = useSQLiteContext()
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
-	const [day, setDay] = useState(today)
+	// The day shown is the one picked, or today when none is: left on today, the
+	// log moves to the new day at midnight and when the app is opened next morning.
+	const current = useToday()
+	const [picked, setPicked] = useState(null)
+	const day = picked ?? current
 	// The one line being edited in place, by id — its row holds the input.
 	const [editingId, setEditingId] = useState(null)
 	const list = useRef(null)
+	const composer = useRef(null)
 	// Set when the composer opens a list; the next layout of the log scrolls it into view.
 	const revealing = useRef(false)
 
@@ -45,7 +54,7 @@ export default function Today() {
 	const entries = useLiveQuery(["entries", day, order], () => entriesForDay(db, day, order))
 	// The day's todos sit in the log as lines with a box where the pill would be;
 	// today's finished ones stay, struck, and are gone from tomorrow's log.
-	const todos = useLiveQuery(["todos", "day", day], () => todosForDay(db, day, today()))
+	const todos = useLiveQuery(["todos", "day", day, current], () => todosForDay(db, day, current))
 	const items = mergeTodosIntoLog(entries, todos)
 
 	// Moving between days: the headline's gestures and keys land here, and a
@@ -53,12 +62,23 @@ export default function Today() {
 	const pick = useCallback(
 		(next) => {
 			materializeDay(db, next)
-			setDay(next)
+			setPicked(followToday(next))
 		},
 		[db]
 	)
-	const shift = useCallback((delta) => setDay((current) => shiftDay(current, delta)), [])
+	const shift = useCallback((delta) => setPicked((shown) => followToday(shiftDay(shown ?? today(), delta))), [])
 	const pan = useDayNav(shift)
+
+	// `dotbook:///?compose=1` — the home-screen widget and the quick-settings
+	// tile — opens today with the cursor in the composer, however the app was left.
+	const { compose } = useLocalSearchParams()
+	const router = useRouter()
+	useEffect(() => {
+		if (compose === undefined) return
+		setPicked(null)
+		composer.current?.focus()
+		router.setParams({ compose: undefined })
+	}, [compose, router])
 	useEffect(() => {
 		materializeDay(db, day)
 	}, [db, day])
@@ -73,8 +93,11 @@ export default function Today() {
 	// and the recording, when the platform could keep one, is saved against it.
 	async function submit(text, voice) {
 		if (text === "") return
-		const stamped = stampedNow(text, day)
-		const id = await addEntry(db, { day, ...stamped, source: voice ? "voice" : "manual" })
+		// Read today now, not at the last render: a line typed in the minute after
+		// midnight belongs to the new day.
+		const target = picked ?? today()
+		const stamped = stampedNow(text, target)
+		const id = await addEntry(db, { day: target, ...stamped, source: voice ? "voice" : "manual" })
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 		// The composer is the log's last row: keep it in view as the log grows.
 		list.current?.scrollToEnd({ animated: true })
@@ -93,8 +116,13 @@ export default function Today() {
 	// when their own entry changes — a ticking timer row does not redraw the log.
 	const remove = useCallback(
 		(entry) => {
-			if (entry.kind === "timer") abandonTimer(db, entry)
-			else deleteEntry(db, entry.id)
+			if (entry.kind === "timer") {
+				abandonTimer(db, entry)
+				offerUndo("Timer abandoned", () => restoreTimer(db, entry))
+			} else {
+				deleteEntry(db, entry.id)
+				offerUndo("Line deleted", () => restoreEntry(db, entry.id))
+			}
 			setEditingId((current) => (current === entry.id ? null : current))
 		},
 		[db]
@@ -103,7 +131,14 @@ export default function Today() {
 	const edited = useCallback(() => setEditingId(null), [])
 	const confirm = useCallback((entry) => confirmPlan(db, entry.id), [db])
 	const stop = useCallback((entry) => stopTimer(db, entry), [db])
-	const closeOne = useCallback((todo, status) => closeTodo(db, todo, status, today()), [db])
+	const closeOne = useCallback(
+		async (todo, status) => {
+			const lineId = await closeTodo(db, todo, status, today())
+			if (status === "done") tap("done")
+			offerUndo(status === "done" ? "Todo done" : "Todo trashed", () => reopenTodo(db, todo.id, lineId))
+		},
+		[db]
+	)
 	const renderItem = useCallback(
 		({ item }) => {
 			if (item.kind === "todo") return <TodoLine todo={item} onClose={closeOne} />
@@ -147,13 +182,24 @@ export default function Today() {
 					keyboardShouldPersistTaps="handled"
 					onContentSizeChange={reveal}
 					ListFooterComponent={
-						<Composer day={day} seam={items.length > 0} onSubmit={submit} onListOpen={markRevealing} />
+						<Composer
+							day={day}
+							seam={items.length > 0}
+							onSubmit={submit}
+							onListOpen={markRevealing}
+							inputRef={composer}
+						/>
 					}
 				/>
 			</View>
 			<StatusBar style="auto" />
 		</KeyboardAvoidingView>
 	)
+}
+
+// Picking today means following it, so it rolls over at midnight.
+function followToday(day) {
+	return day === today() ? null : day
 }
 
 // Todos and entries share the list; their ids come from different tables.

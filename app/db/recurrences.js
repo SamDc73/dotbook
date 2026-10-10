@@ -34,6 +34,11 @@ export function removeRecurrence(db, id) {
 	return updateRow(db, "recurrences", { id }, { deleted_at: Date.now() })
 }
 
+// Undo for removeRecurrence.
+export function restoreRecurrence(db, id) {
+	return updateRow(db, "recurrences", { id }, { deleted_at: null })
+}
+
 // Editing retires the old rule and starts a new one. Days already materialised
 // keep their lines (their instance rows point at the old rule), so a change to
 // the series never rewrites the past.

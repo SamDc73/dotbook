@@ -9,9 +9,12 @@ import { TodoRow } from "../../components/TodoRow"
 import { Badge } from "../../components/ui/Badge"
 import { Input } from "../../components/ui/Input"
 import { Text } from "../../components/ui/Text"
-import { activeTodoId, addTodo, closedTodos, closeTodo, openTodos, setActiveTodo } from "../../db/todos"
+import { activeTodoId, addTodo, closedTodos, closeTodo, openTodos, reopenTodo, setActiveTodo } from "../../db/todos"
 import { useLiveQuery } from "../../db/use-live-query"
-import { shiftDay, today } from "../../lib/day"
+import { shiftDay } from "../../lib/day"
+import { tap } from "../../lib/haptics"
+import { offerUndo } from "../../lib/undo"
+import { useToday } from "../../lib/use-today"
 
 const ACTIVE_QUERY = ["active-todo"]
 const DUE_CHOICES = ["queue", "today", "tomorrow"]
@@ -23,7 +26,7 @@ export default function Todos() {
 	const db = useSQLiteContext()
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
-	const day = today()
+	const day = useToday()
 	const [editingId, setEditingId] = useState(null)
 	const [showClosed, setShowClosed] = useState(false)
 	const [text, setText] = useState("")
@@ -57,8 +60,10 @@ export default function Todos() {
 		setEditingId((current) => (todo.id === current ? null : todo.id))
 	}, [])
 	const close = useCallback(
-		(todo, status) => {
-			closeTodo(db, todo, status, day)
+		async (todo, status) => {
+			const lineId = await closeTodo(db, todo, status, day)
+			if (status === "done") tap("done")
+			offerUndo(status === "done" ? "Todo done" : "Todo trashed", () => reopenTodo(db, todo.id, lineId))
 			if (queryClient.getQueryData(ACTIVE_QUERY) === todo.id) {
 				setActiveTodo(null)
 				queryClient.setQueryData(ACTIVE_QUERY, null)

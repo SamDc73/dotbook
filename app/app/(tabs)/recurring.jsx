@@ -10,9 +10,17 @@ import { ScreenHeader } from "../../components/ScreenHeader"
 import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Text } from "../../components/ui/Text"
-import { addRecurrence, importIcs, recurrences, removeRecurrence, replaceRecurrence } from "../../db/recurrences"
+import {
+	addRecurrence,
+	importIcs,
+	recurrences,
+	removeRecurrence,
+	replaceRecurrence,
+	restoreRecurrence,
+} from "../../db/recurrences"
 import { useLiveQuery } from "../../db/use-live-query"
 import { clockAt } from "../../lib/format"
+import { offerUndo } from "../../lib/undo"
 
 // The rules behind the lines that fill themselves in: class every Tue/Thu,
 // lunch at 5 daily. Tap to edit, long-press to remove, or import a timetable.
@@ -51,8 +59,13 @@ export default function Recurring() {
 		}
 	}
 
+	function remove(rule) {
+		removeRecurrence(db, rule.id)
+		offerUndo("Rule removed", () => restoreRecurrence(db, rule.id))
+	}
+
 	function renderItem({ item }) {
-		return <RuleRow rule={item} onPress={setEditing} onLongPress={(rule) => removeRecurrence(db, rule.id)} />
+		return <RuleRow rule={item} onPress={setEditing} onLongPress={remove} />
 	}
 
 	const initial = editing === null || editing === "new" ? null : toForm(editing)

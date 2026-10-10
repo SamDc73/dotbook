@@ -70,12 +70,18 @@ export function setDueOn(db, id, dueOn) {
 }
 
 // Done or trashed. The day still reads as a true record: an ordinary log line
-// is written for it, marked `source: todo`.
+// is written for it, marked `source: todo`. Returns that line's id, for undo.
 export async function closeTodo(db, todo, status, today) {
 	const now = Date.now()
 	await updateRow(db, "todos", { id: todo.id }, { status, closed_at: now })
 	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
-	await todoLine(db, today, `${status}: ${todo.text}`, now)
+	return todoLine(db, today, `${status}: ${todo.text}`, now)
+}
+
+// Undo for closeTodo: open again, and the line it wrote taken back — it did not happen.
+export async function reopenTodo(db, todoId, lineId) {
+	await updateRow(db, "todos", { id: todoId }, { status: "open", closed_at: null })
+	await updateRow(db, "entries", { id: lineId }, { deleted_at: Date.now() })
 }
 
 // A line the app writes on a todo's behalf — `21:14 done: write report`,

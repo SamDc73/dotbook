@@ -11,7 +11,8 @@ import { Panel } from "../../components/ui/Panel"
 import { Text } from "../../components/ui/Text"
 import { comparisonRows, correlationRows, days, seriesFor, windowRows } from "../../db/analysis"
 import { useLiveQuery } from "../../db/use-live-query"
-import { shiftDay, today } from "../../lib/day"
+import { shiftDay } from "../../lib/day"
+import { useToday } from "../../lib/use-today"
 
 const WINDOWS = [30, 90]
 
@@ -23,7 +24,7 @@ export default function Trends() {
 	const insets = useSafeAreaInsets()
 	const [window, setWindow] = useState(WINDOWS[0])
 
-	const end = today()
+	const end = useToday()
 	const start = shiftDay(end, 1 - window)
 	const rows = useLiveQuery(["trends", start, end], () => windowRows(db, start, end))
 

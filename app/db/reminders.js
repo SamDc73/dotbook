@@ -49,6 +49,11 @@ export function removeReminder(db, id) {
 	return updateRow(db, "reminders", { id }, { deleted_at: Date.now() })
 }
 
+// Undo for removeReminder; the caller reconciles, as after any reminder change.
+export function restoreReminder(db, id) {
+	return updateRow(db, "reminders", { id }, { deleted_at: null })
+}
+
 /**
  * Record a tap. `key` identifies the exact notification fire it answers; the
  * same fire answered twice (foreground listener and background task can both

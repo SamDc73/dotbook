@@ -57,6 +57,14 @@ export async function abandonTimer(db, entry) {
 	await cancelEndNotification(entry.id)
 }
 
+// Undo for abandonTimer: live again, with its end notification back if it is still running.
+export async function restoreTimer(db, entry) {
+	await updateRow(db, "entries", { id: entry.id }, { deleted_at: null })
+	if (entry.ts_end > Date.now()) {
+		await notifyAtEnd(entry.id, entry.ts_end, Math.round((entry.ts_end - entry.ts_start) / MINUTE_MS))
+	}
+}
+
 // The duration is offered, never demanded. Two sources, in order: the plan you
 // already wrote, then what you usually do. Each is a chip; typing a number ignores both.
 export async function suggestions(db, day, now) {

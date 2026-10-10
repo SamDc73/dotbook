@@ -7,7 +7,9 @@ import { runCommand } from "../db/commands"
 import { suggestions } from "../db/timers"
 import { clock } from "../lib/format"
 import { gutter } from "../lib/gutter"
+import { tap } from "../lib/haptics"
 import { matchCommands } from "../lib/menu"
+import { useDraft } from "../lib/use-draft"
 import { LineInput } from "./LineInput"
 import { Seam } from "./LogList"
 import { MicButton } from "./MicButton"
@@ -24,14 +26,17 @@ import { Text } from "./ui/Text"
 // over the log. Editing an existing line happens in that line's own row
 // (EntryLine), not here.
 const NO_SUGGESTIONS = []
+// The half-typed line survives the app being closed (lib/use-draft.js).
+const DRAFT_KEY = "composer-draft"
 const MINUTE_MS = 60 * 1000
 
 // `onListOpen` is called when the slash menu or the timer's durations open under
 // the input — the composer is the log's last row, so on a long day the list
-// would open below the screen; the log scrolls it into view.
-export function Composer({ day, seam = false, onSubmit, onListOpen }) {
+// would open below the screen; the log scrolls it into view. `inputRef` reaches
+// the input, for the screen to focus it.
+export function Composer({ day, seam = false, onSubmit, onListOpen, inputRef }) {
 	const db = useSQLiteContext()
-	const [text, setText] = useState("")
+	const [text, setText] = useDraft(DRAFT_KEY)
 	// The recording behind the current text, when it came from the microphone.
 	// Submitted with the line so it is marked `source: voice` and the audio is kept.
 	const [voice, setVoice] = useState(null)
@@ -119,10 +124,12 @@ export function Composer({ day, seam = false, onSubmit, onListOpen }) {
 			return
 		}
 		if (await runCommand(db, day, line)) {
+			tap("logged")
 			setText("")
 			return
 		}
 		onSubmit(line, voice)
+		tap("logged")
 		setText("")
 		setVoice(null)
 	}
@@ -140,6 +147,7 @@ export function Composer({ day, seam = false, onSubmit, onListOpen }) {
 					</View>
 				) : null}
 				<LineInput
+					ref={inputRef}
 					value={text}
 					day={day}
 					now={now}

@@ -5,8 +5,8 @@ import Storage from "expo-sqlite/kv-store"
 import { Platform, View } from "react-native"
 import { rollupsOn } from "../db/screenTime"
 import { useLiveQuery } from "../db/use-live-query"
-import { today } from "../lib/day"
 import { clock, minutesLabel } from "../lib/format"
+import { useToday } from "../lib/use-today"
 import { collectDays, LABELS_KEY, LAST_COLLECTED_KEY } from "../screenTime/collect"
 import { hasPermission, openSettings } from "../screenTime/usage"
 import { Button } from "./ui/Button"
@@ -38,7 +38,8 @@ export function ScreenTimeSection() {
 	const device = Device.deviceName ?? "android"
 
 	const { data: status = NO_STATUS } = useQuery({ queryKey: STATUS_QUERY, queryFn: readStatus })
-	const rows = useLiveQuery(["screen-time", "today", today()], () => rollupsOn(db, today()))
+	const day = useToday()
+	const rows = useLiveQuery(["screen-time", "today", day], () => rollupsOn(db, day))
 	const apps = rows.filter((row) => row.source === "android:usagestats")
 	const sites = rows.filter((row) => row.source === "ext:firefox")
 
