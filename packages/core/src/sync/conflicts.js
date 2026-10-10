@@ -25,26 +25,31 @@ export const CONFLICT_SOURCE = "sync:conflict"
  *   the line, the losing edit's timestamp, and the losing side's columns for that line
  */
 export async function findClashes(db, unsent, received) {
-	const fresh = []
+	const ours = unsent.filter((message) => message.dataset === "entries")
+	const ourText = newestText(ours)
+	// Nothing of ours in flight — the usual round, and every first sync — clashes with nothing.
+	if (ourText.size === 0) {
+		return []
+	}
+	// Their messages for the lines we edited, the ones this device has never stored.
+	const theirs = []
 	for (const message of received) {
 		if (
 			message.dataset === "entries" &&
+			ourText.has(message.row) &&
 			!(await db.get("SELECT 1 FROM messages_crdt WHERE timestamp = ?", [message.timestamp]))
 		) {
-			fresh.push(message)
+			theirs.push(message)
 		}
 	}
-	const ours = unsent.filter((message) => message.dataset === "entries")
-	const ourText = newestText(ours)
 	const clashes = []
-	for (const [row, theirs] of newestText(fresh)) {
+	for (const [row, their] of newestText(theirs)) {
 		const mine = ourText.get(row)
-		if (mine === undefined || JSON.stringify(mine.value) === JSON.stringify(theirs.value)) {
+		if (JSON.stringify(mine.value) === JSON.stringify(their.value)) {
 			continue
 		}
-		const loser = mine.timestamp < theirs.timestamp ? mine : theirs
-		const side = loser === mine ? ours : fresh
-		clashes.push({ row, loser: loser.timestamp, version: versionOf(side, row) })
+		const loser = mine.timestamp < their.timestamp ? mine : their
+		clashes.push({ row, loser: loser.timestamp, version: versionOf(loser === mine ? ours : theirs, row) })
 	}
 	return clashes
 }
