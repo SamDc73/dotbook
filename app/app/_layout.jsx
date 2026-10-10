@@ -29,6 +29,11 @@ const queryClient = new QueryClient({
 
 const LOADING = <ActivityIndicator className="flex-1 bg-background text-primary" />
 
+// The Suspense provider caches the open database by these props' identity. An
+// inline object here is new on every mount, so BACK and then the app again closed
+// the connection and reopened it at once; the reopen raced the close and locked.
+const DB_OPTIONS = { enableChangeListener: true }
+
 export default function RootLayout() {
 	const [fontsLoaded] = useFonts(FONTS)
 	if (!fontsLoaded) return LOADING
@@ -42,7 +47,7 @@ export default function RootLayout() {
 				<Suspense fallback={LOADING}>
 					<SQLiteProvider
 						databaseName="dotbook.db"
-						options={{ enableChangeListener: true }}
+						options={DB_OPTIONS}
 						onInit={migrate}
 						useSuspense
 					>
