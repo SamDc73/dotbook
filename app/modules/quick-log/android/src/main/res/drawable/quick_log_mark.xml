@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ./ mark from docs/brand/mono.svg, one colour: the shade tints the tile's
+     icon itself, and the widget tints it with its accent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="24dp"
+  android:height="24dp"
+  android:viewportWidth="512"
+  android:viewportHeight="512">
+  <path
+    android:fillColor="@android:color/white"
+    android:pathData="M54.09,369.44a78.3,78.3 0,1 0,156.6 0a78.3,78.3 0,1 0,-156.6 0Z" />
+  <path
+    android:fillColor="@android:color/white"
+    android:pathData="M244.85,444L303.21,444L456,44L397.64,44Z" />
+</vector>

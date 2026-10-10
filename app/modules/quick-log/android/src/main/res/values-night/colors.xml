@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="quick_log_surface">@android:color/background_dark</color>
+  <color name="quick_log_text">@android:color/secondary_text_dark</color>
+  <color name="quick_log_accent">@android:color/holo_blue_light</color>
+</resources>

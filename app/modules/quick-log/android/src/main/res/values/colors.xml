@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Before Android 12 there is no wallpaper palette: the platform's plain colours. -->
+<resources>
+  <color name="quick_log_surface">@android:color/background_light</color>
+  <color name="quick_log_text">@android:color/secondary_text_light</color>
+  <color name="quick_log_accent">@android:color/holo_blue_dark</color>
+</resources>

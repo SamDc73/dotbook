@@ -1,0 +1,13 @@
+// Dotbook's home-screen widget and quick-settings tile. No JavaScript side: the
+// two only open the app at dotbook:///?compose=1. Autolinked from app/modules.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'dev.dotbook'
+version = '1.0.0'
+
+android {
+  namespace "dev.dotbook.quicklog"
+}

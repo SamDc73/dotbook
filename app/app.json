@@ -44,7 +44,8 @@
 					"icon": "./assets/notification-icon.png",
 					"color": "#006CB4"
 				}
-			]
+			],
+			"./plugins/withWindowColours"
 		],
 		"scheme": "dotbook"
 	}

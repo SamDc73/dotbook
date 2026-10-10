@@ -34,6 +34,11 @@ const LOADING = <ActivityIndicator className="flex-1 bg-background text-primary"
 // the connection and reopened it at once; the reopen raced the close and locked.
 const DB_OPTIONS = { enableChangeListener: true }
 
+// The navigator paints each scene light grey in both themes; a screen not yet
+// drawn would flash it. Transparent, the window's colour shows instead, which
+// is the background in either theme (plugins/withWindowColours.js).
+const STACK = { headerShown: false, contentStyle: { backgroundColor: "transparent" } }
+
 export default function RootLayout() {
 	const [fontsLoaded] = useFonts(FONTS)
 	if (!fontsLoaded) return LOADING
@@ -51,7 +56,7 @@ export default function RootLayout() {
 							<Reminders />
 							<Sync />
 							<MaterialYou>
-								<Stack screenOptions={{ headerShown: false }} />
+								<Stack screenOptions={STACK} />
 							</MaterialYou>
 						</QueryClientProvider>
 					</SQLiteProvider>
