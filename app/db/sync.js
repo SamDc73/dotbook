@@ -28,18 +28,29 @@ export function adapterFor(db) {
 }
 
 function adapt(db) {
-	return {
-		run: (sql, params = []) => db.runAsync(sql, params),
-		all: (sql, params = []) => db.getAllAsync(sql, params),
-		get: (sql, params = []) => db.getFirstAsync(sql, params),
-		// withTransactionAsync resolves to nothing, so the result is carried out by hand.
-		transaction: async (fn) => {
+	// One transaction at a time, as the server's adapter does. withTransactionAsync
+	// is a bare BEGIN … COMMIT on the one shared connection, so two at once (an
+	// import while the foreground sync runs) interleave: the second BEGIN fails and
+	// its ROLLBACK undoes the first. A queue makes each wait its turn.
+	let queue = Promise.resolve()
+	function transaction(fn) {
+		const turn = queue.then(async () => {
+			// withTransactionAsync resolves to nothing, so the result is carried out by hand.
 			let result
 			await db.withTransactionAsync(async () => {
 				result = await fn()
 			})
 			return result
-		},
+		})
+		// The next caller waits for this one to finish, however it finished.
+		queue = turn.catch(() => undefined)
+		return turn
+	}
+	return {
+		run: (sql, params = []) => db.runAsync(sql, params),
+		all: (sql, params = []) => db.getAllAsync(sql, params),
+		get: (sql, params = []) => db.getFirstAsync(sql, params),
+		transaction,
 	}
 }
 

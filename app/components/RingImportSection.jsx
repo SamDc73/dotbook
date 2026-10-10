@@ -29,13 +29,19 @@ export function RingImportSection() {
 	const [stored] = useLiveQuery(["ringconn", "totals"], () => totals(db))
 
 	async function pick() {
-		const files = await pickFiles()
+		let files
+		try {
+			files = await pickFiles()
+		} catch (error) {
+			setResults([{ name: "import", line: `failed: ${error.message}` }])
+			return
+		}
 		if (files.length === 0) return
 		// The ring app writes naive local times; this device's zone is the best guess.
 		const tzid = Intl.DateTimeFormat().resolvedOptions().timeZone
 		const lines = []
 		for (const { name, text } of files) {
-			lines.push({ name, line: await importOne(db, text, tzid) })
+			lines.push({ name, line: await importOne(db, text, tzid).catch((error) => `failed: ${error.message}`) })
 		}
 		setResults(lines)
 		const now = Date.now()

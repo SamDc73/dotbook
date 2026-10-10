@@ -15,24 +15,32 @@ export function DataSection() {
 	const [status, setStatus] = useState(null)
 
 	async function exportAll() {
-		const { text, lines, days } = await exportMarkdown(db)
-		await saveFile(`dotbook-${localDay(Date.now())}.md`, text, "text/markdown")
-		setStatus(`exported ${lines} lines over ${days} days`)
+		try {
+			const { text, lines, days } = await exportMarkdown(db)
+			await saveFile(`dotbook-${localDay(Date.now())}.md`, text, "text/markdown")
+			setStatus(`exported ${lines} lines over ${days} days`)
+		} catch (error) {
+			setStatus(`export failed: ${error.message}`)
+		}
 	}
 
 	async function importFile() {
-		const picked = await DocumentPicker.getDocumentAsync({
-			type: ["text/markdown", "text/plain", "*/*"],
-			copyToCacheDirectory: true,
-		})
-		if (picked.canceled) return
-		const [asset] = picked.assets
-		const text = asset.file ? await asset.file.text() : await new File(asset.uri).text()
-		setStatus("importing…")
-		const c = await importMarkdown(db, text)
-		setStatus(
-			`${c.lines} lines · ${c.todos} todos · ${c.habits} habits · ${c.templates} templates · ${c.recurrences} rules added · ${c.skipped} already here`
-		)
+		try {
+			const picked = await DocumentPicker.getDocumentAsync({
+				type: ["text/markdown", "text/plain", "*/*"],
+				copyToCacheDirectory: true,
+			})
+			if (picked.canceled) return
+			const [asset] = picked.assets
+			const text = asset.file ? await asset.file.text() : await new File(asset.uri).text()
+			setStatus("importing…")
+			const c = await importMarkdown(db, text)
+			setStatus(
+				`${c.lines} lines · ${c.todos} todos · ${c.habits} habits · ${c.templates} templates · ${c.recurrences} rules added · ${c.skipped} already here`
+			)
+		} catch (error) {
+			setStatus(`import failed: ${error.message}`)
+		}
 	}
 
 	return (

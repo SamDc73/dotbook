@@ -18,12 +18,18 @@ import {
 } from "@actual-app/crdt"
 
 let activeDb = null
+let loading = null
 
 /** The clock for `db`, created on first use. */
 export async function clockFor(db) {
 	if (db !== activeDb) {
-		setClock(await loadOrCreate(db))
-		activeDb = db
+		// Two first writes at once share one load, so a fresh device makes one clock.
+		if (loading?.db !== db) loading = { db, clock: loadOrCreate(db) }
+		const clock = await loading.clock
+		if (db !== activeDb) {
+			setClock(clock)
+			activeDb = db
+		}
 	}
 	return getClock()
 }
