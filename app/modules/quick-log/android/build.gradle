@@ -8,6 +8,11 @@ plugins {
 group = 'dev.dotbook'
 version = '1.0.0'
 
+// Expo's plugin names the module's publication from these three.
 android {
   namespace "dev.dotbook.quicklog"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
 }
