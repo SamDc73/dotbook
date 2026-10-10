@@ -11,7 +11,7 @@
 		},
 		"android": {
 			"adaptiveIcon": {
-				"backgroundColor": "#E6F4FE",
+				"backgroundColor": "#006CB4",
 				"foregroundImage": "./assets/android-icon-foreground.png",
 				"backgroundImage": "./assets/android-icon-background.png",
 				"monochromeImage": "./assets/android-icon-monochrome.png"
@@ -37,7 +37,14 @@
 					}
 				}
 			],
-			"expo-sharing"
+			"expo-sharing",
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/notification-icon.png",
+					"color": "#006CB4"
+				}
+			]
 		],
 		"scheme": "dotbook"
 	}

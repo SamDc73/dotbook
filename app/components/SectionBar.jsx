@@ -15,10 +15,11 @@ import {
 } from "./icons/Glyphs"
 import { Icon } from "./ui/Icon"
 import { Text } from "./ui/Text"
+import { Wordmark } from "./Wordmark"
 
 // The palette page's rail on wide screens and its phone bar below the
 // breakpoint, drawn from one list of places. The rail is φ⁵ wide on the surface
-// with a right hairline, the wordmark in Fraunces, items in the body face at line
+// with a right hairline, the ./dotbook wordmark, items in the body face at line
 // size, padded above and below by navitem and turned at the same (radius-item),
 // icon and label an xs apart, the active one on the primary wash in primary,
 // semibold — no rule, no uppercase. The bar is the surface with a top hairline,
@@ -51,7 +52,7 @@ function Rail({ current }) {
 			className="w-rail gap-3xs border-r border-outline-variant bg-surface px-sm py-md"
 			style={{ paddingTop: insets.top }}
 		>
-			<Text className="font-display-medium text-title3 leading-title3 px-sm pb-md">Dotbook</Text>
+			<Wordmark className="mx-sm mb-md h-md self-start" />
 			{PLACES.map((place) => (
 				<RailItem key={place.name} place={place} active={place.name === current} />
 			))}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="dotbook">
+  <!-- ./ : dot 1, gap phi^-3, stroke phi^-2, lean 1. 1 + phi^-3 + phi^-2 + 1 = phi^2, so the figure closes into a square. -->
+  <circle cx="132.39" cy="369.44" r="78.3" fill="currentColor"/>
+  <polygon points="244.85,444 303.21,444 456,44 397.64,44" fill="currentColor"/>
+</svg>

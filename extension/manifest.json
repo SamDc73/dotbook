@@ -3,6 +3,7 @@
 	"name": "Dotbook — browser time",
 	"version": "0.1.0",
 	"description": "Records active time per site and sends it to your Dotbook server.",
+	"icons": { "48": "icon.svg", "96": "icon.svg" },
 	"browser_specific_settings": {
 		"gecko": {
 			"id": "browser-time@dotbook.dev",
