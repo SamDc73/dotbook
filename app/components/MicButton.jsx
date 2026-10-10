@@ -51,7 +51,7 @@ export function MicButton({ onTranscript, onDone }) {
 	return (
 		<Pressable
 			onPress={toggle}
-			className={listening ? "p-xs rounded-xl bg-error-container" : "p-xs rounded-xl"}
+			className={listening ? "rounded-full bg-error-container p-xs" : "rounded-full p-xs"}
 			accessibilityLabel={listening ? "Stop recording" : "Record a voice note"}
 		>
 			<Icon as={Mic} className={listening ? "text-on-error-container" : "text-outline"} />

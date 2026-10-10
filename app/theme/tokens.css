@@ -15,7 +15,12 @@
    ───────────────────────────────────────────────────────────────────────── */
 
 @theme {
-	/* Golden-ratio spacing — p-md, gap-lg, m-xl … */
+	/* The golden scale. Every dimension below is a power of φ (1.618) or of one
+	   of its roots — √φ 1.272, ∜φ 1.128, ⁸√φ 1.062 — written out as a number,
+	   because React Native evaluates no calc(): phone and web read the same
+	   static values. Reach for the next step rather than a new number. */
+
+	/* Spacing — p-md, gap-lg, m-xl … φ⁻³ … φ⁵ */
 	--spacing-3xs: 0.146rem;
 	--spacing-2xs: 0.236rem;
 	--spacing-xs: 0.382rem;
@@ -27,25 +32,33 @@
 	--spacing-3xl: 6.854rem;
 	--spacing-4xl: 11.09rem;
 
-	/* Type scale (φ and √φ steps) */
-	--text-caption: 0.618rem;
-	--text-label: 0.786rem;
+	/* Type — body at 1, every role a root-of-φ step from it, each with its own
+	   line height already multiplied out: body reads at φ, display1 at ∜φ,
+	   everything else at √φ. A text-* class always travels with its leading-*. */
+	--text-caption: 0.786rem; /* 1 ÷ √φ */
+	--leading-caption: 1rem;
+	--text-label: 0.835rem; /* 1 ÷ (∜φ · ⁸√φ) */
+	--leading-label: 1.062rem;
+	--text-subheading: 0.887rem; /* 1 ÷ ∜φ */
+	--leading-subheading: 1.128rem;
+	--text-callout: 0.942rem; /* 1 ÷ ⁸√φ — the log line */
+	--leading-callout: 1.198rem;
 	--text-body: 1rem;
-	--text-callout: 1.128rem;
-	--text-subheading: 1.272rem;
-	--text-heading: 1.618rem;
-	--text-title3: 2.058rem;
-	--text-title2: 2.618rem;
-	--text-title1: 3.33rem;
-	--text-display2: 4.236rem;
-	--text-display1: 6.854rem;
-
-	/* Radius */
-	--radius-xs: 0.236rem;
-	--radius-sm: 0.382rem;
-	--radius-md: 0.618rem;
-	--radius-lg: 1rem;
-	--radius-xl: 1.618rem;
+	--leading-body: 1.618rem;
+	--text-heading: 1.128rem; /* ∜φ */
+	--leading-heading: 1.435rem;
+	--text-title3: 1.272rem; /* √φ */
+	--leading-title3: 1.618rem;
+	--text-title2: 1.618rem; /* φ — a screen's title */
+	--leading-title2: 2.058rem;
+	--text-title1: 2.058rem; /* φ · √φ */
+	--leading-title1: 2.618rem;
+	--text-display2: 2.618rem; /* φ² */
+	--leading-display2: 3.33rem;
+	--text-display1: 4.236rem; /* φ³ — the focus countdown */
+	--leading-display1: 4.778rem;
+	/* Uppercase mono — eyebrows and state chips — opened by φ⁻¹ of a tenth. */
+	--tracking-caps: 0.0618em;
 
 	/* Type — the template's three faces. The names are the families expo-font
 	   registers (see app/_layout.jsx), so one token works on native and web. */
@@ -56,31 +69,34 @@
 	--font-body-semibold: InstrumentSans_600SemiBold;
 	--font-mono: IBMPlexMono_500Medium;
 	--font-mono-regular: IBMPlexMono_400Regular;
-	--text-eyebrow: 0.66rem;
-	--text-chip: 0.68rem;
-	--text-time: 0.75rem;
-	--text-line: 0.93rem;
-	--tracking-eyebrow: 0.14em;
-	--tracking-chip: 0.11em;
 
-	/* Shapes the template uses */
-	--radius-chip: 0.25rem;
-	--radius-seg: 0.4rem;
-	--radius-panel: 0.7rem;
+	/* Radius — a box turns its corner at the size of the text it holds divided by
+	   that text's line height, so a panel of body text and a field (1 ÷ φ) share
+	   md, a chip of caption text turns tighter, and a button is a pill. */
+	--radius-xs: 0.236rem;
+	--radius-sm: 0.382rem;
+	--radius-md: 0.618rem;
+	--radius-lg: 1rem;
+	--radius-xl: 1.618rem;
+	--radius-chip: 0.486rem; /* caption ÷ φ — chips and time pills */
+	--radius-item: 0.44rem; /* = its vertical padding — rail rows, day cells */
 
-	/* The rail and the bar, as the palette page draws them */
-	--spacing-rail: 11.5rem;
-	--spacing-navitem: 0.42rem;
-	--spacing-icon: 1.15rem;
-	--text-tab: 0.64rem;
-
+	/* Sizes with a job, each one a step of the scale */
+	--spacing-icon: 1.272rem; /* √φ — every icon, one size */
+	--spacing-navitem: 0.44rem; /* φ × (√φ − 1): a rail row's vertical padding */
+	--spacing-button-y: 0.486rem; /* body × √φ ÷ φ² */
+	--spacing-button-y-sm: 0.431rem; /* the same at subheading size */
+	--spacing-button-x-sm: 0.887rem; /* one subheading em */
+	--leading-button: 1.272rem; /* body at √φ: a button is one line */
+	--spacing-rail: 11.09rem; /* φ⁵ */
 	/* The habits grid, as uHabits draws it: square day cells, names in a fixed column */
-	--spacing-cell: 2.6rem;
-	--spacing-habitname: 9rem;
+	--spacing-cell: 2.618rem; /* φ² */
+	--spacing-habitname: 8.718rem; /* φ⁴ · √φ */
 
-	/* Reading width on wide screens — the log never runs the full width of a monitor. */
-	--container-page: 66rem;
-	/* Past this width the rail replaces the bottom bar and gutters widen — the template's 46rem. */
+	/* Reading width on wide screens — the rail times φ³, so the log never runs
+	   the full width of a monitor. */
+	--container-page: 46.98rem;
+	/* Past this width the rail replaces the bottom bar and gutters widen. */
 	--breakpoint-wide: 46rem;
 	--shadow-panel: 0 1px 2px rgb(25 32 40 / 0.05), 0 10px 30px -18px rgb(0 108 180 / 0.28);
 

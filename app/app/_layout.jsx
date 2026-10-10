@@ -45,12 +45,7 @@ export default function RootLayout() {
 		<ErrorBoundary FallbackComponent={DatabaseError}>
 			<DatabaseGate>
 				<Suspense fallback={LOADING}>
-					<SQLiteProvider
-						databaseName="dotbook.db"
-						options={DB_OPTIONS}
-						onInit={migrate}
-						useSuspense
-					>
+					<SQLiteProvider databaseName="dotbook.db" options={DB_OPTIONS} onInit={migrate} useSuspense>
 						<QueryClientProvider client={queryClient}>
 							<LiveQueries />
 							<Reminders />

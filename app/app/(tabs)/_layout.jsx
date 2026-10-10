@@ -36,12 +36,13 @@ function renderSectionBar(props) {
 // The navigator paints its own scene background; ours comes from the token.
 const SCENE = { backgroundColor: "transparent" }
 
-// Every screen sits in a reading-width column on wide screens, with the
-// template's larger gutter; on a phone it is simply the full width.
+// Every screen sits in a reading-width column on wide screens, and the page adds
+// sm to each screen's own md so the gutter is the next step, lg; on a phone it
+// is simply the full width.
 function PageWidth({ children }) {
 	return (
 		<View className="flex-1 items-center bg-background">
-			<View className="w-full max-w-page flex-1 wide:px-md">{children}</View>
+			<View className="w-full max-w-page flex-1 wide:px-sm">{children}</View>
 		</View>
 	)
 }

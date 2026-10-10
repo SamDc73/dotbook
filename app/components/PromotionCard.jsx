@@ -11,7 +11,7 @@ export function PromotionCard({ template, onAccept, onDecline }) {
 	const label = nextLabel(versions[0].label)
 
 	return (
-		<View className="gap-sm rounded-panel border border-warning-line bg-warning-wash p-md">
+		<View className="gap-sm rounded-md border border-warning-line bg-warning-wash p-md">
 			<Text variant="eyebrow" className="text-warning">
 				{template.name}
 			</Text>

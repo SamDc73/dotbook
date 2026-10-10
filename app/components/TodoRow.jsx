@@ -61,7 +61,7 @@ export const TodoRow = memo(function TodoRow({
 	return (
 		<View>
 			<View className="flex-row items-start gap-sm py-xs">
-				<Pressable onPress={done} disabled={!open} className="pt-3xs" accessibilityLabel="Done">
+				<Pressable onPress={done} disabled={!open} accessibilityLabel="Done">
 					<Icon as={boxFor(todo.status)} className={open ? "text-on-surface-variant" : "text-success"} />
 				</Pressable>
 				<Pressable onPress={edit} disabled={!open} className="flex-1 gap-2xs">
@@ -91,16 +91,12 @@ export const TodoRow = memo(function TodoRow({
 					) : null}
 				</Pressable>
 				{open ? (
-					<Pressable
-						onPress={activate}
-						className="pt-3xs"
-						accessibilityLabel={active ? "Stop working on it" : "Work on it"}
-					>
+					<Pressable onPress={activate} accessibilityLabel={active ? "Stop working on it" : "Work on it"}>
 						<Icon as={Play} className={active ? "text-primary" : "text-on-surface-variant"} />
 					</Pressable>
 				) : null}
 				{open ? (
-					<Pressable onPress={trash} className="pt-3xs" accessibilityLabel="Trash">
+					<Pressable onPress={trash} accessibilityLabel="Trash">
 						<Icon as={Trash} className="text-on-surface-variant" />
 					</Pressable>
 				) : null}

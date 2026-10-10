@@ -35,6 +35,8 @@ export default function Today() {
 	// The one line being edited in place, by id — its row holds the input.
 	const [editingId, setEditingId] = useState(null)
 	const list = useRef(null)
+	// Set when the composer opens a list; the next layout of the log scrolls it into view.
+	const revealing = useRef(false)
 
 	const { data: order = "typing" } = useQuery({
 		queryKey: ORDER_QUERY,
@@ -75,6 +77,15 @@ export default function Today() {
 		const id = await addEntry(db, { day, ...stamped, source: voice ? "voice" : "manual" })
 		if (voice?.uri) await saveVoiceNote(db, { entryId: id, ...voice })
 		// The composer is the log's last row: keep it in view as the log grows.
+		list.current?.scrollToEnd({ animated: true })
+	}
+
+	function markRevealing() {
+		revealing.current = true
+	}
+	function reveal() {
+		if (!revealing.current) return
+		revealing.current = false
 		list.current?.scrollToEnd({ animated: true })
 	}
 
@@ -120,7 +131,7 @@ export default function Today() {
 			<DateHeadline day={day} onShift={shift} onPick={pick}>
 				<Pressable
 					onPress={toggleOrder}
-					className="rounded-md p-xs active:bg-surface-container"
+					className="rounded-full p-xs active:bg-surface-container"
 					accessibilityLabel={`Order: ${order}`}
 				>
 					<Icon as={order === "chronological" ? Clock : List} className="text-primary" />
@@ -134,7 +145,10 @@ export default function Today() {
 					renderItem={renderItem}
 					contentContainerClassName="py-sm"
 					keyboardShouldPersistTaps="handled"
-					ListFooterComponent={<Composer day={day} seam={items.length > 0} onSubmit={submit} />}
+					onContentSizeChange={reveal}
+					ListFooterComponent={
+						<Composer day={day} seam={items.length > 0} onSubmit={submit} onListOpen={markRevealing} />
+					}
 				/>
 			</View>
 			<StatusBar style="auto" />

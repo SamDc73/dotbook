@@ -25,7 +25,7 @@ export function TemplateForm({ withName = false, defaultLabel, onSubmit, onCance
 	}
 
 	return (
-		<View className="gap-sm rounded-panel border border-outline-variant bg-surface p-md">
+		<View className="gap-sm rounded-md border border-outline-variant bg-surface p-md">
 			{withName ? <Field label="Name" value={name} onChangeText={setName} placeholder="nootstack" autoFocus /> : null}
 			<Field label="Version" value={label} onChangeText={setLabel} placeholder="1.0" />
 			<Field label="Effective from" value={effectiveFrom} onChangeText={setEffectiveFrom} placeholder="YYYY-MM-DD" />

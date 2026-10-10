@@ -70,28 +70,34 @@ export default function Habits() {
 		>
 			<ScreenHeader title="Habits" lede="tap a day to cycle it: yes, no, unknown" />
 			<ScrollView className="flex-1" contentContainerClassName="p-md" keyboardShouldPersistTaps="handled">
-				<View className="flex-row overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
-					<View className="w-habitname border-r border-outline-variant">
-						<View className="h-cell" />
-						{list.map((habit) => (
-							<NameCell key={habit.id} habit={habit} onRemove={remove} />
-						))}
-					</View>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false}>
-						<View>
-							<DayHeader days={days} today={day} />
+				{list.length === 0 ? (
+					<Text variant="line" className="text-on-surface-variant">
+						No habits yet. Name one below; tap DO to make it one to avoid.
+					</Text>
+				) : (
+					<View className="flex-row overflow-hidden rounded-md border border-outline-variant bg-surface shadow-panel">
+						<View className="w-habitname border-r border-outline-variant">
+							<View className="h-cell" />
 							{list.map((habit) => (
-								<HabitCells
-									key={habit.id}
-									habit={habit}
-									cells={cellsByHabit.get(habit.id) ?? NONE}
-									onTap={tap}
-									onHold={hold}
-								/>
+								<NameCell key={habit.id} habit={habit} onRemove={remove} />
 							))}
 						</View>
-					</ScrollView>
-				</View>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+							<View>
+								<DayHeader days={days} today={day} />
+								{list.map((habit) => (
+									<HabitCells
+										key={habit.id}
+										habit={habit}
+										cells={cellsByHabit.get(habit.id) ?? NONE}
+										onTap={tap}
+										onHold={hold}
+									/>
+								))}
+							</View>
+						</ScrollView>
+					</View>
+				)}
 				{why ? <Reasoning why={why} onDismiss={dismissWhy} /> : null}
 			</ScrollView>
 			<View className="flex-row items-center gap-xs border-t border-outline-variant bg-surface px-md py-sm">
@@ -132,7 +138,7 @@ function Reasoning({ why, onDismiss }) {
 	return (
 		<Pressable
 			onPress={onDismiss}
-			className="mt-md gap-3xs rounded-panel border border-tertiary-line bg-tertiary-wash px-md py-sm"
+			className="mt-md gap-2xs rounded-md border border-tertiary-line bg-tertiary-wash px-md py-sm"
 		>
 			<Text variant="eyebrow">
 				{habit.name} · {cell.weekday} {cell.number} · proposed

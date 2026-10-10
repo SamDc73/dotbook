@@ -19,6 +19,11 @@ export function Scrubber({ current, next, now }) {
 			</View>
 
 			{current !== null ? <Countdown current={current} now={now} /> : null}
+			{current === null && next === null ? (
+				<Text variant="line" className="text-on-surface-variant">
+					Nothing running and nothing planned. A timer, or a plan line with a time range, fills this.
+				</Text>
+			) : null}
 
 			{next !== null ? (
 				<View className="flex-row items-baseline gap-md border-t border-outline-variant pt-md">
@@ -41,15 +46,15 @@ function Countdown({ current, now }) {
 	return (
 		<View className="gap-sm">
 			<Text variant="heading">{current.title}</Text>
-			<Text className="font-mono text-display1 tabular-nums">{countdown(remaining)}</Text>
+			<Text className="font-mono text-display1 leading-display1 tabular-nums">{countdown(remaining)}</Text>
 
-			<View className="h-2xs rounded-xl bg-outline-variant">
+			<View className="h-2xs rounded-full bg-outline-variant">
 				{/* The fill's width is the elapsed fraction — the one computed layout value here. */}
 				<View
-					className="h-2xs flex-row items-center justify-end rounded-xl bg-primary"
+					className="h-2xs flex-row items-center justify-end rounded-full bg-primary"
 					style={{ width: `${fraction * 100}%` }}
 				>
-					<View className="h-sm w-sm rounded-xl bg-primary" />
+					<View className="h-sm w-sm rounded-full bg-primary" />
 				</View>
 			</View>
 

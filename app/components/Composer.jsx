@@ -26,7 +26,10 @@ import { Text } from "./ui/Text"
 const NO_SUGGESTIONS = []
 const MINUTE_MS = 60 * 1000
 
-export function Composer({ day, seam = false, onSubmit }) {
+// `onListOpen` is called when the slash menu or the timer's durations open under
+// the input — the composer is the log's last row, so on a long day the list
+// would open below the screen; the log scrolls it into view.
+export function Composer({ day, seam = false, onSubmit, onListOpen }) {
 	const db = useSQLiteContext()
 	const [text, setText] = useState("")
 	// The recording behind the current text, when it came from the microphone.
@@ -89,6 +92,7 @@ export function Composer({ day, seam = false, onSubmit }) {
 	}
 
 	function change(next) {
+		if (next.startsWith("/") && !text.startsWith("/")) onListOpen?.()
 		setText(next)
 		setHighlight(0)
 		// Clearing the line drops the recording with it: what is submitted must be what was heard.
@@ -129,7 +133,7 @@ export function Composer({ day, seam = false, onSubmit }) {
 			<View className="flex-row items-center gap-sm py-xs">
 				{/* The time this line will get if none is typed — a ghost, not yet a pill. */}
 				{ghost ? (
-					<View className="rounded-sm border border-dashed border-outline-variant px-xs py-3xs">
+					<View className="rounded-chip border border-dashed border-outline-variant px-xs py-3xs">
 						<Text variant="mono" className="text-on-surface-variant">
 							{clock(now)}
 						</Text>

@@ -62,8 +62,8 @@ function Row({ selected, lead, hint, onPick }) {
 			aria-selected={selected}
 			className={
 				selected
-					? "flex-row items-baseline gap-sm rounded-sm bg-primary-wash px-xs py-2xs"
-					: "flex-row items-baseline gap-sm rounded-sm px-xs py-2xs"
+					? "flex-row items-baseline gap-sm rounded-item bg-primary-wash px-xs py-2xs"
+					: "flex-row items-baseline gap-sm rounded-item px-xs py-2xs"
 			}
 		>
 			<Text variant="mono" className="text-primary">

@@ -65,4 +65,4 @@ export function TemplateExpansion({ entry }) {
 	)
 }
 
-const STACKOUT = "my-2xs rounded-r-sm border-l-2 border-primary bg-primary-wash px-md py-sm"
+const STACKOUT = "my-2xs rounded-r-md border-l-2 border-primary bg-primary-wash px-md py-sm"

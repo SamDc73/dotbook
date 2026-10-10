@@ -56,7 +56,7 @@ export default function Focus() {
 			<View className="px-sm py-sm">
 				<Pressable
 					onPress={back}
-					className="self-start rounded-md p-xs active:bg-surface-container"
+					className="self-start rounded-full p-xs active:bg-surface-container"
 					accessibilityLabel="Back"
 				>
 					<Icon as={ChevronLeft} className="text-on-surface-variant" />

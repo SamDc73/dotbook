@@ -30,7 +30,7 @@ export function ReminderForm({ onSubmit, onCancel }) {
 	}
 
 	return (
-		<View className="gap-sm rounded-panel border border-outline-variant bg-surface p-md">
+		<View className="gap-sm rounded-md border border-outline-variant bg-surface p-md">
 			<Field label="Time" value={at} onChangeText={setAt} placeholder="9:00 am" autoFocus />
 			<Field
 				label="Second nudge after (minutes, optional)"
@@ -41,7 +41,7 @@ export function ReminderForm({ onSubmit, onCancel }) {
 			/>
 			<View className="flex-row gap-xs">
 				{STYLES.map((option) => (
-					<Badge key={option} variant={style === option ? "secondary" : "plain"} onPress={() => setStyle(option)}>
+					<Badge key={option} variant={style === option ? "primary" : "plain"} onPress={() => setStyle(option)}>
 						{option}
 					</Badge>
 				))}

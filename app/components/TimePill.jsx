@@ -17,7 +17,7 @@ import { Text } from "./ui/Text"
 export function TimePill({ tsStart, tsEnd = null, hour, endHour }) {
 	if (tsEnd === null) {
 		return (
-			<View className={`flex-row items-center gap-2xs rounded-sm px-xs py-3xs bg-hour-${hour}-pill`}>
+			<View className={`flex-row items-center gap-2xs rounded-chip px-xs py-3xs bg-hour-${hour}-pill`}>
 				<Text variant="mono" className={`text-hour-${hour}-on-pill`}>
 					{clock(tsStart)}
 				</Text>
@@ -26,7 +26,7 @@ export function TimePill({ tsStart, tsEnd = null, hour, endHour }) {
 	}
 	const { start, end } = rangeParts(tsStart, tsEnd)
 	return (
-		<View className={`flex-row items-center gap-2xs rounded-sm px-xs py-3xs bg-hour-${hour}-pill`}>
+		<View className={`flex-row items-center gap-2xs rounded-chip px-xs py-3xs bg-hour-${hour}-pill`}>
 			<Text variant="mono" className={`text-hour-${hour}-on-pill`}>
 				{start}
 			</Text>

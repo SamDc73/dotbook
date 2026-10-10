@@ -20,19 +20,24 @@ const TEXT = [
 	"title1",
 	"display2",
 	"display1",
-	"eyebrow",
-	"chip",
-	"time",
-	"line",
 ]
-const RADIUS = ["xs", "sm", "md", "lg", "xl", "chip", "seg", "panel"]
+const LEADING = [...TEXT, "button"]
+const RADIUS = ["xs", "sm", "md", "lg", "xl", "chip", "item"]
 const FONT = ["display", "display-medium", "body", "body-medium", "body-semibold", "mono", "mono-regular"]
-const TRACKING = ["eyebrow", "chip"]
+const TRACKING = ["caps"]
 const SHADOW = ["panel"]
 
 const twMerge = extendTailwindMerge({
 	extend: {
-		theme: { spacing: SPACING, text: TEXT, radius: RADIUS, font: FONT, tracking: TRACKING, shadow: SHADOW },
+		theme: {
+			spacing: SPACING,
+			text: TEXT,
+			leading: LEADING,
+			radius: RADIUS,
+			font: FONT,
+			tracking: TRACKING,
+			shadow: SHADOW,
+		},
 	},
 })
 

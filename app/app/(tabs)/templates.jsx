@@ -86,10 +86,10 @@ export default function Templates() {
 			<ScreenHeader
 				title={selected ? selected.name : "Templates"}
 				lede={selected ? "Versions, newest first — history does not move" : "Log once, retype nothing"}
-				onBack={back}
+				onBack={selected ? back : null}
 			>
 				{adding ? null : (
-					<Pressable onPress={open} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel="Add">
+					<Pressable onPress={open} className="rounded-full p-xs active:bg-surface-container" accessibilityLabel="Add">
 						<Icon as={Plus} className="text-primary" />
 					</Pressable>
 				)}
@@ -114,8 +114,13 @@ export default function Templates() {
 							/>
 						))
 					: null}
+				{selected === null && all.length === 0 && !adding ? (
+					<Text variant="line" className="text-on-surface-variant">
+						No templates yet. Tap + and list what one line should stand for.
+					</Text>
+				) : null}
 				{selected === null && all.length > 0 ? (
-					<Panel eyebrow="Templates" className="gap-0 p-0">
+					<Panel eyebrow="Templates" flush>
 						{all.map((template, i) => (
 							<TemplateRow key={template.id} template={template} first={i === 0} onPress={setSelectedId} />
 						))}
@@ -134,7 +139,7 @@ export default function Templates() {
 						) : (
 							<Pressable
 								onPress={() => setRemindingId(selected.id)}
-								className="flex-row items-center gap-xs self-start rounded-md py-2xs active:bg-surface-container"
+								className="flex-row items-center gap-xs self-start rounded-item py-2xs active:bg-surface-container"
 								accessibilityLabel="Add reminder"
 							>
 								<Icon as={Bell} className="text-primary" />
@@ -173,7 +178,7 @@ function TemplateRow({ template, first, onPress }) {
 function VersionCard({ version, current }) {
 	return (
 		<View
-			className={`gap-2xs rounded-r-sm border-l-2 border-primary bg-primary-wash px-md py-sm ${current ? "rounded-panel border border-l-2 border-primary-line" : ""}`}
+			className={`gap-2xs rounded-r-md border-l-2 border-primary bg-primary-wash px-md py-sm ${current ? "rounded-md border border-l-2 border-primary-line" : ""}`}
 		>
 			<View className="flex-row items-baseline gap-sm">
 				<Text variant="mono" className="text-primary">
@@ -208,7 +213,11 @@ function ReminderRow({ reminder, onRemove }) {
 			<Text variant="mono" className="flex-1 text-on-surface">
 				{parts.join(" · ")}
 			</Text>
-			<Pressable onPress={remove} className="rounded-md p-2xs active:bg-surface-container" accessibilityLabel="Remove">
+			<Pressable
+				onPress={remove}
+				className="rounded-full p-2xs active:bg-surface-container"
+				accessibilityLabel="Remove"
+			>
 				<Icon as={X} className="text-on-surface-variant" />
 			</Pressable>
 		</View>

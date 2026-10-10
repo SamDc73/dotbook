@@ -20,7 +20,7 @@ export default function Recurring() {
 	const db = useSQLiteContext()
 	const insets = useSafeAreaInsets()
 	const [editing, setEditing] = useState(null) // null | "new" | a rule row
-	const [imported, setImported] = useState(null) // { rules, oneOffs } of the last import
+	const [imported, setImported] = useState(null) // what the last .ics import did, as a line
 
 	const rules = useLiveQuery(["recurrences"], () => recurrences(db))
 
@@ -41,9 +41,14 @@ export default function Recurring() {
 	}
 
 	async function pickIcs() {
-		const text = await readPickedFile()
-		if (text === null) return
-		setImported(await importIcs(db, text, Intl.DateTimeFormat().resolvedOptions().timeZone))
+		try {
+			const text = await readPickedFile()
+			if (text === null) return
+			const counts = await importIcs(db, text, Intl.DateTimeFormat().resolvedOptions().timeZone)
+			setImported(`imported ${counts.rules} rules and ${counts.oneOffs} one-off lines`)
+		} catch (error) {
+			setImported(`import failed: ${error.message}`)
+		}
 	}
 
 	function renderItem({ item }) {
@@ -59,22 +64,31 @@ export default function Recurring() {
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
 			<ScreenHeader title="Recurring" lede="Rules that write their own lines, ahead of time" />
-			<View className="m-md flex-1 overflow-hidden rounded-panel border border-outline-variant bg-surface shadow-panel">
-				<FlatList
-					data={rules}
-					keyExtractor={keyOf}
-					renderItem={renderItem}
-					ItemSeparatorComponent={Hairline}
-					keyboardShouldPersistTaps="handled"
-					ListFooterComponent={
-						imported === null ? null : (
-							<Text variant="data" className="px-md py-sm">
-								imported {imported.rules} rules and {imported.oneOffs} one-off lines
-							</Text>
-						)
-					}
-				/>
-			</View>
+			<FlatList
+				className="flex-1"
+				data={rules}
+				keyExtractor={keyOf}
+				renderItem={renderItem}
+				ItemSeparatorComponent={Hairline}
+				keyboardShouldPersistTaps="handled"
+				contentContainerClassName={
+					rules.length === 0
+						? "p-md"
+						: "m-md overflow-hidden rounded-md border border-outline-variant bg-surface shadow-panel"
+				}
+				ListEmptyComponent={
+					<Text variant="line" className="text-on-surface-variant">
+						No rules yet. A class, a standup, rent day: make one, or import a calendar.
+					</Text>
+				}
+				ListFooterComponent={
+					imported === null ? null : (
+						<Text variant="data" className="px-md py-sm">
+							{imported}
+						</Text>
+					)
+				}
+			/>
 			{editing === null ? null : (
 				<RecurrenceForm
 					key={editing === "new" ? "new" : editing.id}
@@ -83,7 +97,7 @@ export default function Recurring() {
 					onCancel={stopEditing}
 				/>
 			)}
-			<View className="flex-row gap-xs border-t border-outline-variant bg-surface px-md py-sm">
+			<View className="flex-row gap-sm border-t border-outline-variant bg-surface px-md py-sm">
 				<Button size="sm" onPress={startNew}>
 					<Text>New rule</Text>
 				</Button>

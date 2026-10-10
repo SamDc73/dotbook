@@ -8,6 +8,8 @@ import { Text } from "./Text"
 // token and the habit-state label of the palette page. A chip says one short
 // thing (`3d late`, `nootstack v1.3`, `kept`) and is pressable only when it is
 // given an onPress. `caps` is the state-label form: uppercase, letterspaced.
+// Caption mono, one line, so a chip stands barely taller than the log line it
+// sits in; its corner is the caption's (radius-chip).
 const badgeVariants = cva("self-start flex-row items-center gap-3xs rounded-chip border px-xs py-3xs", {
 	variants: {
 		variant: {
@@ -23,7 +25,7 @@ const badgeVariants = cva("self-start flex-row items-center gap-3xs rounded-chip
 	defaultVariants: { variant: "primary" },
 })
 
-const labelVariants = cva("font-mono text-chip", {
+const labelVariants = cva("font-mono text-caption leading-caption", {
 	variants: {
 		variant: {
 			primary: "text-primary",
@@ -34,7 +36,7 @@ const labelVariants = cva("font-mono text-chip", {
 			surface: "text-on-surface-variant",
 			plain: "text-on-surface-variant",
 		},
-		caps: { true: "uppercase tracking-chip", false: "" },
+		caps: { true: "uppercase tracking-caps", false: "" },
 	},
 	defaultVariants: { variant: "primary", caps: false },
 })

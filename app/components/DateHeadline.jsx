@@ -27,18 +27,18 @@ export function DateHeadline({ day, section = null, onShift, onPick, children = 
 
 	return (
 		<View
-			className="border-b border-outline-variant px-md pt-sm pb-sm"
+			className="border-b border-outline-variant px-md pt-sm pb-sm wide:pt-lg"
 			onPointerEnter={() => setHovered(true)}
 			onPointerLeave={() => setHovered(false)}
 		>
 			<View className="flex-row items-start gap-sm">
 				<Pressable
 					onPress={toggle}
-					className="flex-1 gap-3xs"
+					className="flex-1 gap-2xs"
 					accessibilityRole="button"
 					accessibilityLabel="Pick a day"
 				>
-					<Text variant="heading">{format(date, "EEEE d MMMM")}</Text>
+					<Text variant="title">{format(date, "EEEE d MMMM")}</Text>
 					<Text variant="eyebrow">{subline(date, day, section)}</Text>
 				</Pressable>
 				{Platform.OS === "web" && hovered ? (
@@ -72,7 +72,7 @@ function relative(day) {
 
 function Chevron({ glyph, label, onPress }) {
 	return (
-		<Pressable onPress={onPress} className="rounded-md p-xs active:bg-surface-container" accessibilityLabel={label}>
+		<Pressable onPress={onPress} className="rounded-full p-xs active:bg-surface-container" accessibilityLabel={label}>
 			<Icon as={glyph} className="text-on-surface-variant" />
 		</Pressable>
 	)
@@ -92,20 +92,20 @@ function Week({ day, onPick }) {
 					accessibilityState={{ selected: one === day }}
 					className={
 						one === day
-							? "flex-1 items-center rounded-seg bg-primary py-2xs"
-							: "flex-1 items-center rounded-seg py-2xs active:bg-surface-container"
+							? "flex-1 items-center rounded-item bg-primary py-2xs"
+							: "flex-1 items-center rounded-item py-2xs active:bg-surface-container"
 					}
 				>
 					<Text variant="eyebrow" className={one === day ? "text-on-primary" : undefined}>
 						{format(parseISO(one), "EEE")}
 					</Text>
-					<Text variant="callout" className={numberClass(one, day, now)}>
+					<Text variant="line" className={numberClass(one, day, now)}>
 						{format(parseISO(one), "d")}
 					</Text>
 				</Pressable>
 			))}
 			{day === now ? null : (
-				<Pressable onPress={() => onPick(now)} className="rounded-seg px-sm py-xs active:bg-surface-container">
+				<Pressable onPress={() => onPick(now)} className="rounded-item px-sm py-xs active:bg-surface-container">
 					<Text variant="eyebrow" className="text-primary">
 						Today
 					</Text>

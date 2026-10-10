@@ -45,35 +45,35 @@ export function TodoEditor({ todo, today, onDone }) {
 	}
 
 	return (
-		<View className="mx-md mb-sm gap-sm rounded-panel border border-outline-variant bg-surface p-sm">
-			<View className="flex-row items-center gap-xs">
+		<View className="mb-sm gap-sm rounded-md border border-outline-variant bg-surface p-md">
+			<View className="flex-row flex-wrap items-center gap-xs">
 				<Text variant="eyebrow">Due</Text>
 				<Badge variant="surface" onPress={queue}>
-					Queue
+					queue
 				</Badge>
 				<Badge variant="surface" onPress={dueToday}>
-					Today
+					today
 				</Badge>
 				<Badge variant="surface" onPress={dueTomorrow}>
-					Tomorrow
+					tomorrow
 				</Badge>
 				<Input
-					className="flex-1 py-2xs text-label"
+					className="w-3xl py-2xs text-label"
 					value={dueOn}
 					onChangeText={setDue}
 					onSubmitEditing={submitDue}
 					placeholder="YYYY-MM-DD"
 				/>
 			</View>
-			<View className="flex-row items-center gap-xs">
+			<View className="flex-row flex-wrap items-center gap-xs">
 				<Text variant="eyebrow">Plan</Text>
 				<Input
-					className="flex-1 py-2xs text-label"
+					className="w-4xl py-2xs text-label"
 					value={window}
 					onChangeText={setWindow}
 					placeholder="3:30 pm -> 4:00 pm"
 				/>
-				<Input className="py-2xs text-label" value={day} onChangeText={setDay} placeholder="YYYY-MM-DD" />
+				<Input className="w-3xl py-2xs text-label" value={day} onChangeText={setDay} placeholder="YYYY-MM-DD" />
 				<Button size="sm" onPress={schedule} disabled={!canSchedule}>
 					<Text>Schedule</Text>
 				</Button>

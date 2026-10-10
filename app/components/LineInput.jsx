@@ -52,11 +52,20 @@ export function LineInput({ value, day, now = Date.now(), selectEnd = false, cla
 	// reach it, so the few values it needs come through the same live-token hook.
 	const onSurface = useTokenColour("--color-on-surface")
 	const placeholderColour = useTokenColour("--color-outline")
-	const lineSize = useTokenColour("--text-line")
+	const lineSize = useTokenColour("--text-callout")
+	const lineHeight = useTokenColour("--leading-callout")
 	const bodyFace = useTokenColour("--font-body")
 	const webStyle =
 		Platform.OS === "web"
-			? { flex: 1, borderWidth: 0, outlineStyle: "none", color: onSurface, fontSize: lineSize, fontFamily: bodyFace }
+			? {
+					flex: 1,
+					borderWidth: 0,
+					outlineStyle: "none",
+					color: onSurface,
+					fontSize: lineSize,
+					lineHeight,
+					fontFamily: bodyFace,
+				}
 			: undefined
 
 	// Cursor at the end when a line is opened for editing: one controlled
@@ -68,7 +77,7 @@ export function LineInput({ value, day, now = Date.now(), selectEnd = false, cla
 
 	return (
 		<Input
-			className={className ?? "flex-1 font-body text-line text-on-surface"}
+			className={className ?? "flex-1 font-body text-callout text-on-surface"}
 			style={webStyle}
 			value={value}
 			parser={parser}

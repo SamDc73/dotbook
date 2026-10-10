@@ -35,7 +35,7 @@ export function TimerLine({ entry, onStop, onAbandon }) {
 		<View className={gutter(hour)}>
 			<Pressable
 				onLongPress={abandon}
-				className="relative my-2xs overflow-hidden rounded-seg border border-primary-line bg-surface"
+				className="relative my-2xs overflow-hidden rounded-md border border-primary-line bg-surface"
 			>
 				{/* The progress is a layer behind the line, not inside the text. Its width
 			    is the elapsed fraction — a computed layout value, the one style here

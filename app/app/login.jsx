@@ -59,11 +59,8 @@ export default function Login() {
 			<ScreenHeader
 				title="Log in"
 				lede="Your server, your name, your password. The app keeps a token, never the password"
-			>
-				<Button variant="text" onPress={back}>
-					<Text>Back</Text>
-				</Button>
-			</ScreenHeader>
+				onBack={back}
+			/>
 			<ScrollView contentContainerClassName="gap-md p-md" keyboardShouldPersistTaps="handled">
 				<Panel eyebrow="Server">
 					<Field
@@ -96,7 +93,7 @@ export default function Login() {
 							{error}
 						</Text>
 					)}
-					<View className="flex-row items-center gap-md">
+					<View className="flex-row flex-wrap items-center gap-sm">
 						<Button onPress={() => submit(false)} disabled={!ready}>
 							<Text>Log in</Text>
 						</Button>

@@ -99,7 +99,7 @@ export default function Todos() {
 	}
 	function renderSectionHeader({ section }) {
 		return (
-			<Text variant="eyebrow" className="bg-background px-md pt-md pb-xs">
+			<Text variant="eyebrow" className="bg-background pt-md pb-xs">
 				{section.title}
 			</Text>
 		)
@@ -120,6 +120,11 @@ export default function Todos() {
 				ItemSeparatorComponent={Seam}
 				contentContainerClassName="px-md"
 				keyboardShouldPersistTaps="handled"
+				ListEmptyComponent={
+					<Text variant="line" className="pt-md text-on-surface-variant">
+						Nothing open. A new one goes to the queue unless you give it a day.
+					</Text>
+				}
 				ListFooterComponent={
 					<Pressable onPress={toggleClosed} className="self-start py-md">
 						<Text variant="label" className="font-body-medium text-primary">
@@ -128,20 +133,22 @@ export default function Todos() {
 					</Pressable>
 				}
 			/>
-			<View className="flex-row items-center gap-xs border-t border-outline-variant bg-surface px-md py-sm">
+			<View className="gap-xs border-t border-outline-variant bg-surface px-md py-sm wide:flex-row wide:items-center">
 				<Input
-					className="flex-1"
+					className="wide:flex-1"
 					value={text}
 					onChangeText={setText}
 					onSubmitEditing={add}
 					submitBehavior="submit"
 					placeholder="call the dentist"
 				/>
-				{DUE_CHOICES.map((choice) => (
-					<Badge key={choice} variant={choice === due ? "primary" : "surface"} onPress={() => setDue(choice)}>
-						{choice}
-					</Badge>
-				))}
+				<View className="flex-row gap-xs">
+					{DUE_CHOICES.map((choice) => (
+						<Badge key={choice} variant={choice === due ? "primary" : "surface"} onPress={() => setDue(choice)}>
+							{choice}
+						</Badge>
+					))}
+				</View>
 			</View>
 		</KeyboardAvoidingView>
 	)

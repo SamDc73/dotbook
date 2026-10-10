@@ -29,7 +29,7 @@ export default function More() {
 						onPress={() => router.navigate(place.href)}
 						className="flex-row items-center gap-md border-b border-dashed border-outline-variant py-sm active:bg-surface-container"
 					>
-						<Icon as={place.glyph} className="h-icon w-icon text-on-surface-variant" />
+						<Icon as={place.glyph} className="text-on-surface-variant" />
 						<View className="flex-1">
 							<Text variant="line">{place.label}</Text>
 							<Text variant="caption" className="text-on-surface-variant">

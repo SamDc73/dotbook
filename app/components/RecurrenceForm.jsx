@@ -53,7 +53,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 	}
 
 	return (
-		<View className="mx-md mb-sm gap-sm rounded-panel border border-outline-variant bg-surface p-sm">
+		<View className="mx-md mb-sm gap-sm rounded-md border border-outline-variant bg-surface p-md">
 			<Input value={text} onChangeText={setText} placeholder="class" autoFocus />
 
 			<Row label="Every">
@@ -62,7 +62,13 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 						{value}
 					</Choice>
 				))}
-				<Input className={SMALL} value={interval} onChangeText={setEvery} keyboardType="number-pad" placeholder="1" />
+				<Input
+					className={`${SMALL} w-xl text-center`}
+					value={interval}
+					onChangeText={setEvery}
+					keyboardType="number-pad"
+					placeholder="1"
+				/>
 			</Row>
 
 			{freq === "weekly" ? (
@@ -76,17 +82,19 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 			) : null}
 
 			<Row label="At">
-				<Input className={SMALL} value={time} onChangeText={setTime} placeholder="2:00 pm" />
+				<Input className={`${SMALL} w-3xl`} value={time} onChangeText={setTime} placeholder="2:00 pm" />
 				<Text variant="eyebrow">for</Text>
 				<Input
-					className={SMALL}
+					className={`${SMALL} w-2xl text-center`}
 					value={duration}
 					onChangeText={setDuration}
 					keyboardType="number-pad"
-					placeholder="min"
+					placeholder="—"
 				/>
-				<Text variant="eyebrow">from</Text>
-				<Input className={SMALL} value={dtstart} onChangeText={setDtstart} placeholder="YYYY-MM-DD" />
+				<Text variant="eyebrow">min</Text>
+			</Row>
+			<Row label="From">
+				<Input className={`${SMALL} w-3xl`} value={dtstart} onChangeText={setDtstart} placeholder="YYYY-MM-DD" />
 			</Row>
 
 			<Row label="As">
@@ -97,7 +105,7 @@ export function RecurrenceForm({ initial = null, onSave, onCancel }) {
 				))}
 			</Row>
 
-			<View className="flex-row justify-end gap-xs">
+			<View className="flex-row justify-end gap-sm">
 				<Button variant="text" size="sm" onPress={onCancel}>
 					<Text>Cancel</Text>
 				</Button>

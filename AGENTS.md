@@ -215,9 +215,25 @@ a matching `on-` pair; text on `bg-primary` is `text-on-primary`, always.
 Semantic roles map to this app's domain: `success` = habit kept / dose taken,
 `error` = habit broken / destructive, `warning` = plan approaching / needs review.
 
-**Sizes come from the golden ratio.** `--spacing-*` and `--text-*` are φ-derived
-(`text-title2` is φ² = 2.618rem). Reach for the next step on the scale rather than
-inventing a number — that is the whole point of a ratio-based system.
+**Sizes come from the golden ratio.** Every dimension is a power of φ or of one of
+its roots (√φ 1.272, ∜φ 1.128, ⁸√φ 1.062). Spacing runs `3xs` φ⁻³ … `4xl` φ⁵; type
+sits around body 1rem (`title2` is φ = 1.618rem, `caption` 1 ÷ √φ). Reach for the
+next step on the scale rather than inventing a number — that is the whole point of
+a ratio-based system. The rules the screens follow:
+
+- **Every `text-*` travels with its `leading-*`** (a `<Text variant>` does both).
+  Body reads at φ, display1 at ∜φ, everything else at √φ, multiplied out in rem.
+- **Space next to text scales with that text**: a title's lede sits its `2xs`
+  under it, an eyebrow its `sm` above what it labels, a row of callout text is
+  padded `xs`.
+- **A box is padded by the size of its largest text and turned at that size over
+  its line height**: a panel or field of body text is `p-md`/`rounded-md`, a chip of
+  caption text `rounded-chip`. Buttons are pills, padded across by their font size
+  and above and below by √φ ÷ φ² of it; icons are one size, `icon` (√φ).
+- **Wide screens add a step, they do not invent one**: the page's `sm` plus each
+  screen's `md` is the `lg` gutter, and the reading column is the rail × φ³.
+- A size with a job (`navitem`, `button-y`, `cell`, `rail` …) is a named token in
+  `tokens.css` with its derivation beside it — never a number in a component.
 
 **Re-hue the entire app by editing `tokens.css` alone.** If changing the palette
 requires touching any other file, something has violated this rule.
@@ -263,9 +279,11 @@ defaults, and leaving those in place silently breaks both theming and Material Y
 preview, fall back to NativeWind 4 + Tailwind 3.4 (verified working here) rather
 than abandoning the token system.
 
-The golden-ratio spacing and type scale are pre-computed to static values. The
-usual way to write such a scale is a nested `calc(var(--…))` chain, which React
-Native cannot evaluate; static values also keep phone and web exactly equal.
+The golden-ratio spacing, type scale, line heights and radii are pre-computed to
+static values. The usual way to write such a scale is a nested `calc(var(--…))`
+chain, which React Native cannot evaluate; static values also keep phone and web
+exactly equal. That is also why text-relative spacing is a choice of step here, not
+an `em`: React Native has no `em`.
 
 ### The composer, and what it is not
 

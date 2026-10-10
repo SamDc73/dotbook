@@ -17,11 +17,12 @@ import { Icon } from "./ui/Icon"
 import { Text } from "./ui/Text"
 
 // The palette page's rail on wide screens and its phone bar below the
-// breakpoint, drawn from one list of places. Copied values: the rail is 11.5rem
-// on the surface with a right hairline, the wordmark in Fraunces, items in the
-// body face at line size with .42rem of vertical padding, the active one on the
-// primary wash in primary, semibold — no rule, no uppercase. The bar is the
-// surface with a top hairline, an icon above a small label, active in primary.
+// breakpoint, drawn from one list of places. The rail is φ⁵ wide on the surface
+// with a right hairline, the wordmark in Fraunces, items in the body face at line
+// size, padded above and below by navitem and turned at the same (radius-item),
+// icon and label an xs apart, the active one on the primary wash in primary,
+// semibold — no rule, no uppercase. The bar is the surface with a top hairline,
+// an icon above a caption, active in primary.
 
 const PLACES = [
 	{ name: "index", href: "/", label: "Today", glyph: TodayGlyph },
@@ -50,7 +51,7 @@ function Rail({ current }) {
 			className="w-rail gap-3xs border-r border-outline-variant bg-surface px-sm py-md"
 			style={{ paddingTop: insets.top }}
 		>
-			<Text className="font-display-medium text-subheading px-sm pb-md">Dotbook</Text>
+			<Text className="font-display-medium text-title3 leading-title3 px-sm pb-md">Dotbook</Text>
 			{PLACES.map((place) => (
 				<RailItem key={place.name} place={place} active={place.name === current} />
 			))}
@@ -67,14 +68,11 @@ function RailItem({ place, active }) {
 			accessibilityState={{ selected: active }}
 			className={
 				active
-					? "flex-row items-center gap-sm rounded-seg bg-primary-wash px-sm py-navitem"
-					: "flex-row items-center gap-sm rounded-seg px-sm py-navitem active:bg-surface-container"
+					? "flex-row items-center gap-xs rounded-item bg-primary-wash px-sm py-navitem"
+					: "flex-row items-center gap-xs rounded-item px-sm py-navitem active:bg-surface-container"
 			}
 		>
-			<Icon
-				as={place.glyph}
-				className={active ? "h-icon w-icon text-primary" : "h-icon w-icon text-on-surface-variant"}
-			/>
+			<Icon as={place.glyph} className={active ? "text-primary" : "text-on-surface-variant"} />
 			<Text variant="line" className={active ? "font-body-semibold text-primary" : "text-on-surface-variant"}>
 				{place.label}
 			</Text>
@@ -107,13 +105,10 @@ function BarItem({ place, active }) {
 			onPress={() => router.navigate(place.href)}
 			accessibilityRole="tab"
 			accessibilityState={{ selected: active }}
-			className="flex-1 items-center gap-3xs rounded-seg py-xs active:bg-surface-container"
+			className="flex-1 items-center gap-3xs rounded-item py-xs active:bg-surface-container"
 		>
-			<Icon
-				as={place.glyph}
-				className={active ? "h-icon w-icon text-primary" : "h-icon w-icon text-on-surface-variant"}
-			/>
-			<Text className={active ? "font-body-semibold text-tab text-primary" : "text-tab text-on-surface-variant"}>
+			<Icon as={place.glyph} className={active ? "text-primary" : "text-on-surface-variant"} />
+			<Text variant="caption" className={active ? "font-body-semibold text-primary" : "text-on-surface-variant"}>
 				{place.label}
 			</Text>
 		</Pressable>
