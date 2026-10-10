@@ -5,7 +5,7 @@
 // clocks, so "newest" is causal order, not wall-clock luck.
 
 import { merkle, Timestamp } from "@actual-app/crdt"
-import { clockFor, saveClock } from "./clock.js"
+import { reloadClock, saveClock, withClock } from "./clock.js"
 import { keyValues, SYNCED } from "./tables.js"
 
 /**
@@ -19,8 +19,19 @@ import { keyValues, SYNCED } from "./tables.js"
  * @param {{ timestamp: string, dataset: string, row: string, column: string, value: unknown }[]} messages
  * @returns {Promise<number>} how many messages were new
  */
-export async function applyMessages(db, messages) {
-	const clock = await clockFor(db)
+export function applyMessages(db, messages) {
+	return withClock(db, async (clock) => {
+		try {
+			return await mergeAll(db, clock, messages)
+		} catch (error) {
+			// The batch rolled back; so must the clock that counted it.
+			await reloadClock(db)
+			throw error
+		}
+	})
+}
+
+function mergeAll(db, clock, messages) {
 	return db.transaction(async () => {
 		const fresh = []
 		for (const message of messages) {

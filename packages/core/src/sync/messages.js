@@ -5,7 +5,7 @@
 // a materialisation of `messages_crdt`.
 
 import { Timestamp } from "@actual-app/crdt"
-import { clockFor, saveClock } from "./clock.js"
+import { saveClock, withClock } from "./clock.js"
 import { rowKey, SYNCED } from "./tables.js"
 
 /**
@@ -43,9 +43,10 @@ export function messagesForUpdate(db, dataset, key, changes) {
 }
 
 /** Give each field a fresh, monotonic timestamp from this device's clock. */
-async function stamp(db, fields) {
-	await clockFor(db)
-	const messages = fields.map((field) => ({ ...field, timestamp: Timestamp.send().toString() }))
-	await saveClock(db)
-	return messages
+function stamp(db, fields) {
+	return withClock(db, async () => {
+		const messages = fields.map((field) => ({ ...field, timestamp: Timestamp.send().toString() }))
+		await saveClock(db)
+		return messages
+	})
 }

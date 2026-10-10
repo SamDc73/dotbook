@@ -8,7 +8,7 @@
 
 import { Timestamp } from "@actual-app/crdt"
 import { applyMessages } from "./apply.js"
-import { clockFor } from "./clock.js"
+import { rebuildTrie, withClock } from "./clock.js"
 import { divergence } from "./merkle.js"
 
 // Actual uses the same bound: two devices that keep diverging after this many
@@ -20,17 +20,18 @@ const MAX_ROUNDS = 10
  * @param {import("./index.js").SyncDb} db
  * @param {string} groupId  the user — one group per person, every device shares it
  */
-export async function buildSyncRequest(db, groupId) {
-	const clock = await clockFor(db)
-	const clientId = clock.timestamp.node()
-	const { since } = await db.get("SELECT since FROM messages_clock WHERE id = 1")
-	// Only messages this device stamped: anything else came from the server.
-	const rows = await db.all(
-		"SELECT timestamp, dataset, row, column, value FROM messages_crdt WHERE timestamp > ? AND timestamp LIKE ? ORDER BY timestamp",
-		[since, `%-${clientId}`]
-	)
-	const messages = rows.map((row) => ({ ...row, value: JSON.parse(row.value) }))
-	return { groupId, clientId, merkle: clock.merkle, messages }
+export function buildSyncRequest(db, groupId) {
+	return withClock(db, async (clock) => {
+		const clientId = clock.timestamp.node()
+		const { since } = await db.get("SELECT since FROM messages_clock WHERE id = 1")
+		// Only messages this device stamped: anything else came from the server.
+		const rows = await db.all(
+			"SELECT timestamp, dataset, row, column, value FROM messages_crdt WHERE timestamp > ? AND timestamp LIKE ? ORDER BY timestamp",
+			[since, `%-${clientId}`]
+		)
+		const messages = rows.map((row) => ({ ...row, value: JSON.parse(row.value) }))
+		return { groupId, clientId, merkle: clock.merkle, messages }
+	})
 }
 
 /**
@@ -41,8 +42,7 @@ export async function buildSyncRequest(db, groupId) {
  */
 export async function receiveSyncResponse(db, request, response) {
 	await applyMessages(db, response.messages)
-	const clock = await clockFor(db)
-	const divergedAt = divergence(clock.merkle, response.merkle)
+	const divergedAt = await withClock(db, (clock) => divergence(clock.merkle, response.merkle))
 
 	let since = request.messages.at(-1)?.timestamp
 	if (divergedAt !== null) {
@@ -60,12 +60,22 @@ export async function receiveSyncResponse(db, request, response) {
  * @returns {Promise<number>} rounds it took
  */
 export async function sync(db, groupId, post) {
+	let stalledAt = null
+	let rebuilt = false
 	for (let round = 1; round <= MAX_ROUNDS; round++) {
 		const request = await buildSyncRequest(db, groupId)
 		const response = await post(request)
 		if (await receiveSyncResponse(db, request, response)) {
 			return round
 		}
+		// Two rounds stopping at the same point made no progress: this device's
+		// trie no longer matches its messages. Rebuild it from them, once.
+		const { since } = await db.get("SELECT since FROM messages_clock WHERE id = 1")
+		if (since === stalledAt && !rebuilt) {
+			await rebuildTrie(db)
+			rebuilt = true
+		}
+		stalledAt = since
 	}
 	throw new Error(`sync did not converge in ${MAX_ROUNDS} rounds`)
 }
