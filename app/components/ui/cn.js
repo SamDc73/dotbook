@@ -7,7 +7,27 @@ import { extendTailwindMerge } from "tailwind-merge"
 // tailwind-merge only knows Tailwind's stock scale names. Ours come from
 // tokens.css, so it is told the *names* here (never the values) — otherwise
 // `text-body` and `text-on-surface` look like the same utility and one is dropped.
-const SPACING = ["3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl"]
+const SPACING = [
+	"3xs",
+	"2xs",
+	"xs",
+	"sm",
+	"md",
+	"lg",
+	"xl",
+	"2xl",
+	"3xl",
+	"4xl",
+	// the sizes with a job, so `h-full` on an Icon replaces its `h-icon`
+	"icon",
+	"navitem",
+	"button-y",
+	"button-y-sm",
+	"button-x-sm",
+	"rail",
+	"cell",
+	"habitname",
+]
 const TEXT = [
 	"caption",
 	"label",
