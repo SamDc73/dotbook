@@ -13,6 +13,7 @@
 		"./sync": "./src/sync/index.js",
 		"./db": "./src/db/index.js",
 		"./import": "./src/import/index.js",
+		"./markdown": "./src/markdown/index.js",
 		"./analysis": "./src/analysis/index.js"
 	},
 	"dependencies": {

@@ -45,6 +45,32 @@ Self-hosting (Caddy + ntfy + the API, one SQLite volume): `docs/self-host.md`.
 - Every write to a synced table: `app/db/sync.js` — rows are messages first, tables second.
 - The one prompt: `server/src/ai/prompts.js`.
 
+## Your data
+
+Settings → Your data exports everything as one Markdown file and imports the same
+file back, on the phone and on the web. The log is the body, one section per day,
+every line exactly as typed; then todos, habits with their ticks, templates with
+their versions, and recurring rules:
+
+```markdown
+## 2026-10-09
+- 7:36 am woke up
+- [ ] 9:00 pm gym          ← a plan, not yet confirmed
+
+## Todos
+- [ ] call the dentist · 2026-10-10
+- [x] write report · 2026-10-09
+
+## Habits
+- no sugar · avoid
+  - 2026-10-09 · kept
+```
+
+Importing is additive and repeatable: a line, todo, habit, template version or rule
+that is already there is skipped, and everything added syncs like anything typed.
+A hand-written journal in the same shape imports too. Passive data (ring, screen
+time) and the links between rows are not in the file.
+
 ## AI tools (MCP)
 
 The server speaks the Model Context Protocol at `/api/v1/mcp`, so Claude Code,

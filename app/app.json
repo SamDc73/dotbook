@@ -36,7 +36,8 @@
 						"usesCleartextTraffic": true
 					}
 				}
-			]
+			],
+			"expo-sharing"
 		],
 		"scheme": "dotbook"
 	}

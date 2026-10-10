@@ -390,7 +390,8 @@ A suggestion is always visible before it commits — never applied silently.
 
 ```
 packages/core/       shared logic — db schema + migrations, parse, templates,
-                     recurrence, sync (CRDT), habits, analysis, import (RingConn)
+                     recurrence, sync (CRDT), habits, analysis, import (RingConn),
+                     markdown (the export/import file)
 app/                 Expo universal — Android and web from one codebase
 app/app/             the routes: (tabs)/ holds index (Today), todos, habits,
                      templates, recurring, trends, settings, more; focus is a

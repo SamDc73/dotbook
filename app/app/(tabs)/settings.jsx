@@ -1,5 +1,6 @@
 import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { DataSection } from "../../components/DataSection"
 import { RingImportSection } from "../../components/RingImportSection"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { ScreenTimeSection } from "../../components/ScreenTimeSection"
@@ -23,6 +24,9 @@ export default function Settings() {
 				</Panel>
 				<Panel eyebrow="RingConn">
 					<RingImportSection />
+				</Panel>
+				<Panel eyebrow="Your data">
+					<DataSection />
 				</Panel>
 			</ScrollView>
 		</View>
