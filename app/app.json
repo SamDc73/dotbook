@@ -24,7 +24,20 @@
 			"output": "single",
 			"favicon": "./assets/favicon.png"
 		},
-		"plugins": ["expo-router", "expo-sqlite", "expo-speech-recognition", "expo-font"],
+		"plugins": [
+			"expo-router",
+			"expo-sqlite",
+			"expo-speech-recognition",
+			"expo-font",
+			[
+				"expo-build-properties",
+				{
+					"android": {
+						"usesCleartextTraffic": true
+					}
+				}
+			]
+		],
 		"scheme": "dotbook"
 	}
 }
