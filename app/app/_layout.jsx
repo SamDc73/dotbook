@@ -6,6 +6,7 @@ import { addDatabaseChangeListener, SQLiteProvider, useSQLiteContext } from "exp
 import { Suspense, useEffect } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { ActivityIndicator, AppState, Platform } from "react-native"
+import { KeyboardProvider } from "react-native-keyboard-controller"
 import { DatabaseError } from "../db/DatabaseError"
 import { DatabaseGate } from "../db/DatabaseGate"
 import { migrate } from "../db/migrate"
@@ -56,7 +57,9 @@ export default function RootLayout() {
 							<Reminders />
 							<Sync />
 							<MaterialYou>
-								<Stack screenOptions={STACK} />
+								<KeyboardProvider>
+									<Stack screenOptions={STACK} />
+								</KeyboardProvider>
 							</MaterialYou>
 						</QueryClientProvider>
 					</SQLiteProvider>

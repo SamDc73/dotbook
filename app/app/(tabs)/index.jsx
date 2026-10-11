@@ -7,11 +7,12 @@ import { StatusBar } from "expo-status-bar"
 import Clock from "lucide-react-native/icons/clock"
 import List from "lucide-react-native/icons/list"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native"
+import { Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Composer } from "../../components/Composer"
 import { DateHeadline } from "../../components/DateHeadline"
 import { EntryLine } from "../../components/EntryLine"
+import { KeyboardAvoidingView } from "../../components/KeyboardAvoidingView"
 import { LogList } from "../../components/LogList"
 import { TodoLine } from "../../components/TodoLine"
 import { Icon } from "../../components/ui/Icon"
@@ -109,10 +110,16 @@ export default function Today() {
 	function markRevealing() {
 		revealing.current = true
 	}
+	// The composer is the log's last row. While it holds the cursor it stays in
+	// view: as the day's lines load in above it, and as the keyboard takes the
+	// bottom of the screen — on opening, and from the widget or the tile.
 	function reveal() {
-		if (!revealing.current) return
-		revealing.current = false
-		list.current?.scrollToEnd({ animated: true })
+		if (revealing.current) {
+			revealing.current = false
+			list.current?.scrollToEnd({ animated: true })
+		} else if (composer.current?.isFocused()) {
+			list.current?.scrollToEnd({ animated: false })
+		}
 	}
 
 	// The row handlers are stable so the memoised EntryLine rows only re-render
@@ -184,6 +191,7 @@ export default function Today() {
 					contentContainerClassName="py-sm"
 					keyboardShouldPersistTaps="handled"
 					onContentSizeChange={reveal}
+					onLayout={reveal}
 					ListFooterComponent={
 						<Composer
 							day={day}
