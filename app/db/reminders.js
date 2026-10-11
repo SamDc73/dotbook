@@ -8,13 +8,19 @@ import { insertRow, updateRow } from "./sync"
 // Writes go through insertRow/updateRow (db/sync.js), so a Yes on the phone
 // cancels T2 on the laptop too.
 
-// With the template name or the entry, whichever the reminder belongs to.
+// With the template name or the entry, whichever the reminder belongs to, and
+// the todo when the entry is a todo's plan line. A todo already done or
+// trashed has nothing left to remind of.
 export function allReminders(db) {
-	return db.sql`SELECT r.*, t.name AS template_name, e.text AS entry_text, e.day AS entry_day, e.ts_start AS entry_ts
+	return db.sql`SELECT r.*, t.name AS template_name, e.text AS entry_text, e.day AS entry_day, e.ts_start AS entry_ts,
+			td.id AS todo_id, td.text AS todo_text
 		FROM reminders r
 		LEFT JOIN templates t ON t.id = r.template_id
 		LEFT JOIN entries e ON e.id = r.entry_id
-		WHERE r.deleted_at IS NULL AND (e.id IS NULL OR e.deleted_at IS NULL)`
+		LEFT JOIN todo_links l ON l.entry_id = e.id AND l.origin = 'planned'
+		LEFT JOIN todos td ON td.id = l.todo_id AND td.deleted_at IS NULL
+		WHERE r.deleted_at IS NULL AND (e.id IS NULL OR e.deleted_at IS NULL)
+			AND (td.id IS NULL OR td.status = 'open')`
 }
 
 export function remindersFor(db, templateId) {

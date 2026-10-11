@@ -3,6 +3,7 @@ import Storage from "expo-sqlite/kv-store"
 import { uuidv7 } from "uuidv7"
 import { clock } from "../lib/format"
 import { addEntry } from "./entries"
+import { addReminder } from "./reminders"
 import { insertRow, updateRow } from "./sync"
 
 // Todos: not lines. `due_on` is written once by a person and never by a job —
@@ -96,7 +97,9 @@ async function todoLine(db, day, body, now) {
 // Scheduling is an ordinary `plan` line linked back to the todo. The window is
 // read from that line, never copied here, so moving the block moves the todo.
 // Rescheduling soft-deletes the previous plan line; its link stays as history,
-// and `openTodos` reads the newest live one.
+// and `openTodos` reads the newest live one. A todo given a time rings at its
+// start: the plan line gets a reminder, which its bell takes off. A todo with
+// only a day asks nothing of you.
 export async function scheduleTodo(db, todo, { day, text }) {
 	const previous = await db.sql`SELECT l.entry_id FROM todo_links l JOIN entries e ON e.id = l.entry_id
 		WHERE l.todo_id = ${todo.id} AND l.origin = 'planned' AND e.deleted_at IS NULL`
@@ -106,6 +109,7 @@ export async function scheduleTodo(db, todo, { day, text }) {
 	const id = await addEntry(db, { day, text })
 	await updateRow(db, "entries", { id }, { kind: "plan" })
 	await link(db, todo.id, id, "planned", Date.now())
+	await addReminder(db, { entryId: id })
 }
 
 // The lines that time spent is summed over, oldest first.

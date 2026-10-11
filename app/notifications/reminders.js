@@ -56,16 +56,25 @@ async function scheduleTemplate(db, reminder, day) {
 }
 
 // A plan block's mark: "it's X time", answered from the shade like any reminder.
+// A todo's block asks after the todo itself, and its Yes marks it done.
 async function scheduleEntry(reminder) {
 	if (reminder.entry_ts === null || reminder.entry_ts < Date.now()) return
 	const { body } = parseLineTime(reminder.entry_text, reminder.entry_day)
 	const channelId = CHANNEL[reminder.style]
-	const content = {
-		title: `it's ${body} time`,
-		body: "Tap Yes to log it",
-		categoryIdentifier: CATEGORY,
-		data: { reminderId: reminder.id, log: body, channelId },
-	}
+	const content =
+		reminder.todo_id === null
+			? {
+					title: `it's ${body} time`,
+					body: "Tap Yes to log it",
+					categoryIdentifier: CATEGORY,
+					data: { reminderId: reminder.id, log: body, channelId },
+				}
+			: {
+					title: reminder.todo_text,
+					body: "Planned for now. Tap Yes when it's done",
+					categoryIdentifier: CATEGORY,
+					data: { reminderId: reminder.id, todoId: reminder.todo_id, channelId },
+				}
 	await scheduleAt(`entry:${reminder.id}`, content, reminder.entry_ts, channelId)
 }
 

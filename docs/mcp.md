@@ -145,7 +145,7 @@ Write (write token only):
 | `close_todo` | `done` or `trashed`; writes the `done: …` line, linked, as the app does |
 | `start_todo` | writes `started: …`, linked |
 | `set_todo_due` | a new date, or `later` for the queue |
-| `schedule_todo` | a plan line linked to the todo; scheduling again replaces it |
+| `schedule_todo` | a plan line linked to the todo, with a reminder at its start; scheduling again replaces it |
 | `tick_habit` | the person's verdict: `kept`, `broken`, or `clear` |
 | `add_habit`, `remove_habit` | `do` or `avoid` |
 | `create_template`, `add_template_version` | a new stack, or its next version from a day on |
@@ -175,7 +175,8 @@ auto-approve reads and ask before anything removes.
   connect. Adding it means running an authorization server; the SDK covers the
   resource-server half (`requireBearerAuth` already gates this route).
 - **Timers and reminders.** Both fire on a device (notifications, exact
-  alarms), so they stay device-only. A running timer still shows in `get_day`.
+  alarms), so they stay device-only — except the reminder `schedule_todo`
+  puts on a todo's plan line, which the phone schedules like its own. A running timer still shows in `get_day`.
 - **The active todo.** Which todo a device's timer counts toward is that
   device's own setting, so `start_todo` writes the line and link but does not
   change it.

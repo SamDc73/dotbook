@@ -97,6 +97,11 @@ function LiveQueries() {
 // load, never per mount: StrictMode and a remount must not register twice.
 let notificationsReady = false
 
+// The rows that decide what rings: a todo closed or given a time — here or on
+// another device — or a plan line moved reschedules once the writes settle.
+const RINGS_ON = new Set(["reminders", "todos", "todo_links", "entries"])
+const SETTLE_MS = 1000
+
 // Keeps the scheduled alarms equal to the reminders table, and answers taps
 // while the app is running. Taps while it is closed are the background task's
 // (notifications/task.js); both go through the same answerResponse, which
@@ -110,9 +115,20 @@ function Reminders() {
 		const foreground = AppState.addEventListener("change", (state) => {
 			if (state === "active") reconcile(db)
 		})
+		let settle = null
+		const changes = addDatabaseChangeListener(({ tableName }) => {
+			if (!RINGS_ON.has(tableName)) return
+			clearTimeout(settle)
+			settle = setTimeout(() => reconcile(db), SETTLE_MS)
+		})
+		function stop() {
+			foreground.remove()
+			changes.remove()
+			clearTimeout(settle)
+		}
 		if (Platform.OS === "web") {
 			reconcile(db)
-			return () => foreground.remove()
+			return stop
 		}
 
 		if (notificationsReady) {
@@ -127,7 +143,7 @@ function Reminders() {
 		// A tap that woke the app before this listener existed is still waiting here.
 		Notifications.getLastNotificationResponseAsync().then((response) => response && answerResponse(db, response))
 		return () => {
-			foreground.remove()
+			stop()
 			taps.remove()
 		}
 	}, [db])

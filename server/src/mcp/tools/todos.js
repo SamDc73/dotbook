@@ -102,8 +102,8 @@ export function registerTodoTools(server, { db, groupId, canWrite }) {
 		{
 			title: "Schedule a todo",
 			description:
-				"Give a todo a time block: writes a plan line (e.g. `2:00 pm -> 3:00 pm write report`) linked to it. " +
-				"Scheduling again replaces the previous block.",
+				"Give a todo a time block: writes a plan line (e.g. `2:00 pm -> 3:00 pm write report`) linked to it, " +
+				"with a reminder that rings on the person's phone at its start. Scheduling again replaces the previous block.",
 			inputSchema: z.object({
 				id: idOf("todo"),
 				text: z.string().min(1).describe("The block as a line: a time range, then the text"),

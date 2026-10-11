@@ -121,7 +121,8 @@ export async function startTodo(db, groupId, id, now = Date.now()) {
 /**
  * Scheduling is an ordinary plan line linked back to the todo; the window is
  * read from the line, never copied. Rescheduling soft-deletes the previous plan
- * line — its link stays as history.
+ * line — its link stays as history. As in the app, the plan line gets a
+ * reminder, so the todo rings at its start on the person's devices.
  */
 export async function scheduleTodo(db, groupId, id, { day, text }, now = Date.now()) {
 	const todo = await openTodo(db, id)
@@ -135,6 +136,18 @@ export async function scheduleTodo(db, groupId, id, { day, text }, now = Date.no
 	}
 	const line = await addEntry(db, groupId, { day, text, kind: "plan" }, now)
 	await link(db, groupId, id, line.id, "planned", now)
+	await publish(db, groupId, "reminders", [
+		{
+			id: uuidv7(),
+			template_id: null,
+			entry_id: line.id,
+			at: null,
+			escalation_min: null,
+			style: "notify",
+			created_at: now,
+			deleted_at: null,
+		},
+	])
 	return { todo, line }
 }
 

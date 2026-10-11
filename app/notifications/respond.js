@@ -1,6 +1,7 @@
 import { localDay } from "@dotbook/core/parse"
 import { addEntry } from "../db/entries"
 import { recordAnswer } from "../db/reminders"
+import { closeTodo } from "../db/todos"
 import { clock } from "../lib/format"
 import * as Notifications from "./native"
 import { reconcile } from "./reminders"
@@ -32,7 +33,12 @@ export async function answerResponse(db, response) {
 	const first = await recordAnswer(db, { reminderId: data.reminderId, day, answer: actionIdentifier, key })
 	if (!first) return
 
-	if (actionIdentifier === ACTION.yes) {
+	if (actionIdentifier === ACTION.yes && data.todoId) {
+		// A todo's reminder: Yes is "done", unless it was closed in the meantime.
+		const todo =
+			await db.sql`SELECT * FROM todos WHERE id = ${data.todoId} AND status = 'open' AND deleted_at IS NULL`.first()
+		if (todo) await closeTodo(db, todo, "done", day)
+	} else if (actionIdentifier === ACTION.yes) {
 		const id = await addEntry(db, { day, text: `${clock(firedAt)} ${data.log}` })
 		await db.sql`UPDATE entries SET source = 'reminder' WHERE id = ${id}`
 	}
