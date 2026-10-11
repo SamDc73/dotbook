@@ -71,13 +71,16 @@ export default function Today() {
 
 	// `dotbook:///?compose=1` — the home-screen widget and the quick-settings
 	// tile — opens today with the cursor in the composer, however the app was left.
+	// The param is cleared so the next tap sets it again — after this commit, as the
+	// tabs commit their first state after this effect runs and would undo it.
 	const { compose } = useLocalSearchParams()
 	const router = useRouter()
 	useEffect(() => {
 		if (compose === undefined) return
 		setPicked(null)
 		composer.current?.focus()
-		router.setParams({ compose: undefined })
+		const clear = setTimeout(() => router.setParams({ compose: undefined }))
+		return () => clearTimeout(clear)
 	}, [compose, router])
 	useEffect(() => {
 		materializeDay(db, day)
