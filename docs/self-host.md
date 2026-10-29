@@ -1,16 +1,18 @@
 # Self-hosting
 
-One box, one command, one file of data. The phone app works forever without
-any of this; the server adds sync, the web app, browser-time ingestion, and
-LLM habit classification.
+One box, one command, one image, one file of data. The phone app works
+forever without any of this; the server adds sync, the web app, browser-time
+ingestion, and LLM habit classification.
 
 ## What you need
 
 - A machine with Docker (or Podman) and `docker compose`.
 - A name that resolves to it: a public domain, or a Tailscale MagicDNS name.
-- HTTPS. Not optional: browser Notifications and Web Push only exist in a
-  secure context, so the web app must be served over TLS. Caddy does this for
-  you — with a public domain automatically, on a private name with `tls internal`.
+- HTTPS. Not optional for the full experience: browser Notifications and Web
+  Push only exist in a secure context. That is two env vars pointing at a
+  certificate file — `tailscale cert` for a Tailscale name, `certbot` or your
+  provider for a public domain. On a LAN over plain HTTP everything else
+  works; only notifications stay silent.
 
 ## Set up
 
@@ -23,12 +25,15 @@ Edit `.env`:
 
 | Variable | Set it to |
 |---|---|
-| `DOMAIN` | `life.example.com` — the name Caddy will serve (add this line; it is not in the example) |
-| `CORS_ORIGINS` | `https://life.example.com` — the web app's origin, no wildcard |
+| `DOMAIN` | `life.example.com` — the name you will reach the app on (ntfy uses it for its base URL; add this line, it is not in the example) |
 | `TZ` | your zone, e.g. `Europe/Berlin` — "today" and server-written times use it (the container's default is UTC) |
 | `SIGNUP` | leave at `first`: the first person to open the app creates the account, then sign-up closes. `open` keeps it open for a household; `closed` means accounts come from the CLI |
 | `PORT` | leave at `3000` |
 | `DATA_DIR` | leave it; compose sets `/data` (the `data` volume) |
+
+`CORS_ORIGINS` stays empty: the web app and the API are the same origin now, so
+nothing cross-origin happens. Set it only for a web app served elsewhere (e.g.
+local dev against the deployed API).
 
 Then:
 
@@ -36,12 +41,39 @@ Then:
 docker compose pull && docker compose up -d
 ```
 
-That pulls the two images GitHub builds on every push (the Bun API, and Caddy
-with the exported web app baked in — `.github/workflows/docker.yml`), pulls
-ntfy, and starts all three. To build the two images on the box instead, for a
-fork or a change of your own, `docker compose up -d --build`. The web app
-is at `https://$DOMAIN`, the API under `https://$DOMAIN/api/v1/`, ntfy at
-`https://ntfy.$DOMAIN`. Check: `curl https://$DOMAIN/api/v1/health` → `{"ok":true}`.
+That pulls the one image GitHub builds on every push (Bun serving the API and
+the exported web app from one process — `.github/workflows/docker.yml`), pulls
+ntfy, and starts both. To build the image on the box instead, for a fork or a
+change of your own, `docker compose up -d --build`. The web app is at
+`http://$DOMAIN` straight away (plain HTTP on port 80) and at
+`https://$DOMAIN` once the certificate below is in place; the API lives under
+`/api/v1/` on the same origin. Check: `curl http://$DOMAIN/api/v1/health` →
+`{"ok":true}`.
+
+## HTTPS (two env vars)
+
+The server speaks TLS itself when `TLS_CERT` and `TLS_KEY` point at a
+certificate and its key. Put both files in `certs/` next to
+`docker-compose.yml` (it is mounted read-only into the containers) as
+`cert.pem` and `key.pem`, and add to `.env`:
+
+```
+TLS_CERT=/certs/cert.pem
+TLS_KEY=/certs/key.pem
+```
+
+`docker compose up -d` again, and `https://$DOMAIN` answers on 443 (compose
+maps it to the server's TLS port, 8443 inside). Where the certificate comes
+from:
+
+- **Tailscale name (private, no public DNS):** on the box, `tailscale cert
+  box.tail1234.ts.net`, then copy the two files it prints into `certs/`.
+  Tailscale renews it; re-copy after renewal.
+- **Public domain:** `certbot certonly` (or your DNS provider's tooling), copy
+  `fullchain.pem` → `cert.pem` and `privkey.pem` → `key.pem`. Repeat on
+  renewal, or script the copy as a deploy hook.
+- **Testing only:** `mkcert` or a self-signed cert — browsers will warn until
+  you trust it.
 
 Open `https://$DOMAIN`, Settings → Server → **Log in**, and **Create account**:
 the first sign-up is open. From then on sign-up is closed (see `SIGNUP`); more
@@ -51,33 +83,18 @@ people come in through the CLI:
 docker compose exec server bun src/cli.js user add alex
 ```
 
-### Private name, no public DNS (LAN, Tailscale)
+### A plain LAN box, no names at all
 
-Caddy cannot get a public certificate for `box.tail1234.ts.net`. Add one line
-to **both** site blocks in `Caddyfile`:
-
-```
-{$DOMAIN} {
-	tls internal
-	…
-}
-ntfy.{$DOMAIN} {
-	tls internal
-	…
-}
-```
-
-Caddy then signs with its own CA. Trust that CA once per device
-(`docker compose exec caddy caddy trust` prints the root; import it on the
-phone and in Firefox), or use Tailscale's own certificates instead
-(`tailscale cert`) and point `tls` at those files.
+With neither a domain nor Tailscale, use the host's IP or mDNS name over plain
+HTTP: the app, sync, MCP and the browser extension all work. Notifications and
+Web Push are the only casualties — browsers reserve them for secure contexts.
 
 ## Where the data lives
 
 Everything is SQLite in the `data` volume, inside the `server` container:
 `/data/accounts.sqlite` (users and tokens) and one `/data/users/<id>.sqlite`
 per user (their relay messages plus a replica of their devices' tables).
-Certificates live in `caddy_data`, ntfy's cache in `ntfy`.
+Certificates live in `certs/` on the host, ntfy's cache in `ntfy`.
 
 **Backup** = copy those files. For a consistent copy while running:
 
@@ -97,7 +114,22 @@ data is one file: back it up, hand it over, or delete it on its own.
 ## Push when the browser is closed (ntfy Web Push)
 
 While a tab is open the web app notifies by itself. For a closed tab it needs
-Web Push, which ntfy provides once it has a VAPID keypair:
+Web Push, which ntfy provides. ntfy takes the same certificate the app uses —
+one certificate serves `https://$DOMAIN` and `https://$DOMAIN:8444`, a
+different port needs no second name. Give the ntfy service in
+`docker-compose.yml` a published port and its TLS (the `certs/` volume is
+already mounted):
+
+```yaml
+    ports:
+      - "8444:443"
+    environment:
+      NTFY_LISTEN_HTTPS: ":443"
+      NTFY_CERT_FILE: /certs/cert.pem
+      NTFY_KEY_FILE: /certs/key.pem
+```
+
+(keep its other environment lines as they are). Then the VAPID keypair:
 
 ```sh
 docker compose run --rm ntfy webpush keys
@@ -106,7 +138,7 @@ docker compose run --rm ntfy webpush keys
 Copy the two keys it prints into `.env` as `NTFY_WEB_PUSH_PUBLIC_KEY` and
 `NTFY_WEB_PUSH_PRIVATE_KEY`, set `NTFY_WEB_PUSH_EMAIL_ADDRESS` to a contact
 address (push services require one), and `docker compose up -d` again. Open
-`https://ntfy.$DOMAIN` in Firefox, install it as a PWA, subscribe to a topic
+`https://$DOMAIN:8444` in Firefox, install it as a PWA, subscribe to a topic
 with an unguessable name. Android uses the same ntfy through UnifiedPush — no
 Google services involved.
 
@@ -126,8 +158,8 @@ Mint a token for your user — `mcp:write` for a tool that may log for you,
 docker compose exec server bun src/cli.js token add sam --scope mcp:write --label "claude code"
 ```
 
-It is printed once. The endpoint is `https://$DOMAIN/api/v1/mcp`, behind the
-same Caddy route as the rest of the API. Client setup and the tool list are in
+It is printed once. The endpoint is `https://$DOMAIN/api/v1/mcp`, on the same
+origin as the rest of the API. Client setup and the tool list are in
 [`mcp.md`](mcp.md).
 
 ## Updating

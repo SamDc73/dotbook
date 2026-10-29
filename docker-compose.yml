@@ -1,19 +1,25 @@
-# `docker compose pull && docker compose up -d` and nothing else: the images
-# are built on GitHub (.github/workflows/docker.yml). `docker compose up -d
-# --build` builds them here instead. Settings come from `.env` in this
-# directory (see docs/self-host.md).
+# `docker compose pull && docker compose up -d` and nothing else: the image is
+# built on GitHub (.github/workflows/docker.yml). `docker compose up -d
+# --build` builds it here instead. Settings come from `.env` in this directory
+# (see docs/self-host.md).
 
 services:
+  # The one image: Bun serving the web app and the API from the same process.
   server:
-    image: ghcr.io/samdc73/dotbook-server:latest
-    build:
-      context: .
-      target: server
+    image: ghcr.io/samdc73/dotbook:latest
+    build: .
     env_file: .env
     environment:
       DATA_DIR: /data
+      WEB_ROOT: /src/app/dist
+    ports:
+      # HTTP — LAN, localhost, the internal healthcheck. HTTPS answers once
+      # TLS_CERT and TLS_KEY are set (the secure context web push needs).
+      - "80:3000"
+      - "443:8443"
     volumes:
       - data:/data
+      - ./certs:/certs:ro
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1))"]
       interval: 30s
@@ -21,30 +27,15 @@ services:
       retries: 3
     restart: unless-stopped
 
-  caddy:
-    image: ghcr.io/samdc73/dotbook-web:latest
-    build:
-      context: .
-      target: web
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN}
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - server
-      - ntfy
-    restart: unless-stopped
-
+  # Push when the browser is closed, and UnifiedPush for Android. Plain HTTP
+  # inside the network until it gets TLS and a published port of its own —
+  # the Push section of docs/self-host.md turns both on with the same cert
+  # files as the app.
   ntfy:
     image: binwiederhier/ntfy
     command: serve
     environment:
-      NTFY_BASE_URL: https://ntfy.${DOMAIN}
+      NTFY_BASE_URL: https://${DOMAIN}:8444
       NTFY_LISTEN_HTTP: ":80"
       NTFY_BEHIND_PROXY: "true"
       NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
@@ -56,10 +47,9 @@ services:
       NTFY_WEB_PUSH_EMAIL_ADDRESS: ${NTFY_WEB_PUSH_EMAIL_ADDRESS:-}
     volumes:
       - ntfy:/var/cache/ntfy
+      - ./certs:/certs:ro
     restart: unless-stopped
 
 volumes:
   data:          # the one SQLite file — back this up
-  caddy_data:    # certificates
-  caddy_config:
   ntfy:

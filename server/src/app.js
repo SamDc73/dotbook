@@ -24,6 +24,7 @@ import {
 import { addBrowserTime } from "./ingest/browserTime.js"
 import { mcpRoute } from "./mcp/handler.js"
 import { validateBrowserTime, validateClassify, validateCredentials, validateSyncBody } from "./validate.js"
+import { serveWeb } from "./web.js"
 
 // Guessing a password is slow by design: this many tries a minute per address.
 const LOGIN_TRIES_PER_MINUTE = 10
@@ -32,7 +33,8 @@ const LOGIN_TRIES_PER_MINUTE = 10
  * @param {{ accounts: import("@dotbook/core/sync").SyncDb,
  *           databaseFor: (userId: string) => Promise<import("@dotbook/core/sync").SyncDb>,
  *           corsOrigins: string[], signup?: "first"|"open"|"closed",
- *           classifier?: import("./ai/adapter.js").Classifier | null }} options
+ *           classifier?: import("./ai/adapter.js").Classifier | null,
+ *           webRoot?: string | null }} options
  */
 export function createApp({
 	accounts,
@@ -41,6 +43,7 @@ export function createApp({
 	signup = "first",
 	minPassword = DEFAULT_MIN_PASSWORD,
 	classifier = null,
+	webRoot = null,
 }) {
 	const app = new Hono()
 	app.use("/api/v1/*", cors({ origin: corsOrigins }))
@@ -168,10 +171,14 @@ export function createApp({
 		return c.json(await classifyStatus(c.get("db"), classifier))
 	})
 
+	// Last: the web app itself (server/src/web.js). Every API route above it
+	// answers first; an unmatched /api path stays a 404, never index.html.
+	if (webRoot) serveWeb(app, webRoot)
+
 	return app
 }
 
-// The caller's address: what Caddy forwards, else the socket's; in tests, neither.
+// The caller's address: what a reverse proxy forwards, else the socket's; in tests, neither.
 function address(c) {
 	const forwarded = c.req.header("x-forwarded-for")
 	if (forwarded) {

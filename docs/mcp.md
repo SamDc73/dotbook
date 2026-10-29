@@ -12,7 +12,7 @@ template-snapshotted exactly like one typed in the app.
 
 ## Turn it on
 
-The endpoint is part of the server, under the API path Caddy already proxies:
+The endpoint is part of the server, on the same origin as the web app:
 
 ```
 https://$DOMAIN/api/v1/mcp          self-hosted

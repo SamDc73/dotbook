@@ -1,5 +1,7 @@
-// Dotbook server — sync relay, browser-time ingest, LLM classification, MCP.
-// `bun src/index.js` serves the default export.
+// Dotbook server — web app, sync relay, browser-time ingest, LLM
+// classification, MCP. One process: HTTP on PORT always, and when TLS_CERT and
+// TLS_KEY are set, HTTPS on TLS_PORT too — the compose healthcheck and LAN use
+// the plain one, the internet-facing name the secure one.
 
 import { join } from "node:path"
 import { classifierFor } from "./ai/adapter.js"
@@ -22,6 +24,7 @@ const app = createApp({
 	signup: CONFIG.signup,
 	minPassword: CONFIG.minPassword,
 	classifier,
+	webRoot: CONFIG.webRoot,
 })
 
 // Classification is deferred and periodic: every user's finished days, whenever
@@ -37,4 +40,11 @@ if (classifier) {
 	)
 }
 
-export default { port: CONFIG.port, fetch: app.fetch }
+Bun.serve({ fetch: app.fetch, port: CONFIG.port })
+if (CONFIG.tlsCert) {
+	Bun.serve({
+		fetch: app.fetch,
+		port: CONFIG.tlsPort,
+		tls: { cert: Bun.file(CONFIG.tlsCert), key: Bun.file(CONFIG.tlsKey) },
+	})
+}

@@ -429,12 +429,13 @@ app/theme/tokens.css THE design tokens — colours, spacing, type, radius
 app/components/ui/   Text, Button, Icon (from react-native-reusables), cn()
 docs/                palette.html, self-host.md, mcp.md, brand/ (the Dot Slash logo — source
                      SVGs for every app icon, favicon and the Wordmark component)
-server/              Bun server — relay, ingest, LLM classification, MCP
+server/              Bun server — serves the web export itself (src/web.js), plus
+                     relay, ingest, LLM classification, MCP; TLS is envs, no Caddy
 server/src/mcp/      the MCP endpoint (/api/v1/mcp) — AI tools read and write; docs/mcp.md
 server/src/db/       accounts (users, tokens), one database per user, migrations,
                      plus the server's half of app/db for MCP writes
 server/src/cli.js    users and tokens from the shell
 mcp.json             MCP client config template (read and write entries)
 extension/           Firefox extension (browser time)
-Dockerfile, docker-compose.yml, Caddyfile — self-hosting
+Dockerfile, docker-compose.yml — self-hosting: one image, ntfy the only sidecar
 ```
