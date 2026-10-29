@@ -12,7 +12,7 @@ server/data
 .env
 .env.*
 !.env.example
-copied_repos
+reference
 Inspiration
 docs
 ringconn/*.csv

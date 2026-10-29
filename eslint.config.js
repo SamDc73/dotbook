@@ -6,7 +6,7 @@ import importPlugin from "eslint-plugin-import"
 
 export default [
 	{
-		ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.expo/**", "copied_repos/**"],
+		ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.expo/**", "reference/**"],
 	},
 	{
 		files: ["packages/**/*.js", "app/**/*.{js,jsx}", "server/**/*.js", "extension/**/*.{js,jsx}"],

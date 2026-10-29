@@ -215,6 +215,6 @@
 	],
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!!**/dist", "!!**/coverage", "!!**/node_modules", "!!**/build", "!!copied_repos", "!!**/*.html"]
+		"includes": ["**", "!!**/dist", "!!**/coverage", "!!**/node_modules", "!!**/build", "!!reference", "!!**/*.html"]
 	}
 }
