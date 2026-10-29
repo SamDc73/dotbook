@@ -430,7 +430,7 @@ app/components/ui/   Text, Button, Icon (from react-native-reusables), cn()
 docs/                palette.html, self-host.md, mcp.md, brand/ (the Dot Slash logo — source
                      SVGs for every app icon, favicon and the Wordmark component)
 server/              Bun server — serves the web export itself (src/web.js), plus
-                     relay, ingest, LLM classification, MCP; TLS is envs, no Caddy
+                     relay, ingest, LLM classification, MCP; plain HTTP, no Caddy
 server/src/mcp/      the MCP endpoint (/api/v1/mcp) — AI tools read and write; docs/mcp.md
 server/src/db/       accounts (users, tokens), one database per user, migrations,
                      plus the server's half of app/db for MCP writes

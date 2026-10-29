@@ -1,7 +1,6 @@
 # One image: the Bun server with the exported web app baked in. The server
-# serves both /api and the app itself (server/src/web.js) — no Caddy.
-# HTTPS is TLS_CERT/TLS_KEY env vars; the image itself is plain HTTP
-# (docs/self-host.md).
+# serves both /api and the app itself (server/src/web.js), plain HTTP — no
+# Caddy, no TLS. See docs/self-host.md.
 
 # Debian straight from Docker Hub, with Bun installed from its GitHub release:
 # Bun's own image lives only here, and one anonymous library pull a build is
@@ -33,5 +32,5 @@ ENV PORT=3000
 ENV DATA_DIR=/data
 ENV WEB_ROOT=/src/app/dist
 VOLUME /data
-EXPOSE 3000 8443
+EXPOSE 3000
 CMD ["bun", "src/index.js"]

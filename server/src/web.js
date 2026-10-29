@@ -14,14 +14,6 @@ const SECURITY_HEADERS = {
 	"Cross-Origin-Opener-Policy": "same-origin",
 }
 
-// COOP/COEP only apply on trustworthy origins — over plain http (not even
-// localhost) Chromium just console-errors that they are ignored, so only send
-// them where they can work.
-function trustworthy(url) {
-	const u = new URL(url)
-	return u.protocol === "https:" || u.hostname === "localhost" || u.hostname === "127.0.0.1"
-}
-
 // API requests never touch the filesystem: an unmatched /api path stays a 404.
 const isWebPage = (path, method) => method === "GET" && !path.startsWith("/api/")
 
@@ -30,9 +22,7 @@ export function serveWeb(app, root) {
 
 	app.use("/*", async (c, next) => {
 		if (isWebPage(c.req.path, c.req.method)) {
-			if (trustworthy(c.req.url)) {
-				for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value)
-			}
+			for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value)
 			return files(c, next)
 		}
 		await next()

@@ -11,11 +11,6 @@ export const CONFIG = {
 	// The exported web app (expo export) the server also serves. Unset = API only,
 	// which is how `bun run dev` runs it (the dev app comes from Metro).
 	webRoot: env.WEB_ROOT ?? null,
-	// HTTPS. Both or neither. Notifications and Web Push only exist in a secure
-	// context, so a web app on a public name needs these (docs/self-host.md).
-	tlsCert: env.TLS_CERT ?? null,
-	tlsKey: env.TLS_KEY ?? null,
-	tlsPort: Number(env.TLS_PORT ?? 8443),
 	// Who may create an account: `first` — anyone, until the first user exists;
 	// `open` — anyone, always; `closed` — only the CLI (`bun src/cli.js user add`).
 	signup: env.SIGNUP ?? "first",
@@ -44,7 +39,4 @@ if (!Number.isInteger(CONFIG.minPassword) || CONFIG.minPassword < 1) {
 }
 if (!SIGNUP.includes(CONFIG.signup)) {
 	throw new Error(`SIGNUP is one of ${SIGNUP.join(", ")}, not "${CONFIG.signup}"`)
-}
-if (Boolean(CONFIG.tlsCert) !== Boolean(CONFIG.tlsKey)) {
-	throw new Error("TLS_CERT and TLS_KEY come together or not at all")
 }

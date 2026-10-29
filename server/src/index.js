@@ -1,7 +1,6 @@
 // Dotbook server — web app, sync relay, browser-time ingest, LLM
-// classification, MCP. One process: HTTP on PORT always, and when TLS_CERT and
-// TLS_KEY are set, HTTPS on TLS_PORT too — the compose healthcheck and LAN use
-// the plain one, the internet-facing name the secure one.
+// classification, MCP. One process, plain HTTP on PORT: self-hosted on a
+// network only its owner reaches.
 
 import { join } from "node:path"
 import { classifierFor } from "./ai/adapter.js"
@@ -41,10 +40,3 @@ if (classifier) {
 }
 
 Bun.serve({ fetch: app.fetch, port: CONFIG.port })
-if (CONFIG.tlsCert) {
-	Bun.serve({
-		fetch: app.fetch,
-		port: CONFIG.tlsPort,
-		tls: { cert: Bun.file(CONFIG.tlsCert), key: Bun.file(CONFIG.tlsKey) },
-	})
-}
