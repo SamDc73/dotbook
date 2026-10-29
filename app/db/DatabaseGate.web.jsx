@@ -10,17 +10,26 @@ import { Text } from "../components/ui/Text"
 // and the next tab waits for it — with a message — instead of crashing.
 const LOCK = "dotbook-db"
 
+// Web Locks — and the OPFS the database lives in — are secure-context APIs.
+// On plain http that is not localhost, `navigator.locks` is undefined and the
+// database could never open; say so plainly instead of crashing on import.
+const SECURE = typeof navigator !== "undefined" && "locks" in navigator
+
 // Requested once per page load, never per mount. The callback holds the lock
-// by never settling; `acquired` is how the component learns it has it.
+// by never settling; `acquired` is how the component learns it has it. Only a
+// secure context may touch navigator.locks at all.
 const NEVER = new Promise(() => undefined)
-const acquired = new Promise((resolve) => {
-	navigator.locks.request(LOCK, () => {
-		resolve()
-		return NEVER
-	})
-})
+const acquired = SECURE
+	? new Promise((resolve) => {
+			navigator.locks.request(LOCK, () => {
+				resolve()
+				return NEVER
+			})
+		})
+	: null
 
 export function DatabaseGate({ children }) {
+	if (!SECURE) return <NeedsHttps />
 	return (
 		<Suspense fallback={<Waiting />}>
 			<Locked>{children}</Locked>
@@ -48,6 +57,21 @@ function Waiting() {
 			<Text className="text-center text-on-surface-variant">
 				The log is already open in another tab of this browser. Close that tab, or use it — this one continues on its
 				own once it is free.
+			</Text>
+		</View>
+	)
+}
+
+// Plain HTTP on a LAN box: the log is safe — browsers simply refuse the
+// browser-side database the whole web app stands on. Android, sync, MCP and
+// the extension are unaffected; only this browser tab cannot host the log.
+function NeedsHttps() {
+	return (
+		<View className="flex-1 items-center justify-center gap-sm bg-background px-lg">
+			<Text variant="subheading">Needs HTTPS</Text>
+			<Text className="text-center text-on-surface-variant">
+				Dotbook keeps the log in this browser’s own storage, and browsers only allow that in a secure context. Open
+				this over https:// or on localhost — the server speaks TLS itself once TLS_CERT and TLS_KEY are set.
 			</Text>
 		</View>
 	)

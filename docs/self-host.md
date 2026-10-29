@@ -8,11 +8,12 @@ ingestion, and LLM habit classification.
 
 - A machine with Docker (or Podman) and `docker compose`.
 - A name that resolves to it: a public domain, or a Tailscale MagicDNS name.
-- HTTPS. Not optional for the full experience: browser Notifications and Web
-  Push only exist in a secure context. That is two env vars pointing at a
-  certificate file — `tailscale cert` for a Tailscale name, `certbot` or your
-  provider for a public domain. On a LAN over plain HTTP everything else
-  works; only notifications stay silent.
+- HTTPS. Not optional for the web app: browsers reserve its browser-side
+  storage — and Notifications and Web Push — for secure contexts. That is two
+  env vars pointing at a certificate file — `tailscale cert` for a Tailscale
+  name, `certbot` or your provider for a public domain. (Android, sync, MCP
+  and the extension run fine over plain HTTP on a LAN; a browser on the same
+  box can use `http://localhost`.)
 
 ## Set up
 
@@ -85,9 +86,14 @@ docker compose exec server bun src/cli.js user add alex
 
 ### A plain LAN box, no names at all
 
-With neither a domain nor Tailscale, use the host's IP or mDNS name over plain
-HTTP: the app, sync, MCP and the browser extension all work. Notifications and
-Web Push are the only casualties — browsers reserve them for secure contexts.
+With neither a domain nor Tailscale, the host's IP over plain HTTP still
+carries the Android app, sync, MCP and the browser extension — none of those
+are browsers asking for storage. The **web app** is different: browsers only
+allow its browser-side database (OPFS, Web Locks) in a secure context, so over
+plain http it stops with a clear "needs HTTPS" screen. One browser on the same
+box as the server may use `http://localhost`; anyone else needs a certificate
+from the section above. Notifications and Web Push share the rule either way —
+secure contexts only.
 
 ## Where the data lives
 
