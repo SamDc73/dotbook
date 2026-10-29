@@ -3,10 +3,11 @@
 # HTTPS is TLS_CERT/TLS_KEY env vars; the image itself is plain HTTP
 # (docs/self-host.md).
 
-# Debian from AWS's mirror of the official images, with Bun installed from its
-# GitHub release: Bun's own image lives only on Docker Hub, which rate-limits
-# anonymous pulls from CI. Same version as the lockfile was made with.
-FROM public.ecr.aws/docker/library/debian:bookworm-slim
+# Debian straight from Docker Hub, with Bun installed from its GitHub release:
+# Bun's own image lives only here, and one anonymous library pull a build is
+# well under the 100/6h quota. (public.ecr.aws's mirror was tried first — its
+# anonymous data quota runs dry: 429 toomanyrequests.)
+FROM debian:bookworm-slim
 ARG BUN_VERSION=1.2.23
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl unzip \
  && rm -rf /var/lib/apt/lists/* \
