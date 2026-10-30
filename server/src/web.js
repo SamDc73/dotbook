@@ -6,14 +6,6 @@
 import { join } from "node:path"
 import { serveStatic } from "hono/bun"
 
-// expo-sqlite keeps SQLite in a Worker whose synchronous path needs
-// SharedArrayBuffer, which browsers allow only under these two headers — the
-// same ones app/metro.config.js sets for the dev server.
-const SECURITY_HEADERS = {
-	"Cross-Origin-Embedder-Policy": "credentialless",
-	"Cross-Origin-Opener-Policy": "same-origin",
-}
-
 // API requests never touch the filesystem: an unmatched /api path stays a 404.
 const isWebPage = (path, method) => method === "GET" && !path.startsWith("/api/")
 
@@ -21,10 +13,7 @@ export function serveWeb(app, root) {
 	const files = serveStatic({ root })
 
 	app.use("/*", async (c, next) => {
-		if (isWebPage(c.req.path, c.req.method)) {
-			for (const [name, value] of Object.entries(SECURITY_HEADERS)) c.header(name, value)
-			return files(c, next)
-		}
+		if (isWebPage(c.req.path, c.req.method)) return files(c, next)
 		await next()
 	})
 
