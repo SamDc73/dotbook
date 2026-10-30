@@ -53,12 +53,11 @@ docker compose exec server bun src/cli.js user add alex
 
 ### A note on browsers
 
-The Android app, sync, MCP and the browser extension all live happily on
-`http://<host>`. The **web app in a browser** is the exception: browsers only
-allow its browser-side database (OPFS, Web Locks) on `localhost` or over
-HTTPS — a browser's rule, not the server's. On the box itself use
-`http://localhost`; from another machine the web app cannot hold the log over
-plain http, and stops with an error. Everything else is unaffected.
+Everything works on plain `http://<host>`: the Android app, sync, MCP, the
+browser extension, and the web app — which keeps nothing in the browser; it
+reads and writes your log on the server, so any browser on your network opens
+it. (It is online-only for that reason; the Android app is the one that works
+offline.)
 
 ## Where the data lives
 

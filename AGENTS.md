@@ -19,7 +19,7 @@ ingestion, and LLM habit classification.
 | Language | **Plain JavaScript** — no TypeScript |
 | Android + Web | **One** Expo universal codebase (`app/`) — RN on Android, react-native-web on web |
 | Server | Bun |
-| Storage | SQLite everywhere |
+| Storage | SQLite on the phone and the server — the web app holds none |
 | Sync | vendored `@actual-app/crdt` (Actual Budget pattern) |
 | LLM | TanStack AI on the server → Ollama / any adapter |
 | Parsing | `chrono-node`, `parse-duration`, `uFuzzy` |
@@ -56,17 +56,19 @@ nothing about the web at runtime; the browser check does.
    utilities in `@layer utilities`; react-native-web's per-element classes are
    unlayered and win, so without `important` the web renders unstyled. Native
    ignores the flag.
-5. **No synchronous SQLite on web.** expo-sqlite's sync API needs
-   `SharedArrayBuffer`, which needs a cross-origin-isolated document; Expo's dev
-   server does not isolate the HTML and neither does every host. Core's sync
-   adapter is async for this reason — keep it that way.
+5. **The web app has no database.** It is a client of the server:
+   `app/db/*.web.js` twins call `server/src/client/` over HTTP, and `useDb()`
+   (`app/db/context`) is `null` on web. Never import `expo-sqlite` or its
+   kv-store in code that runs on web — use `useDb` and `lib/kv`. Browsers allow
+   OPFS and Web Locks only in secure contexts; a browser-side database is what
+   once made the web app fail on plain-HTTP LANs.
 6. **live-markdown's web input ignores `className`.** It is styled through the
    token hook on web only (`Composer.jsx`); do not try to fix it with classes.
-7. **One database connection per origin on web.** OPFS's access-handle pool
-   refuses a second opener with `NoModificationAllowedError` — a second tab
-   would be blank forever. `app/db/DatabaseGate.web.jsx` takes a Web Lock
-   before opening and the next tab waits, then takes over when the first closes.
-   Keep the gate outside the `SQLiteProvider`.
+7. **Import platform twins without an extension.** `import("./kv")` resolves
+   `kv.web.js` on web; `import("./kv.js")` is that exact file, on every
+   platform. One explicit `.js` made the web app write its login token to
+   localStorage and read it from the native store — logged in, yet bounced to
+   the login page.
 
 ### No telemetry
 
@@ -352,7 +354,7 @@ A suggestion is always visible before it commits — never applied silently.
 
 ### Data & Storage
 
-- SQLite everywhere — phone, web (OPFS), server. No Postgres.
+- SQLite on the phone and the server (one database per user). The web app keeps none — it reads and writes the server. No Postgres.
 - **Use UUIDv7 for all ids** — time-sortable, generated client-side so offline writes need no server round-trip
 - **Store all timestamps as UTC epoch milliseconds.** Never naive local times. Keep the original timezone as a separate field when it matters
 - **Show and write clocks 12-hour** (`7:36 am`), only through `app/lib/format.js` (`clock`, `range`, `clockAt`) — and `renderLine` in core's recurrence module, which cannot import the app. Countdowns are durations (`18:42`), not clocks. The parser accepts 24-hour input; nothing renders it
@@ -431,6 +433,7 @@ docs/                palette.html, self-host.md, mcp.md, brand/ (the Dot Slash l
                      SVGs for every app icon, favicon and the Wordmark component)
 server/              Bun server — serves the web export itself (src/web.js), plus
                      relay, ingest, LLM classification, MCP; plain HTTP, no Caddy
+server/src/client/   the web app's REST routes — what app/db/*.web.js read and write
 server/src/mcp/      the MCP endpoint (/api/v1/mcp) — AI tools read and write; docs/mcp.md
 server/src/db/       accounts (users, tokens), one database per user, migrations,
                      plus the server's half of app/db for MCP writes
