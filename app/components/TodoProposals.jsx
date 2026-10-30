@@ -1,5 +1,5 @@
-import { useSQLiteContext } from "expo-sqlite"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { answerProposal } from "../db/todos"
 import { Badge } from "./ui/Badge"
 import { Text } from "./ui/Text"
@@ -8,7 +8,7 @@ import { Text } from "./ui/Text"
 // never applied silently (V0.1 → feature 17): "Link" counts the line's time from
 // now on, "Not this" remembers the refusal so the line is not proposed again.
 export function TodoProposals({ todo, proposals }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 
 	return (
 		<View className="gap-2xs pb-xs">

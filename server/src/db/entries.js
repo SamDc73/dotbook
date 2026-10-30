@@ -28,6 +28,37 @@ export function entriesForDay(db, day) {
 	)
 }
 
+// A day as the app's Today screen reads it (app/db/entries.js `entriesForDay`):
+// the template use with its snapshot, and what the line said about a todo, so
+// the log can draw it as that todo's row. The web client is thin, so this is the
+// shape it renders — kept apart from `entriesForDay` above, which the AI tools
+// read and which has no todo columns.
+const DAY_PAGE = `SELECT e.*, u.snapshot, u.deviation, t.name AS template_name, v.label AS version_label,
+		tl.origin AS todo_role, td.status AS todo_status, td.text AS todo_text
+	FROM entries e
+	LEFT JOIN template_uses u ON u.entry_id = e.id
+	LEFT JOIN templates t ON t.id = u.template_id
+	LEFT JOIN template_versions v ON v.id = u.version_id
+	LEFT JOIN todo_links tl ON tl.entry_id = e.id AND tl.origin IN ('started', 'finished', 'trashed')
+		AND tl.confirmed_at IS NOT NULL
+	LEFT JOIN todos td ON td.id = tl.todo_id
+	WHERE e.day = ? AND e.deleted_at IS NULL
+	ORDER BY e.seq, e.id`
+
+/** A day's live lines for the web client, typing order (the screen may sort by time itself). */
+export async function dayPage(db, day) {
+	const rows = await db.all(DAY_PAGE, [day])
+	return rows.map(parseUse)
+}
+
+/** `snapshot`/`deviation` are stored as JSON text; the screen wants the objects back. */
+function parseUse(row) {
+	if (row.snapshot === null || row.snapshot === undefined) {
+		return row
+	}
+	return { ...row, snapshot: JSON.parse(row.snapshot), deviation: row.deviation && JSON.parse(row.deviation) }
+}
+
 /** One line as it stands after a write, template included. */
 function readEntry(db, id) {
 	return db.get(`${WITH_TEMPLATE} WHERE e.id = ?`, [id])
@@ -131,4 +162,18 @@ export async function deleteEntry(db, groupId, id) {
 	const row = await liveEntry(db, id)
 	await publishUpdate(db, groupId, "entries", { id }, { deleted_at: Date.now() })
 	return row
+}
+
+/**
+ * Undo for `deleteEntry`: the same row, live again (app/db/entries.js
+ * `restoreEntry`). The line did not stop happening; only its deletion is taken
+ * back, so the row keeps its text, time and kind.
+ */
+export async function restoreEntry(db, groupId, id) {
+	const row = await db.get("SELECT * FROM entries WHERE id = ?", [id])
+	if (!row) {
+		throw new Error(`No line with id ${id} — read the day again for current ids.`)
+	}
+	await publishUpdate(db, groupId, "entries", { id }, { deleted_at: null })
+	return readEntry(db, id)
 }

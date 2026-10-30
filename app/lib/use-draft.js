@@ -1,6 +1,6 @@
-import Storage from "expo-sqlite/kv-store"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AppState } from "react-native"
+import Storage from "./kv"
 
 // A text field whose unsent text is kept on the device under `key`: closed,
 // killed or reloaded mid-line, it opens with the line still in it. Saved once

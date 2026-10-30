@@ -1,8 +1,8 @@
 import { parseLineTime } from "@dotbook/core/parse"
 import { useQuery } from "@tanstack/react-query"
-import { useSQLiteContext } from "expo-sqlite"
 import { useEffect, useState } from "react"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { runCommand } from "../db/commands"
 import { suggestions } from "../db/timers"
 import { clock } from "../lib/format"
@@ -35,7 +35,7 @@ const MINUTE_MS = 60 * 1000
 // would open below the screen; the log scrolls it into view. `inputRef` reaches
 // the input, for the screen to focus it.
 export function Composer({ day, seam = false, onSubmit, onListOpen, inputRef }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const [text, setText] = useDraft(DRAFT_KEY)
 	// The recording behind the current text, when it came from the microphone.
 	// Submitted with the line so it is marked `source: voice` and the audio is kept.

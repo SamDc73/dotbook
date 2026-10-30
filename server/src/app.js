@@ -11,6 +11,16 @@ import { cors } from "hono/cors"
 import { validator } from "hono/validator"
 import { rateLimiter } from "hono-rate-limiter"
 import { classifyDay, classifyStatus, clearRuns, runPending } from "./ai/classify.js"
+import { days } from "./client/days.js"
+import { habits } from "./client/habits.js"
+import { io } from "./client/io.js"
+import { lines } from "./client/lines.js"
+import { recurrences } from "./client/recurrences.js"
+import { reminders } from "./client/reminders.js"
+import { templates } from "./client/templates.js"
+import { timers } from "./client/timers.js"
+import { todos } from "./client/todos.js"
+import { trends } from "./client/trends.js"
 import {
 	AccountError,
 	authenticate,
@@ -170,6 +180,14 @@ export function createApp({
 		}
 		return c.json(await classifyStatus(c.get("db"), classifier))
 	})
+
+	// The web client's routes (server/src/client/): the browser holds no
+	// database — the server is its database, behind the same device token a
+	// phone uses. Everything a screen can do, an AI tool can do over MCP too,
+	// the same server-side write either way.
+	for (const client of [days, habits, io, lines, recurrences, reminders, templates, timers, todos, trends]) {
+		client(app)
+	}
 
 	// Last: the web app itself (server/src/web.js). Every API route above it
 	// answers first; an unmatched /api path stays a 404, never index.html.

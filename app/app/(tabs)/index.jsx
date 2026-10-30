@@ -1,14 +1,13 @@
 import { parseLineTime } from "@dotbook/core/parse"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { useSQLiteContext } from "expo-sqlite"
-import Storage from "expo-sqlite/kv-store"
 import { StatusBar } from "expo-status-bar"
 import Clock from "lucide-react-native/icons/clock"
 import List from "lucide-react-native/icons/list"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { Composer } from "../../components/Composer"
 import { DateHeadline } from "../../components/DateHeadline"
 import { EntryLine } from "../../components/EntryLine"
@@ -24,6 +23,7 @@ import { useLiveQuery } from "../../db/use-live-query"
 import { shiftDay, today } from "../../lib/day"
 import { clock } from "../../lib/format"
 import { tap } from "../../lib/haptics"
+import Storage from "../../lib/kv"
 import { offerUndo } from "../../lib/undo"
 import { useDayNav } from "../../lib/use-day-nav"
 import { useToday } from "../../lib/use-today"
@@ -33,7 +33,7 @@ const ORDER_KEY = "entry-order" // "typing" | "chronological"
 const ORDER_QUERY = ["pref", ORDER_KEY]
 
 export default function Today() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	// The day shown is the one picked, or today when none is: left on today, the

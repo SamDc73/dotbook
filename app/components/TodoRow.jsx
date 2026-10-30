@@ -1,4 +1,3 @@
-import { useSQLiteContext } from "expo-sqlite"
 import Play from "lucide-react-native/icons/play"
 import Square from "lucide-react-native/icons/square"
 import SquareCheck from "lucide-react-native/icons/square-check"
@@ -6,6 +5,7 @@ import SquareDashed from "lucide-react-native/icons/square-dashed"
 import Trash from "lucide-react-native/icons/trash"
 import { memo, useState } from "react"
 import { Pressable, View } from "react-native"
+import { useDb } from "@/db/context"
 import { linkedEntries, proposedLinks } from "../db/todos"
 import { useLiveQuery } from "../db/use-live-query"
 import { clock, minutesLabel, range, weekday } from "../lib/format"
@@ -27,7 +27,7 @@ export const TodoRow = memo(function TodoRow({
 	onActivate,
 	editor = null,
 }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const [showLines, setShowLines] = useState(false)
 	const [showProposals, setShowProposals] = useState(false)
 	const open = todo.status === "open"

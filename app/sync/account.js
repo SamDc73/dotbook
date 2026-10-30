@@ -1,6 +1,6 @@
 import * as Device from "expo-device"
-import Storage from "expo-sqlite/kv-store"
 import { Platform } from "react-native"
+import Storage from "../lib/kv"
 import { SETTINGS, STATUS, settings } from "./client"
 
 // Logging in and out. A login is a device token from the server, kept in

@@ -28,12 +28,10 @@ export function serveWeb(app, root) {
 		await next()
 	})
 
-	// SPA fallback: cached after the first request — the file does not change
-	// during the process's life.
-	let index = null
+	// SPA fallback, read fresh each time — caching a stale index.html after a
+	// re-export points the page at a bundle that no longer exists.
 	app.get("/*", async (c) => {
 		if (!isWebPage(c.req.path, c.req.method)) return c.notFound()
-		index ??= await Bun.file(join(root, "index.html")).text()
-		return c.html(index)
+		return c.html(await Bun.file(join(root, "index.html")).text())
 	})
 }

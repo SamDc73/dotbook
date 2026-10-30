@@ -1,10 +1,10 @@
 import { partsFromRule } from "@dotbook/core/recurrence"
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { FlatList, Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { KeyboardAvoidingView } from "../../components/KeyboardAvoidingView"
 import { RecurrenceForm } from "../../components/RecurrenceForm"
 import { ScreenHeader } from "../../components/ScreenHeader"
@@ -26,7 +26,7 @@ import { offerUndo } from "../../lib/undo"
 // The rules behind the lines that fill themselves in: class every Tue/Thu,
 // lunch at 5 daily. Tap to edit, long-press to remove, or import a timetable.
 export default function Recurring() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const insets = useSafeAreaInsets()
 	const [editing, setEditing] = useState(null) // null | "new" | a rule row
 	const [imported, setImported] = useState(null) // what the last .ics import did, as a line

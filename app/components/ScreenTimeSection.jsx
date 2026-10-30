@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as Device from "expo-device"
-import { useSQLiteContext } from "expo-sqlite"
-import Storage from "expo-sqlite/kv-store"
 import { Platform, View } from "react-native"
+import { useDb } from "@/db/context"
 import { rollupsOn } from "../db/screenTime"
 import { useLiveQuery } from "../db/use-live-query"
 import { clock, minutesLabel } from "../lib/format"
+import Storage from "../lib/kv"
 import { useToday } from "../lib/use-today"
 import { collectDays, LABELS_KEY, LAST_COLLECTED_KEY } from "../screenTime/collect"
 import { hasPermission, openSettings } from "../screenTime/usage"
@@ -33,7 +33,7 @@ async function readStatus() {
 const NO_STATUS = { granted: false, collectedAt: null, labels: {} }
 
 export function ScreenTimeSection() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const queryClient = useQueryClient()
 	const device = Device.deviceName ?? "android"
 

@@ -1,6 +1,6 @@
-import { useSQLiteContext } from "expo-sqlite"
 import { useRef, useState } from "react"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { updateEntryText } from "../db/entries"
 import { LineInput } from "./LineInput"
 
@@ -8,7 +8,7 @@ import { LineInput } from "./LineInput"
 // the end. Commit and cancel each happen once — Enter commits and the row
 // unmounts, and the blur that follows must not commit again.
 export function InlineEdit({ entry, onDone }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const [text, setText] = useState(entry.text)
 	const settled = useRef(false)
 

@@ -1,7 +1,7 @@
 import { applyDeviation, diffItems } from "@dotbook/core/templates"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { Pressable, View } from "react-native"
+import { useDb } from "@/db/context"
 import { saveDeviation } from "../db/templates"
 import { Button } from "./ui/Button"
 import { Input } from "./ui/Input"
@@ -12,7 +12,7 @@ import { Text } from "./ui/Text"
 // the left, the primary wash behind, mono items. Editing here changes this
 // entry only — never the version.
 export function TemplateExpansion({ entry }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const items = applyDeviation(entry.snapshot, entry.deviation)
 	const [draft, setDraft] = useState(null) // the items as text while editing, else null
 

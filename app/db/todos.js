@@ -1,7 +1,7 @@
 import { fuzzyFind, localDay, parseLineTime } from "@dotbook/core/parse"
-import Storage from "expo-sqlite/kv-store"
 import { uuidv7 } from "uuidv7"
 import { clock } from "../lib/format"
+import Storage from "../lib/kv"
 import { addEntry } from "./entries"
 import { addReminder } from "./reminders"
 import { insertRow, updateRow } from "./sync"

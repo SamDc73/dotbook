@@ -1,8 +1,8 @@
 import { MIN_PAIRS } from "@dotbook/core/analysis"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { Sparkline } from "../../components/Sparkline"
 import { StatRow } from "../../components/StatRow"
@@ -20,7 +20,7 @@ const WINDOWS = [30, 90]
 // Everything shown is descriptive: things that moved together, with the
 // sample size beside them. V0.1 defers causal analysis on purpose.
 export default function Trends() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const insets = useSafeAreaInsets()
 	const [window, setWindow] = useState(WINDOWS[0])
 

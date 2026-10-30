@@ -1,10 +1,10 @@
 import { localDay, parseLineTime } from "@dotbook/core/parse"
 import { CONFLICT_SOURCE } from "@dotbook/core/sync"
-import { useSQLiteContext } from "expo-sqlite"
 import Bell from "lucide-react-native/icons/bell"
 import BellRing from "lucide-react-native/icons/bell-ring"
 import { memo, useState } from "react"
 import { Pressable, View } from "react-native"
+import { useDb } from "@/db/context"
 import { entryReminder, toggleEntryReminder } from "../db/reminders"
 import { useLiveQuery } from "../db/use-live-query"
 import { gutter } from "../lib/gutter"
@@ -42,7 +42,7 @@ export const EntryLine = memo(function EntryLine({
 	onConfirm,
 	onStop,
 }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const { body } = parseLineTime(entry.text, entry.day)
 	const hour = hourOf(entry.ts_start)
 	const endHour = hourOf(entry.ts_end)

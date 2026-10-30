@@ -1,8 +1,8 @@
-import Storage from "expo-sqlite/kv-store"
 import { useEffect } from "react"
 import { AppState, Platform } from "react-native"
 import { replaceRollup } from "../db/screenTime"
 import { shiftDay, today } from "../lib/day"
+import Storage from "../lib/kv"
 import { hasPermission, queryDay } from "./usage"
 
 // Pulls yesterday and today out of UsageStatsManager into `time_rollups`.

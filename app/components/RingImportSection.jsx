@@ -2,12 +2,12 @@ import { detectRingconnFile } from "@dotbook/core/import"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
-import { useSQLiteContext } from "expo-sqlite"
-import Storage from "expo-sqlite/kv-store"
 import { useState } from "react"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { importRingconn } from "../db/ringconn"
 import { useLiveQuery } from "../db/use-live-query"
+import Storage from "../lib/kv"
 import { Button } from "./ui/Button"
 import { Text } from "./ui/Text"
 
@@ -18,7 +18,7 @@ const IMPORTED_AT_KEY = "ringconn-imported-at"
 const IMPORTED_AT_QUERY = ["pref", IMPORTED_AT_KEY]
 
 export function RingImportSection() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const queryClient = useQueryClient()
 	const [results, setResults] = useState([]) // [{ name, line }] of the last import
 

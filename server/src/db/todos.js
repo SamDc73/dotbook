@@ -4,6 +4,7 @@
 // same record line the app writes, linked the same way, so the log draws it as
 // the todo's own row. Writes go through publish/publishUpdate so they sync.
 
+import { fuzzyFind, localDay, parseLineTime } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { publish, publishUpdate } from "../sync/publish.js"
 import { stamped, today } from "../wallClock.js"
@@ -21,10 +22,36 @@ const PLANNED = `LEFT JOIN entries p ON p.id = (
 	WHERE l.todo_id = t.id AND l.origin = 'planned' AND e.deleted_at IS NULL
 	ORDER BY l.confirmed_at DESC LIMIT 1)`
 
-/** Open todos, dated ones first by date, the queue (no date) last. */
+/**
+ * Open todos as the app's Todos screen reads them — app/db/todos.js `openTodos`,
+ * the same SELECT word for word: `spent_ms` and the plan window included, because
+ * the screen draws them. (An AI tool's answer goes through `todo()` in mcp/reply.js,
+ * which picks the fields it wants, so the wider row costs it nothing.)
+ *
+ * Dated ones first by date, the queue (no date) last.
+ */
 export function openTodos(db, day) {
 	return db.all(
-		`SELECT ${SHOWN} FROM todos t ${PLANNED}
+		`SELECT t.*,
+			CASE WHEN t.due_on < ? THEN CAST(julianday(?) - julianday(t.due_on) AS INTEGER) END AS days_late,
+			p.day AS planned_day, p.ts_start AS planned_start, p.ts_end AS planned_end,
+			(SELECT coalesce(sum(e.ts_end - e.ts_start), 0)
+				FROM todo_links l JOIN entries e ON e.id = l.entry_id
+				WHERE l.todo_id = t.id AND l.origin IN ('timer', 'matched') AND l.confirmed_at IS NOT NULL
+					AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL AND e.deleted_at IS NULL)
+			+ coalesce((SELECT f.ts_start - s.ts_start
+				FROM todo_links lf JOIN entries f ON f.id = lf.entry_id
+				JOIN todo_links ls ON ls.todo_id = lf.todo_id JOIN entries s ON s.id = ls.entry_id
+				WHERE lf.todo_id = t.id AND lf.origin = 'finished' AND ls.origin = 'started'
+					AND f.day = s.day AND f.ts_start > s.ts_start AND f.deleted_at IS NULL AND s.deleted_at IS NULL
+				ORDER BY f.ts_start DESC LIMIT 1), 0) AS spent_ms,
+			(SELECT max(s.ts_start) FROM todo_links ls JOIN entries s ON s.id = ls.entry_id
+				WHERE ls.todo_id = t.id AND ls.origin = 'started' AND s.deleted_at IS NULL) AS started_ts
+		FROM todos t
+		LEFT JOIN entries p ON p.id = (
+			SELECT l.entry_id FROM todo_links l JOIN entries e ON e.id = l.entry_id
+			WHERE l.todo_id = t.id AND l.origin = 'planned' AND e.deleted_at IS NULL
+			ORDER BY l.confirmed_at DESC LIMIT 1)
 		WHERE t.status = 'open' AND t.deleted_at IS NULL
 		ORDER BY t.due_on IS NULL, t.due_on, t.created_at`,
 		[day, day]
@@ -111,9 +138,10 @@ export async function closeTodo(db, groupId, id, status, now = Date.now()) {
  * time on it begins. Which todo a device's timer counts toward is that device's
  * own setting (kv-store), so starting here does not change it.
  */
-export async function startTodo(db, groupId, id, now = Date.now()) {
+export async function startTodo(db, groupId, id, now = Date.now(), lineId = null) {
 	const todo = await openTodo(db, id)
-	const line = await todoLine(db, groupId, `started: ${todo.text}`, now)
+	// A typed "started …" line is the record already — link it, write no second one.
+	const line = lineId ? { id: lineId } : await todoLine(db, groupId, `started: ${todo.text}`, now)
 	await link(db, groupId, id, line.id, "started", now)
 	return { todo, line }
 }
@@ -155,6 +183,76 @@ export async function scheduleTodo(db, groupId, id, { day, text }, now = Date.no
 // drawn as the todo's own row and never mistaken for something typed.
 function todoLine(db, groupId, body, now) {
 	return addEntry(db, groupId, { day: today(now), text: stamped(body, now), source: "todo" }, now)
+}
+
+/**
+ * Undo for `closeTodo` (app/db/todos.js `reopenTodo`): the todo is open again,
+ * and the record line it wrote is taken back — it did not happen. With no
+ * `lineId`, the newest `finished`/`trashed` link is the line to retract.
+ */
+export async function reopenTodo(db, groupId, id, lineId = null, now = Date.now()) {
+	const todo = await db.get("SELECT * FROM todos WHERE id = ? AND deleted_at IS NULL", [id])
+	if (!todo) {
+		throw new Error(`No todo with id ${id} — list the todos again for current ids.`)
+	}
+	await publishUpdate(db, groupId, "todos", { id }, { status: "open", closed_at: null })
+	const closing = lineId ?? (await closingLine(db, id))
+	if (closing) {
+		await publishUpdate(db, groupId, "entries", { id: closing }, { deleted_at: now })
+	}
+	return { ...todo, status: "open", closed_at: null }
+}
+
+/** The line a close wrote: the newest confirmed `finished`/`trashed` link, or null. */
+async function closingLine(db, todoId) {
+	const row = await db.get(
+		`SELECT entry_id FROM todo_links WHERE todo_id = ? AND origin IN ('finished', 'trashed')
+		AND confirmed_at IS NOT NULL ORDER BY confirmed_at DESC LIMIT 1`,
+		[todoId]
+	)
+	return row?.entry_id ?? null
+}
+
+/**
+ * The lines that time spent is summed over — app/db/todos.js `linkedEntries`,
+ * the same SELECT word for word: confirmed `timer`/`matched` links, oldest first.
+ */
+export function linkedEntries(db, todoId) {
+	return db.all(
+		`SELECT e.*, l.origin FROM todo_links l JOIN entries e ON e.id = l.entry_id
+		WHERE l.todo_id = ? AND l.origin IN ('timer', 'matched') AND l.confirmed_at IS NOT NULL
+			AND e.deleted_at IS NULL
+		ORDER BY e.ts_start`,
+		[todoId]
+	)
+}
+
+/**
+ * Log ranges since the todo was written whose text fuzzy-matches it, best match
+ * first — app/db/todos.js `proposedLinks`. Proposed only: nothing here writes,
+ * and a line already answered for this todo is never proposed again.
+ */
+export async function proposedLinks(db, todo) {
+	const since = localDay(todo.created_at)
+	const candidates = await db.all(
+		`SELECT e.* FROM entries e
+		WHERE e.kind = 'log' AND e.deleted_at IS NULL AND e.day >= ?
+			AND e.ts_start IS NOT NULL AND e.ts_end IS NOT NULL
+			AND e.id NOT IN (SELECT entry_id FROM todo_links WHERE todo_id = ?)
+		ORDER BY e.ts_start DESC LIMIT 200`,
+		[since, todo.id]
+	)
+	const bodies = candidates.map((entry) => parseLineTime(entry.text, entry.day).body)
+	return fuzzyFind(todo.text, bodies).ranked.map((index) => candidates[index])
+}
+
+/**
+ * Answering a proposal — app/db/todos.js `answerProposal`. Yes: the line's time
+ * counts from now on. No: the link stays with `confirmed_at` null, a remembered
+ * "not this", so the same line is never proposed again.
+ */
+export async function answerProposal(db, groupId, todoId, entryId, confirmed, now = Date.now()) {
+	await link(db, groupId, todoId, entryId, "matched", confirmed ? now : null)
 }
 
 // One link per (todo, line); a second one changes nothing.

@@ -1,8 +1,8 @@
 import { localDay, parseLineTime } from "@dotbook/core/parse"
-import Storage from "expo-sqlite/kv-store"
 import { Platform } from "react-native"
 import { uuidv7 } from "uuidv7"
 import { clock } from "../lib/format"
+import Storage from "../lib/kv"
 import {
 	cancelScheduledNotificationAsync,
 	SchedulableTriggerInputTypes,

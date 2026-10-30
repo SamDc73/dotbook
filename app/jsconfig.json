@@ -1,0 +1,9 @@
+// Absolute imports from the app root (`import … from "@/db/context"` = this
+// file's sibling). Metro reads this through its default tsconfig-paths
+// support; no TypeScript is meant or implied.
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": { "@/*": ["./*"] }
+	}
+}

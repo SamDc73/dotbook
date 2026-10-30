@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router"
-import { useSQLiteContext } from "expo-sqlite"
 import { StatusBar } from "expo-status-bar"
 import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useEffect, useState } from "react"
 import { Platform, Pressable, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { KeyboardAvoidingView } from "../components/KeyboardAvoidingView"
 import { Scrubber } from "../components/Scrubber"
 import { Icon } from "../components/ui/Icon"
@@ -19,7 +19,7 @@ import { useToday } from "../lib/use-today"
 // The focus view: one block, one line. Reached by a button, never the default.
 // Nothing written earlier is ever shown here — that is the whole point.
 export default function Focus() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const [now, setNow] = useState(Date.now)

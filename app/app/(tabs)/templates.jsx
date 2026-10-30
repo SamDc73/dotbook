@@ -1,11 +1,11 @@
 import { nextLabel } from "@dotbook/core/templates"
-import { useSQLiteContext } from "expo-sqlite"
 import Bell from "lucide-react-native/icons/bell"
 import Plus from "lucide-react-native/icons/plus"
 import X from "lucide-react-native/icons/x"
 import { useState } from "react"
 import { Platform, Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { KeyboardAvoidingView } from "../../components/KeyboardAvoidingView"
 import { PromotionCard } from "../../components/PromotionCard"
 import { ReminderForm } from "../../components/ReminderForm"
@@ -26,7 +26,7 @@ import { ensurePermission, reconcile } from "../../notifications/reminders"
 // Templates and their versions, plus the promotion prompts — computed live from
 // the uses, so there is no stored "pending question" to go stale.
 export default function Templates() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const insets = useSafeAreaInsets()
 	const [selectedId, setSelectedId] = useState(null) // a template's versions, or the list
 	const [adding, setAdding] = useState(false) // the form is open

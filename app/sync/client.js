@@ -1,6 +1,6 @@
-import Storage from "expo-sqlite/kv-store"
 import { reannotate } from "../db/entries"
 import { adapterFor } from "../db/sync"
+import Storage from "../lib/kv"
 import { reconcile } from "../notifications/reminders"
 import { runRound } from "./round"
 
@@ -30,6 +30,8 @@ export function isSyncing() {
 }
 
 export function syncNow(db) {
+	// No local database (the web app reads the server directly): nothing to sync.
+	if (db === null) return Promise.resolve()
 	if (inFlight === null) {
 		inFlight = run(db).finally(() => {
 			inFlight = null

@@ -1,11 +1,11 @@
 import { deserializeClock } from "@actual-app/crdt"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "expo-router"
-import { useSQLiteContext } from "expo-sqlite"
-import Storage from "expo-sqlite/kv-store"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { useLiveQuery } from "../db/use-live-query"
 import { clock } from "../lib/format"
+import Storage from "../lib/kv"
 import { account, logOut } from "../sync/account"
 import { STATUS, syncNow } from "../sync/client"
 import { Button } from "./ui/Button"
@@ -20,7 +20,7 @@ const EMPTY_ACCOUNT = { url: "", name: null }
 const EMPTY_STATUS = { lastSync: null, lastError: null }
 
 export function ServerSettings() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { data: who = EMPTY_ACCOUNT } = useQuery({ queryKey: ACCOUNT_KEY, queryFn: account })
@@ -42,7 +42,9 @@ export function ServerSettings() {
 		return (
 			<View className="gap-sm">
 				<Text variant="caption" className="text-on-surface-variant">
-					Not connected. The log works offline; logging in turns on sync and the web app.
+					{db === null
+						? "Not connected. Log in to open your log on this server."
+						: "Not connected. The log works offline; logging in turns on sync and the web app."}
 				</Text>
 				<View className="flex-row">
 					<Button variant="tonal" onPress={() => router.push("/login")}>
@@ -59,12 +61,14 @@ export function ServerSettings() {
 			<Text variant="caption" className="text-on-surface-variant">
 				{who.url}
 			</Text>
-			<View className="flex-row items-center gap-md">
-				<Button variant="tonal" onPress={sync}>
-					<Text>Sync now</Text>
-				</Button>
-				<StatusLine status={status} waiting={row?.waiting ?? 0} />
-			</View>
+			{db !== null && (
+				<View className="flex-row items-center gap-md">
+					<Button variant="tonal" onPress={sync}>
+						<Text>Sync now</Text>
+					</Button>
+					<StatusLine status={status} waiting={row?.waiting ?? 0} />
+				</View>
+			)}
 			<View className="flex-row">
 				<Button variant="outlined" onPress={leave}>
 					<Text>Log out</Text>
@@ -102,6 +106,7 @@ async function readStatus() {
 // timestamp ends with its node id) and newer than `since`, exactly what the
 // next request will carry. No clock row yet means nothing was ever written.
 async function waiting(db) {
+	if (db === null) return [{ waiting: 0 }]
 	const state = await db.sql`SELECT clock, since FROM messages_clock WHERE id = 1`.first()
 	if (!state) {
 		return [{ waiting: 0 }]

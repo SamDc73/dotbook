@@ -1,9 +1,9 @@
 import { localDay } from "@dotbook/core/parse"
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { exportMarkdown, importMarkdown } from "../db/markdown"
 import { saveFile } from "../lib/saveFile"
 import { Button } from "./ui/Button"
@@ -11,7 +11,7 @@ import { Text } from "./ui/Text"
 
 // Settings → Your data. One Markdown file out, the same file back in.
 export function DataSection() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const [status, setStatus] = useState(null)
 
 	async function exportAll() {

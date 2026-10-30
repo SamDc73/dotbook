@@ -1,7 +1,7 @@
 import { parseLineTime } from "@dotbook/core/parse"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { View } from "react-native"
+import { useDb } from "@/db/context"
 import { scheduleTodo, setDueOn } from "../db/todos"
 import { shiftDay } from "../lib/day"
 import { Badge } from "./ui/Badge"
@@ -13,7 +13,7 @@ import { Text } from "./ui/Text"
 // (empty = the queue), and — only if wanted — a planned window, which becomes
 // an ordinary `plan` line linked back to the todo.
 export function TodoEditor({ todo, today, onDone }) {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const [dueOn, setDue] = useState(todo.due_on ?? "")
 	const [window, setWindow] = useState("")
 	const [day, setDay] = useState(todo.due_on ?? today)

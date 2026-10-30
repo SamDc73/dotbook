@@ -1,8 +1,8 @@
 import { effectiveTick } from "@dotbook/core/habits"
-import { useSQLiteContext } from "expo-sqlite"
 import { useCallback, useMemo, useState } from "react"
 import { Platform, Pressable, ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { DayHeader, HabitCells } from "../../components/HabitGrid"
 import { KeyboardAvoidingView } from "../../components/KeyboardAvoidingView"
 import { ScreenHeader } from "../../components/ScreenHeader"
@@ -25,7 +25,7 @@ const DAYS = 28
 // under one header. The state shown is `effectiveTick`: a person's tick wins
 // over the classifier's while it exists. Nothing counts proposals, nothing nags.
 export default function Habits() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const insets = useSafeAreaInsets()
 	const [name, setName] = useState("")
 	const [kind, setKind] = useState("do")

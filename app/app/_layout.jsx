@@ -2,13 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import * as Device from "expo-device"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
-import { addDatabaseChangeListener, SQLiteProvider, useSQLiteContext } from "expo-sqlite"
+import { addDatabaseChangeListener, SQLiteProvider } from "expo-sqlite"
 import { Suspense, useEffect } from "react"
 import { ErrorBoundary } from "react-error-boundary"
 import { ActivityIndicator, AppState, Platform } from "react-native"
 import { KeyboardProvider } from "react-native-keyboard-controller"
+import { useDb } from "@/db/context"
 import { DatabaseError } from "../db/DatabaseError"
-import { DatabaseGate } from "../db/DatabaseGate"
 import { migrate } from "../db/migrate"
 import * as Notifications from "../notifications/native"
 import { reconcile } from "../notifications/reminders"
@@ -20,6 +20,7 @@ import { useSync } from "../sync/use-sync"
 import { FONTS } from "../theme/fonts"
 import { MaterialYou } from "../theme/MaterialYou"
 import "../global.css"
+import LiveQueriesWeb from "../components/LiveQueries.web"
 
 // One query client for the app. Nothing goes stale on its own — the database
 // is local, so the only thing that changes an answer is a write, and
@@ -44,27 +45,44 @@ export default function RootLayout() {
 	const [fontsLoaded] = useFonts(FONTS)
 	if (!fontsLoaded) return LOADING
 
-	// Opening the database can fail (on web: another tab holds it, see
-	// DatabaseGate.web.jsx). The boundary shows the message and a retry, which
-	// remounts the provider and opens again.
+	// Web: the browser holds no database and syncs nothing — the server is the
+	// data (db/*.web.js twins over HTTP). None of the native bootstrap exists
+	// below: no SQLiteProvider, no Reminders, no Sync — just
+	// the app, refetching on /api/v1/state (LiveQueriesWeb).
+	if (Platform.OS === "web") {
+		return (
+			<ErrorBoundary FallbackComponent={DatabaseError}>
+				<QueryClientProvider client={queryClient}>
+					<LiveQueriesWeb />
+					{/* No <Reminders> or DB – sync is a no‑op on web */}
+					<MaterialYou>
+						<KeyboardProvider>
+							<Stack screenOptions={STACK} />
+						</KeyboardProvider>
+					</MaterialYou>
+				</QueryClientProvider>
+			</ErrorBoundary>
+		)
+	}
+
+	// Native: opening the database can fail. The boundary shows the message and
+	// a retry, which remounts the provider and opens again.
 	return (
 		<ErrorBoundary FallbackComponent={DatabaseError}>
-			<DatabaseGate>
-				<Suspense fallback={LOADING}>
-					<SQLiteProvider databaseName="dotbook.db" options={DB_OPTIONS} onInit={migrate} useSuspense>
-						<QueryClientProvider client={queryClient}>
-							<LiveQueries />
-							<Reminders />
-							<Sync />
-							<MaterialYou>
-								<KeyboardProvider>
-									<Stack screenOptions={STACK} />
-								</KeyboardProvider>
-							</MaterialYou>
-						</QueryClientProvider>
-					</SQLiteProvider>
-				</Suspense>
-			</DatabaseGate>
+			<Suspense fallback={LOADING}>
+				<SQLiteProvider databaseName="dotbook.db" options={DB_OPTIONS} onInit={migrate} useSuspense>
+					<QueryClientProvider client={queryClient}>
+						<LiveQueries />
+						<Reminders />
+						<Sync />
+						<MaterialYou>
+							<KeyboardProvider>
+								<Stack screenOptions={STACK} />
+							</KeyboardProvider>
+						</MaterialYou>
+					</QueryClientProvider>
+				</SQLiteProvider>
+			</Suspense>
 		</ErrorBoundary>
 	)
 }
@@ -107,7 +125,7 @@ const SETTLE_MS = 1000
 // (notifications/task.js); both go through the same answerResponse, which
 // claims each tap once, so overlap is harmless.
 function Reminders() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	// Android screen time, collected on every foreground once usage access is granted.
 	useCollectScreenTime(db, Device.deviceName ?? "android")
 
@@ -154,7 +172,7 @@ function Reminders() {
 // Syncs with the server when there is one configured: on start, on foreground,
 // and after local changes settle. See app/sync.
 function Sync() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	useSync(db)
 	return null
 }

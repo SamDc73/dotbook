@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "expo-router"
-import { useSQLiteContext } from "expo-sqlite"
 import { useState } from "react"
 import { ScrollView, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { ScreenHeader } from "../components/ScreenHeader"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
@@ -18,7 +18,7 @@ import { syncNow } from "../sync/client"
 export default function Login() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
-	const db = useSQLiteContext()
+	const db = useDb()
 	const queryClient = useQueryClient()
 	const { data: known } = useQuery({ queryKey: ["account"], queryFn: account })
 	const [url, setUrl] = useState(null)

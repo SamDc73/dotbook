@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useSQLiteContext } from "expo-sqlite"
 import { useCallback, useState } from "react"
 import { Platform, Pressable, SectionList, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useDb } from "@/db/context"
 import { KeyboardAvoidingView } from "../../components/KeyboardAvoidingView"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { TodoEditor } from "../../components/TodoEditor"
@@ -24,7 +24,7 @@ const DUE_CHOICES = ["queue", "today", "tomorrow"]
 // close. Overdue items surface at the top of every later day until closed; the
 // queue asks nothing of you. See V0.1 → feature 17.
 export default function Todos() {
-	const db = useSQLiteContext()
+	const db = useDb()
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 	const day = useToday()
