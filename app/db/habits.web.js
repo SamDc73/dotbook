@@ -32,11 +32,9 @@ export async function restoreHabit(_db, id) {
 	noteChange()
 }
 
-// Every live tick on `day`, oldest first. CONTRACT NOTE: the endpoint has no
-// single-day read, so this filters the day's grid slice to the day itself.
-export async function ticksOn(db, day) {
-	const rows = await grid(db, day, day)
-	return rows.filter((row) => row.day === day)
+// Every live tick on `day`, oldest first: the one-day window.
+export function ticksOn(db, day) {
+	return grid(db, day, day)
 }
 
 // A person's tick. It wins over any proposal for as long as it exists.
@@ -46,11 +44,9 @@ export async function tick(_db, habitId, day, value) {
 }
 
 // Removes the person's ticks for that day only. A proposal underneath, if any,
-// shows again. CONTRACT NOTE: the tick endpoint is the only write, so the
-// removal travels as `value: null` — the server must treat that as "retire the
-// manual ticks for this habit and day", not as a tick of null.
+// shows again. The tick endpoint is the only write; "clear" is the removal.
 export async function untick(_db, habitId, day) {
-	await api("/api/v1/habit-ticks", { method: "POST", body: { habitId, day, value: null } })
+	await api("/api/v1/habit-ticks", { method: "POST", body: { habitId, day, value: "clear" } })
 	noteChange()
 }
 
@@ -60,9 +56,10 @@ export async function untick(_db, habitId, day) {
 // the effective tick for that habit and day, or null. Returns the value the
 // cell now holds, or null when it went back to unknown.
 export async function cycleTick(db, habitId, day, current) {
-	await untick(db, habitId, day)
+	// One write: the server retires the old manual tick before setting the new.
 	const next = nextTick(current)
-	if (next !== null) await tick(db, habitId, day, next)
+	if (next === null) await untick(db, habitId, day)
+	else await tick(db, habitId, day, next)
 	return next
 }
 
@@ -73,11 +70,9 @@ function nextTick(current) {
 	return null
 }
 
-// Live ticks in a day range, oldest first — what the grid is built from.
-// CONTRACT NOTE: the endpoint takes one `day`, so the range's last day is what
-// is asked for and `fromDay` rides along as `from`; the server should return
-// the whole window the screen asked for (the habits screen wants 28 days).
+// Live ticks in a day range, oldest first — what the grid is built from; the
+// same rows app/db/habits.js `grid` reads, from `from` through `day`.
 export async function grid(_db, fromDay, toDay) {
 	const data = await api(`/api/v1/habits?day=${encodeURIComponent(toDay)}&from=${encodeURIComponent(fromDay)}`)
-	return data.grid
+	return data.ticks
 }

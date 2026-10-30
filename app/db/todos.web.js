@@ -55,11 +55,9 @@ export async function closeTodo(db, todo, status, today) {
 
 // Undo for closeTodo: open again, and the line it wrote taken back — it did not happen.
 export async function reopenTodo(_db, todoId, lineId) {
-	// The line id rides along in case the server wants it; the explicit delete
-	// below is what actually takes the line back (a soft delete, like the native
-	// sibling's updateRow).
+	// The server reopens the todo and takes the closing line back (a soft
+	// delete) in one call — the line id says which line that is.
 	await api(`/api/v1/todos/${todoId}/reopen`, { method: "POST", body: { lineId } })
-	if (lineId !== null) await api(`/api/v1/lines/${lineId}`, { method: "DELETE" })
 	noteChange()
 }
 

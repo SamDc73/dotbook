@@ -3,12 +3,10 @@
 // replica; every write goes through publish/publishUpdate (../sync/publish.js),
 // so the phone, the web app, and the server agree on every habit and tick.
 //
-// The grid is the habits screen's matrix: one cell per habit per day for the
-// screen's window ending at `day`, each holding the tick that counts —
-// `effectiveTick` from @dotbook/core/habits, so a person's tick wins over the
-// classifier's while it exists.
+// The habits read hands back the window's tick rows exactly as app/db/habits.js
+// `grid` reads them; the screen resolves the tick that counts itself
+// (`effectiveTick` from @dotbook/core/habits), on the phone and in the browser.
 
-import { effectiveTick } from "@dotbook/core/habits"
 import { SYNCED } from "@dotbook/core/sync"
 import { addHabit, removeHabit, setTick } from "../db/habits.js"
 import { publishUpdate } from "../sync/publish.js"
@@ -33,8 +31,11 @@ export function habits(app) {
 			return c.json({ error: "day is 'YYYY-MM-DD'" }, 400)
 		}
 		const db = c.get("db")
-		// app/db/habits.js `grid`'s query, over the same window the screen draws.
-		const fromDay = shiftDay(day, 1 - DAYS)
+		// app/db/habits.js `grid`'s query, over the window the screen asks for.
+		const fromDay = c.req.query("from") ?? shiftDay(day, 1 - DAYS)
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDay)) {
+			return c.json({ error: "from is 'YYYY-MM-DD'" }, 400)
+		}
 		const [list, history] = await Promise.all([
 			db.all("SELECT * FROM habits WHERE deleted_at IS NULL ORDER BY created_at"),
 			db.all(
@@ -44,7 +45,7 @@ export function habits(app) {
 				[fromDay, day]
 			),
 		])
-		return c.json({ habits: list, grid: grid(list, history, day) })
+		return c.json({ habits: list, ticks: history })
 	})
 
 	app.post("/api/v1/habits", async (c) => {
@@ -151,27 +152,4 @@ function patchOf(bodyValue) {
 
 async function liveRow(db, id) {
 	return db.get("SELECT 1 FROM habits WHERE id = ? AND deleted_at IS NULL", [id])
-}
-
-// One cell per habit per day, oldest day first — the screen's `cellsByHabit`
-// as JSON: `value`/`by` from the tick that counts, or nulls when the day is
-// still unknown.
-function grid(list, history, day) {
-	const byKey = new Map()
-	for (const tick of history) {
-		const key = `${tick.habit_id}|${tick.day}`
-		byKey.set(key, [...(byKey.get(key) ?? []), tick])
-	}
-	const columns = []
-	for (let i = DAYS - 1; i >= 0; i--) {
-		columns.push(shiftDay(day, -i))
-	}
-	const cells = {}
-	for (const habit of list) {
-		cells[habit.id] = columns.map((column) => {
-			const tick = effectiveTick(byKey.get(`${habit.id}|${column}`) ?? [])
-			return { day: column, value: tick?.value ?? null, by: tick?.by ?? null }
-		})
-	}
-	return cells
 }
