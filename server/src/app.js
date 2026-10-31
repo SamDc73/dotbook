@@ -136,10 +136,11 @@ export function createApp({
 			return c.json({ error: "unknown group" }, 403)
 		}
 		const db = c.get("db")
-		const response = await relay(db, body)
-		// Keep the replica current for the classifier. A device whose clock is
-		// more than the CRDT's drift limit ahead of ours is refused rather than
-		// let its timestamps poison every other device's clock.
+		// The replica first — the web app and MCP read it. A batch it refuses is
+		// not relayed either, so the device sends it again rather than the relay
+		// holding what the replica never got. A device whose clock is more than
+		// the CRDT's drift limit ahead of ours is refused rather than let its
+		// timestamps poison every other device's clock.
 		try {
 			await applyMessages(db, body.messages)
 		} catch (error) {
@@ -148,7 +149,7 @@ export function createApp({
 			}
 			throw error
 		}
-		return c.json(response)
+		return c.json(await relay(db, body))
 	})
 
 	app.post("/api/v1/browser-time", validator("json", validateBrowserTime), async (c) => {

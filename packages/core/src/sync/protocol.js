@@ -27,10 +27,11 @@ export function buildSyncRequest(db, groupId) {
 	return withClock(db, async (clock) => {
 		const clientId = clock.timestamp.node()
 		const { since } = await db.get("SELECT since FROM messages_clock WHERE id = 1")
-		// Only messages this device stamped: anything else came from the server.
+		// Every message, not only this device's: a server that lacks them (a new
+		// one, or one restored from a backup) gets them back from whoever has them.
 		const rows = await db.all(
-			"SELECT timestamp, dataset, row, column, value FROM messages_crdt WHERE timestamp > ? AND timestamp LIKE ? ORDER BY timestamp",
-			[since, `%-${clientId}`]
+			"SELECT timestamp, dataset, row, column, value FROM messages_crdt WHERE timestamp > ? ORDER BY timestamp",
+			[since]
 		)
 		const messages = rows.map((row) => ({ ...row, value: JSON.parse(row.value) }))
 		return { groupId, clientId, merkle: clock.merkle, messages }
@@ -48,13 +49,16 @@ export function buildSyncRequest(db, groupId) {
  * @returns {Promise<{ done: boolean, kept: string[] }>}
  */
 export async function receiveSyncResponse(db, request, response, unsentAfter = "") {
-	const unsent = request.messages.filter((message) => message.timestamp > unsentAfter)
+	const unsent = request.messages.filter(
+		(message) => message.timestamp > unsentAfter && message.timestamp.endsWith(`-${request.clientId}`)
+	)
 	const clashes = await findClashes(db, unsent, response.messages)
 	await applyMessages(db, response.messages)
 	const kept = await keepBoth(db, clashes)
 	const divergedAt = await withClock(db, (clock) => divergence(clock.merkle, response.merkle))
 
-	let since = request.messages.at(-1)?.timestamp
+	// What was sent and what came back are both on the server now.
+	let since = [request.messages.at(-1)?.timestamp, response.messages.at(-1)?.timestamp].filter(Boolean).sort().at(-1)
 	if (divergedAt !== null) {
 		since = new Timestamp(divergedAt, 0, "0").toString()
 	}

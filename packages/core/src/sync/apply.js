@@ -101,20 +101,23 @@ function touchedRows(messages) {
  *
  * UPDATE or INSERT rather than an upsert: SQLite checks NOT NULL before it
  * looks for a key conflict, so an upsert carrying one column would fail on an
- * existing row. A brand-new row with a NOT NULL column still missing does fail
- * here — that can only happen if a row's creating messages were split up,
- * which `messagesForInsert` never does and the relay never reorders (it
- * returns causal order) — so that failure is a real bug surfacing, not a case
- * to paper over.
+ * existing row. A new row is built from every message it has, not only this
+ * batch's: a server catching up on a device's history (a new server, or one
+ * restored from a backup) gets a later edit before the row's creating
+ * messages. Until those arrive the row lacks a NOT NULL column, and INSERT OR
+ * IGNORE leaves it waiting in `messages_crdt` instead of failing the batch.
  */
 async function materialise(db, dataset, row, columns) {
 	const table = SYNCED[dataset]
 	if (!table) {
 		return
 	}
+	const whereKey = table.keys.map((key) => `${key} = ?`).join(" AND ")
+	const keys = keyValues(row)
+	const exists = await db.get(`SELECT 1 FROM ${dataset} WHERE ${whereKey}`, keys)
 	const names = []
 	const values = []
-	for (const column of columns.filter((c) => table.columns.includes(c))) {
+	for (const column of (exists ? columns : table.columns).filter((c) => table.columns.includes(c))) {
 		const newest = await db.get(
 			"SELECT value FROM messages_crdt WHERE dataset = ? AND row = ? AND column = ? ORDER BY timestamp DESC LIMIT 1",
 			[dataset, row, column]
@@ -128,14 +131,12 @@ async function materialise(db, dataset, row, columns) {
 		return
 	}
 
-	const whereKey = table.keys.map((key) => `${key} = ?`).join(" AND ")
-	const keys = keyValues(row)
-	if (await db.get(`SELECT 1 FROM ${dataset} WHERE ${whereKey}`, keys)) {
+	if (exists) {
 		const assignments = names.map((column) => `${column} = ?`).join(", ")
 		await db.run(`UPDATE ${dataset} SET ${assignments} WHERE ${whereKey}`, [...values, ...keys])
 		return
 	}
 	const all = [...table.keys, ...names]
 	const placeholders = all.map(() => "?").join(", ")
-	await db.run(`INSERT INTO ${dataset} (${all.join(", ")}) VALUES (${placeholders})`, [...keys, ...values])
+	await db.run(`INSERT OR IGNORE INTO ${dataset} (${all.join(", ")}) VALUES (${placeholders})`, [...keys, ...values])
 }
