@@ -1,4 +1,4 @@
-import { extractItems, lineKind, localDay, parseLineTime } from "@dotbook/core/parse"
+import { extractItems, lineKind, localDay, parseLineTime, typedOn } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { clock } from "../lib/format"
 import { insertRow, updateRow } from "./sync"
@@ -82,7 +82,8 @@ export async function addEntry(db, { day, text, source = "manual", stampedAt = n
 
 export async function updateEntryText(db, id, text, day) {
 	const now = Date.now()
-	const parsed = parseLineTime(text, day, now)
+	// Read on the day it is stored on: a `ytd` line stays where `ytd` put it.
+	const parsed = parseLineTime(text, typedOn(text, day, now), now)
 	const changes = { text, day: parsed.day, ts_start: parsed.tsStart, ts_end: parsed.tsEnd, kind: lineKind(parsed, now) }
 	// A stamped time the person has now edited is their time: the stamp is over.
 	const before = await db.sql`SELECT text, stamped_at FROM entries WHERE id = ${id}`.first()

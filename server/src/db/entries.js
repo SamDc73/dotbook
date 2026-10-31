@@ -3,7 +3,7 @@
 // stamp, same template snapshot, so a line written here differs from a typed
 // one only in its `source`. Writes go through publish/publishUpdate so they sync.
 
-import { lineKind, parseLineTime } from "@dotbook/core/parse"
+import { lineKind, parseLineTime, typedOn } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { publish, publishUpdate } from "../sync/publish.js"
 import { stamped, today } from "../wallClock.js"
@@ -131,7 +131,8 @@ export async function editEntry(db, groupId, id, text, now = Date.now()) {
 		throw new Error("That line is a timer; stop or abandon it on a device.")
 	}
 	const typed = text.trim()
-	const parsed = parseLineTime(typed, before.day, now)
+	// Read on the day it is stored on: a `ytd` line stays where `ytd` put it.
+	const parsed = parseLineTime(typed, typedOn(typed, before.day, now), now)
 	const changes = {
 		text: typed,
 		day: parsed.day,

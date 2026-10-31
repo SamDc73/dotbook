@@ -1,5 +1,5 @@
 import { parseMarkdown, renderMarkdown } from "@dotbook/core/markdown"
-import { localDay } from "@dotbook/core/parse"
+import { localDay, typedOn } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { addEntry } from "./entries"
 import { addHabit, tick } from "./habits"
@@ -99,7 +99,8 @@ async function importLines(db, days, counts) {
 				counts.skipped += 1
 				continue
 			}
-			await addEntry(db, { day, text: line.text, source: SOURCE, kind: line.kind })
+			// The section is the line's day already: `ytd` moved it there once.
+			await addEntry(db, { day: typedOn(line.text, day), text: line.text, source: SOURCE, kind: line.kind })
 			have.add(`${day}\n${line.text}`)
 			counts.lines += 1
 		}

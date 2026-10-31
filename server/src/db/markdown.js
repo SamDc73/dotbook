@@ -6,7 +6,7 @@
 // between rows are not in the file.
 
 import { parseMarkdown, renderMarkdown } from "@dotbook/core/markdown"
-import { localDay } from "@dotbook/core/parse"
+import { localDay, typedOn } from "@dotbook/core/parse"
 import { uuidv7 } from "uuidv7"
 import { publish } from "../sync/publish.js"
 import { today } from "../wallClock.js"
@@ -106,7 +106,8 @@ async function importLines(db, groupId, days, counts) {
 				counts.skipped += 1
 				continue
 			}
-			await addEntry(db, groupId, { day, text: line.text, source: SOURCE, kind: line.kind })
+			// The section is the line's day already: `ytd` moved it there once.
+			await addEntry(db, groupId, { day: typedOn(line.text, day), text: line.text, source: SOURCE, kind: line.kind })
 			have.add(`${day}\n${line.text}`)
 			counts.lines += 1
 		}

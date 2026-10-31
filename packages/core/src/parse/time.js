@@ -5,7 +5,7 @@
 //
 // This function annotates. It never rewrites the line; `text` stays raw in storage.
 
-import { parseNaturalTime } from "./natural.js"
+import { localDay, parseNaturalTime } from "./natural.js"
 
 // One time: `7:36`, `07:36`, `3:30 PM`, `4:00 p.m.`
 //   hour      1–2 digits
@@ -22,6 +22,29 @@ const SEPARATOR = String.raw`\s*(?:->|→|-|–|—)\s*`
 const LINE_PREFIX = new RegExp(String.raw`^\s*${TIME}(?:${SEPARATOR}${TIME})?(?=\s|$)`, "i")
 
 const NO_TIME = Object.freeze({ tsStart: null, tsEnd: null, timeText: "" })
+
+/**
+ * The day a line was typed on, given the day it is stored on: `ytd 9pm` stored
+ * on the 30th was typed on the 31st. A stored line read again — edited, or
+ * imported from an export — parses from here, so it stays on its own day.
+ *
+ * @param {string} text  the stored line
+ * @param {string} day   the day it is stored on, YYYY-MM-DD
+ * @param {number} [now]
+ * @returns {string} YYYY-MM-DD
+ */
+export function typedOn(text, day, now = Date.now()) {
+	const landed = parseLineTime(text, day, now).day
+	const typed = noonOf(day)
+	typed.setDate(typed.getDate() - Math.round((noonOf(landed) - typed) / 86_400_000))
+	return localDay(typed.getTime())
+}
+
+// Noon, so a daylight-saving change never tips the date.
+function noonOf(day) {
+	const [year, month, date] = day.split("-").map(Number)
+	return new Date(year, month - 1, date, 12)
+}
 
 /**
  * Parse the time prefix of a line.
