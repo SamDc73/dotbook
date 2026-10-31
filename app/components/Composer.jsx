@@ -128,7 +128,8 @@ export function Composer({ day, seam = false, onSubmit, onListOpen, inputRef }) 
 			setText("")
 			return
 		}
-		onSubmit(line, voice)
+		// Cleared once written: a write that fails (on web, the network) keeps the line.
+		await onSubmit(line, voice)
 		tap("logged")
 		setText("")
 		setVoice(null)

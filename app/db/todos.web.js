@@ -1,8 +1,6 @@
 import { api } from "../lib/api"
 import { noteChange } from "../lib/changes"
-import { clock } from "../lib/format"
 import kv from "../lib/kv"
-import { addEntry } from "./entries.web"
 
 // Web twin of db/todos.js: same names, same signatures, same shapes. The `db`
 // parameter is accepted and ignored; the server holds the rows. Every mutating
@@ -43,14 +41,13 @@ export async function setDueOn(_db, id, dueOn) {
 	noteChange()
 }
 
-// Done or trashed. The day still reads as a true record: an ordinary log line
-// is written for it, marked `source: todo`. Returns that line's id, for undo.
-export async function closeTodo(db, todo, status, today) {
-	await api(`/api/v1/todos/${todo.id}/close`, { method: "POST", body: { status } })
+// Done or trashed. The day still reads as a true record: the server writes an
+// ordinary log line for it, marked `source: todo`. Returns that line's id, for undo.
+export async function closeTodo(_db, todo, status, _today) {
+	const data = await api(`/api/v1/todos/${todo.id}/close`, { method: "POST", body: { status } })
 	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
-	const lineId = await todoLine(db, today, `${status}: ${todo.text}`)
 	noteChange()
-	return lineId
+	return data.lineId
 }
 
 // Undo for closeTodo: open again, and the line it wrote taken back — it did not happen.
@@ -59,14 +56,6 @@ export async function reopenTodo(_db, todoId, lineId) {
 	// delete) in one call — the line id says which line that is.
 	await api(`/api/v1/todos/${todoId}/reopen`, { method: "POST", body: { lineId } })
 	noteChange()
-}
-
-// A line the app writes on a todo's behalf — `21:14 done: write report`,
-// `9:05 started: anki deck` — marked `source: todo` so it is drawn as the
-// todo's own row, struck or not, and never mistaken for something typed.
-async function todoLine(db, day, body) {
-	const now = Date.now()
-	return addEntry(db, { day, text: `${clock(now)} ${body}`, source: "todo" })
 }
 
 // Scheduling is an ordinary `plan` line linked back to the todo. CONTRACT NOTE:
@@ -152,13 +141,11 @@ export async function applyTodoIntent(db, intent, todos, { day, entryId = null }
 		return todo
 	}
 	// done / trash: closed without a second line — the one that said it stands
-	// for the record, struck (see DoneLine), and carries the time. The line id
-	// rides along so the server can link it instead of writing its own.
+	// for the record, struck (see DoneLine), and carries the time. The server
+	// links it, or — from `/todo … done`, with no line — writes the record line.
 	const status = intent.action === "done" ? "done" : "trashed"
 	await api(`/api/v1/todos/${todo.id}/close`, { method: "POST", body: { status, lineId: entryId } })
 	if ((await activeTodoId()) === todo.id) await setActiveTodo(null)
-	// `/todo … done` said it without a line of its own: write the record line.
-	if (entryId === null) await todoLine(db, day, `${status}: ${todo.text}`)
 	noteChange()
 	return todo
 }

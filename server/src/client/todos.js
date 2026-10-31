@@ -61,12 +61,14 @@ export function todos(app) {
 	app.post(
 		"/api/v1/todos/:id/close",
 		handled(async (c) => {
-			const { status } = await body(c)
+			const { status, lineId } = await body(c)
 			if (status !== "done" && status !== "trashed") {
 				return c.json({ error: 'expected { status: "done" | "trashed" }' }, 400)
 			}
-			await closeTodo(c.get("db"), c.get("auth").user.id, c.req.param("id"), status)
-			return c.body(null, 204)
+			const userId = c.get("auth").user.id
+			const { line } = await closeTodo(c.get("db"), userId, c.req.param("id"), status, Date.now(), lineId ?? null)
+			// The record line — undo takes it back.
+			return c.json({ lineId: line.id })
 		})
 	)
 

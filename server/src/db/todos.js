@@ -125,10 +125,11 @@ export async function setDueOn(db, groupId, id, dueOn) {
  * day gets its record line (`9:14 pm done: write report`, `source: todo`),
  * linked as `finished` or `trashed`.
  */
-export async function closeTodo(db, groupId, id, status, now = Date.now()) {
+export async function closeTodo(db, groupId, id, status, now = Date.now(), lineId = null) {
 	const todo = await openTodo(db, id)
 	await publishUpdate(db, groupId, "todos", { id }, { status, closed_at: now })
-	const line = await todoLine(db, groupId, `${status}: ${todo.text}`, now)
+	// A typed "anki deck done" is the record already — link it, write no second one.
+	const line = lineId ? { id: lineId } : await todoLine(db, groupId, `${status}: ${todo.text}`, now)
 	await link(db, groupId, id, line.id, status === "done" ? "finished" : "trashed", now)
 	return { todo: { ...todo, status, closed_at: now }, line }
 }

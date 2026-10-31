@@ -12,6 +12,7 @@ import { today } from "../wallClock.js"
 
 // The window the promotion rule counts over — app/db/templates.js's number.
 const RECENT_USES = 5
+const DAY = /^\d{4}-\d{2}-\d{2}$/
 
 export function templates(app) {
 	// Everything the templates screen shows, per template.
@@ -19,31 +20,37 @@ export function templates(app) {
 		return c.json({ items: await overview(c.get("db"), today()) })
 	})
 
-	// A template is born with its first version, in force from today.
+	// A template is born with its first version, in force from the form's day (today unless changed).
 	app.post("/api/v1/templates", async (c) => {
-		const { name, contents, label } = await body(c)
+		const { name, contents, label, effectiveFrom = today() } = await body(c)
 		const checked = checkContents(contents)
 		if (typeof name !== "string" || name.trim() === "" || checked.error) {
 			return c.json({ error: checked.error ?? "expected { name, contents: string[] }" }, 400)
 		}
+		if (!DAY.test(effectiveFrom)) {
+			return c.json({ error: "effectiveFrom is 'YYYY-MM-DD'" }, 400)
+		}
 		const { db, groupId } = mine(c)
-		const id = await createTemplate(db, groupId, { name, label: label ?? null, effectiveFrom: today(), contents })
+		const id = await createTemplate(db, groupId, { name, label: label ?? null, effectiveFrom, contents })
 		return c.json({ template: await db.get("SELECT * FROM templates WHERE id = ?", [id]) }, 201)
 	})
 
 	app.post("/api/v1/templates/:id/versions", async (c) => {
-		const { contents, label } = await body(c)
+		const { contents, label, effectiveFrom = today() } = await body(c)
 		const checked = checkContents(contents)
 		if (checked.error) {
 			return c.json({ error: checked.error }, 400)
+		}
+		if (!DAY.test(effectiveFrom)) {
+			return c.json({ error: "effectiveFrom is 'YYYY-MM-DD'" }, 400)
 		}
 		const { db, groupId } = mine(c)
 		const id = c.req.param("id")
 		if (!(await liveRow(db, id))) {
 			return c.json({ error: `no template with id ${id}` }, 404)
 		}
-		await addVersion(db, groupId, id, { label: label ?? null, effectiveFrom: today(), contents })
-		return c.body(null, 204)
+		const versionId = await addVersion(db, groupId, id, { label: label ?? null, effectiveFrom, contents })
+		return c.json({ version: await db.get("SELECT * FROM template_versions WHERE id = ?", [versionId]) }, 201)
 	})
 
 	// Rule 3, accepted: the repeated deviation becomes a version.

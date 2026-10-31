@@ -11,13 +11,25 @@ export async function recurrences(_db) {
 }
 
 // `parts` is the form's shape — see ruleFromParts in core. `durationMin` null = point event.
-export async function addRecurrence(_db, { text, parts, durationMin, kind }) {
-	const data = await api("/api/v1/recurrences", {
-		method: "POST",
-		body: { text, parts, durationMin, kind },
-	})
+export async function addRecurrence(_db, fields) {
+	const data = await api("/api/v1/recurrences", { method: "POST", body: bodyOf(fields) })
 	noteChange()
 	return data.recurrence
+}
+
+// The form's `parts` as the endpoint reads them; the server rules in its own zone.
+function bodyOf({ text, parts, durationMin, kind }) {
+	const time = `${parts.hour}:${String(parts.minute).padStart(2, "0")}`
+	return {
+		text,
+		freq: parts.freq,
+		interval: parts.interval,
+		byDay: parts.byDay,
+		time,
+		startDay: parts.dtstart,
+		durationMin,
+		kind,
+	}
 }
 
 // Soft delete: occurrences already written stay in the log — they happened, or were planned.
@@ -26,20 +38,16 @@ export async function removeRecurrence(_db, id) {
 	noteChange()
 }
 
-// CONTRACT GAP: the endpoint list has no restore for a removed recurrence, so
-// the undo the screen offers after a removal cannot be honoured on web. This
-// rejects loudly rather than pretending the rule came back.
-export function restoreRecurrence(_db, _id) {
-	return Promise.reject(new Error("restoreRecurrence: the server contract has no restore endpoint for recurrences"))
+// Undo for removeRecurrence.
+export async function restoreRecurrence(_db, id) {
+	await api(`/api/v1/recurrences/${id}/restore`, { method: "POST" })
+	noteChange()
 }
 
 // Editing retires the old rule and starts a new one. Days already materialised
 // keep their lines, so a change to the series never rewrites the past.
 export async function replaceRecurrence(_db, id, fields) {
-	await api(`/api/v1/recurrences/${id}`, {
-		method: "PUT",
-		body: { text: fields.text, parts: fields.parts, durationMin: fields.durationMin, kind: fields.kind },
-	})
+	await api(`/api/v1/recurrences/${id}`, { method: "PUT", body: bodyOf(fields) })
 	noteChange()
 }
 
